@@ -22,7 +22,7 @@ search and delete multiple products, customers or orders using a **familiar, sin
 spreadsheet like** interface. 
 
 The Pro version also allows adding and updating items easily. It also provides **smart Batch Update** to 
-change multiple fields on multiple items Ð all **at once with zero errors**. You will discover a new way 
+change multiple fields on multiple items - all **at once with zero errors**. You will discover a new way 
 of store administration with this add-on. 
 
 It frees you up from mundane housekeeping tasks. So you can spend that time on anything that makes you more 
@@ -31,8 +31,8 @@ Use that time to develop a new product, or simply present it to your family.
 
 Highlights:
 
-* Convenient Browsing & Searching Ð Eliminate Extra Clicks And Long Wait Times
-* Inline Product Management Ð Get Productive Right Away (Pro only)
+* Convenient Browsing & Searching - Eliminate Extra Clicks And Long Wait Times
+* Inline Product Management - Get Productive Right Away (Pro only)
 * Fast And Reliable Batch Updates With Intelligent Update Actions (Pro only)
 * Order And Customer Management Coming Soon
 
