@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce
 Requires at least: 2.0.2
 Tested up to: 3.1
-Stable tag: 0.5.7
+Stable tag: 0.6.0
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, orders and customers reliably using a fast and familiar interface.
@@ -18,12 +18,12 @@ As a business owner, **your time is better spent on marketing and customer servi
 Unfortunately store administration with WordPress e-Commerce can take significant time. Day after day.
 
 Smart Manager will **boost your productivity 10x** in managing products, customers and orders. You can browse, 
-search and delete multiple products, customers or orders using a **familiar, single page, 
+search, edit and delete multiple products, customers or orders using a **familiar, single page, 
 spreadsheet like** interface. 
 
-The Pro version also allows adding and updating items easily. It also provides **smart Batch Update** to 
-change multiple fields on multiple items - all **at once with zero errors**. You will discover a new way 
-of store administration with this add-on. 
+The Pro version also allows inline editing for all fields and adding items. It also provides 
+**smart Batch Update** to change multiple fields on multiple items - all **at once with zero errors**. 
+You will discover a new way of store administration with this add-on. 
 
 It frees you up from mundane housekeeping tasks. So you can spend that time on anything that makes you more 
 money. Use that time to leverage social media for higher sales, or develop deeper customer relationships. 
@@ -32,9 +32,10 @@ Use that time to develop a new product, or simply present it to your family.
 Highlights:
 
 * Convenient Browsing & Searching - Eliminate Extra Clicks And Long Wait Times
-* Inline Product Management - Get Productive Right Away (Pro only)
+* Inline Product/Order Management - Get Productive Right Away
+* Quick, In-page detail view for Products/Orders
 * Fast And Reliable Batch Updates With Intelligent Update Actions (Pro only)
-* Order And Customer Management Coming Soon
+* Customer Management Coming Soon
 
 == Installation ==
 
@@ -51,20 +52,40 @@ Not yet. But we will release an update quickly after 3.8 stable release is out.
 
 = What do I get in this free version? =
 
-Spreadsheet like view of products, search and navigation, ability to delete multiple items at once, a quick
-edit link to jump to WP e-Commerce editing screen.
+Spreadsheet like view of products, search and navigation, limited inline editing, 
+ability to delete multiple items at once, a quick edit link to WP e-Commerce editing screen.
 
 = What does the Pro version give me? =
 
-Pro version allows inline editing right within the spreadsheet view and a powerful Batch Update screen where
-you can apply multiple smart update actions to all selected items.
+Pro version allows inline editing on all fields right within the spreadsheet view and a 
+powerful Batch Update screen where you can apply multiple smart update actions 
+to all selected items.
+
+It also gives the fuzzy, warm feeling of supporting further development of the plugin.
 
 
 == Screenshots ==
 
-1. Smart Manager
+1. Products Dashboard
+
+2. Orders Dashboard
+
+3. In-page Order Details
 
 == Changelog ==
+
+= 0.6.0 =
+* Order Management features added - search, navigate, inline editing
+* Product dashboard now allows editing name and price in Lite version
+* Can search on product names within an order / session id
+* Filter orders by date range
+* Batch update order status, notes and track id
+* Add order notes / track id right from the grid view
+* See order details without leaving the page
+* Bring up product editing screen of WPeC without leaving the page
+* Alert messages replaced with slide down notifications
+* Improved search performance 
+* Added Facebook like button. We would love to get your likes! ;-)
 
 = 0.5.7 =
 * Fixed a problem which caused blank screen on Smart Manager page
@@ -90,6 +111,9 @@ you can apply multiple smart update actions to all selected items.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 0.6.0 =
+Must have upgrade. Now you can manage orders too, and in a much better way than WPeC! Lite version now also supports inline editing for product name and price. Many more enhancements too.    
 
 = 0.5.7 =
 Fixes a problem that caused blank screen. 

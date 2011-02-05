@@ -2,8 +2,8 @@
 /*
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
-Description: 10x productivity gains with WP e-Commerce store administration. Quickly find and update products. (Customers and Orders coming soon)
-Version: 0.5.7
+Description: 10x productivity gains with WP e-Commerce store administration. Quickly find and update products and orders. (Customer management coming soon)
+Version: 0.6.0
 Author: Store Apps
 Author URI: http://www.storeapps.org/about/
 Copyright (c) 2010, 2011 Store Apps All rights reserved.
@@ -65,6 +65,7 @@ if ( is_admin() ) {
 	
 	function sm_admin_styles() {
 		wp_enqueue_style( 'sm_ext_main' );
+		wp_enqueue_style( 'sm_lightbox_css' );
 	}
 	
 	function wpsc_add_modules_admin_pages($page_hooks, $base_page) {
@@ -85,22 +86,36 @@ if ( is_admin() ) {
 		#icon-smart-manager {
 			background:url("<?php echo plugins_url('/images', __FILE__); ?>/logo-32x32.png") no-repeat scroll transparent;
 		}		
+		.x-grid3-td-details {
+    		color: #21759B; 
+		}
+
+		.x-grid3-hd-details{
+		color: #000;
+		} 
+		
+		#msg-div {
+	    position:absolute;
+	    left:33%;
+	    top:10px;
+	    right:33%;
+	    width:34%;
+	    z-index:20000;
+		}
 		</style>
 		<div class="wrap">
 		<div id="icon-smart-manager" class="icon32"><br /></div>
    		<h2><?php 
    		echo _e('Smart Manager');
    		echo ' ';
-   		if (SMPRO == true) echo _e('Pro'); else echo _e('Lite');
-   		?>
-   		<p class="wrap"><?php echo __('10x productivity gains with store administration. Quickly find and update products. (Customers and Orders coming soon)'); ?></p>
-   		</h2>
-		</div>
+   		if (SMPRO == true) echo _e('Pro'); else echo _e('Lite');   		
+   		?><p class="wrap"><?php echo __('10x productivity gains with store administration. Quickly find and update products and orders. (Customers management coming soon)'); ?></p></h2>
+		</div>		
 		
 		<?php 
-		if (SMPRO == false){  ?>
-		<div id="message" class="updated fade">
-		<p><?php printf( __( '<b>Important:</b> Unlock inline editing, batch update, item addition and other features with <a href="%1s" target=_storeapps>Smart Manager Pro</a>. Try its <a href="%2s" target=_livedemo>Live Demo</a> and decide yourself.'), 'http://storeapps.org/', 'http://demo.storeapps.org/'); ?></p>
+		if (SMPRO == false){  ?>		
+		<div id="message" class="updated fade">		
+		<p><?php printf( __( '<b>Important:</b> Unlock inline editing on all fields, batch update, item addition and other features with <a href="%1s" target=_storeapps>Smart Manager Pro</a>. Try its <a href="%2s" target=_livedemo>Live Demo</a> and decide yourself.'), 'http://storeapps.org/', 'http://demo.storeapps.org/'); ?></p>
 		</div>
 		<?php } ?>
 		
@@ -133,6 +148,6 @@ if ( is_admin() ) {
 		    </p></div>
 			<?php 
 		}
-	}	
+	}
 }
 ?>
