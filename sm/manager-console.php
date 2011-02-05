@@ -1,3 +1,19 @@
+<?php
+global $purchlogs;
+$allstatuses = $purchlogs->the_purch_item_statuses();
+?>
+<select id="order_status" name="order_status" style="display: none;">
+<?php 
+
+$cur_status = $cnt;
+while($cur_status < count($allstatuses)) :  ?>
+<option name="<?php $allstatuses[$cur_status]->id; ?>" value="<?php echo $allstatuses[$cur_status]->name; ?>"><?php echo $allstatuses[$cur_status]->name; ?> </option>
+<?php
+$cur_status++;
+endwhile;
+?>
+</select>
+
 <div id="editor-grid"></div>
 <select name="status" id="status" style="display: none;">
 	<option value="Draft"><?php _e('Draft')?></option>
@@ -8,7 +24,7 @@
 	<option value='Pounds'><?php _e('Pounds')?></option>
 	<option value='Ounces'><?php _e('Ounces')?></option>
 	<option value='Grams'><?php _e('Grams')?></option>
-	<option value='Kilograms'><?php _e('Kilograms')?></option>0
+	<option value='Kilograms'><?php _e('Kilograms')?></option>
 </select>
 <?php
 global $wpdb;
@@ -18,6 +34,7 @@ $itemCategoryTbl         = WPSC_TABLE_ITEM_CATEGORY_ASSOC;
 $productCategoriesTbl    = WPSC_TABLE_PRODUCT_CATEGORIES;
 $categorisationTbl       = WPSC_TABLE_CATEGORISATION_GROUPS;
 $variationPropertiesTbl  = WPSC_TABLE_VARIATION_PROPERTIES;
+$purchaseLogsTbl         = WPSC_TABLE_PURCHASE_LOGS;
 $limit = 2;
 
 $jsonURL    = plugins_url('/json.php', __FILE__);
@@ -26,10 +43,10 @@ $imgURL     = $pluginURL.'/images/';
 $smFilePath = dirname(dirname(__FILE__)).'/pro/sm.js';
 
 // for full version check if the required file exists
-if (file_exists($smFilePath))
-$fileExixts = 1;
+if (SMPRO == 'true')
+$fileExists = 1;
 else
-$fileExixts = 0;
+$fileExists = 0;
 
 // to fetch Product categories START
 (isset ( $_POST ['start'] )) ? $offset = $_POST ['start'] : $offset = 0;
@@ -60,7 +77,6 @@ foreach ((array)$categories as $category){
 		$cat_id = $cat['id'];
 		break;
 	}
-	break;
 }
 		echo '<script type="text/javascript">';
 		foreach ( (array) $categories as $group_id => $category ) {
@@ -77,7 +93,7 @@ foreach ((array)$categories as $category){
 		}
 		echo '</script>';
 
-		// getting the fieldnames.
+		// getting the products fieldnames.
 			 $query = "SELECT $productListTbl.name,
 							  $productListTbl.description, 
 							  $productListTbl.additional_description, 
@@ -154,7 +170,7 @@ foreach ((array)$categories as $category){
 						}else{
 							$field_names ['items'] [$i] ['name'] = strtoupper($field_values[$len]);
 							$field_names ['items'] [$i] ['type'] = mysql_field_type ( $result, $i-$len );
-							$field_names ['items'] [$i] ['value'] = mysql_field_name ( $result, $i-$len ) . ', ' . mysql_field_table ( $result, $i-$len );
+	$field_names ['items'] [$i] ['value'] = mysql_field_name ( $result, $i-$len ) . ', ' . mysql_field_table ( $result, $i-$len );
 						}
 					}}
 					$i++;
@@ -169,14 +185,64 @@ foreach ((array)$categories as $category){
 				$field_names ['items'][$i]['value'] = $id;
 				$i ++;
 			}
-			$encodedfields = json_encode ( $field_names ); // getting the fielnames END
+			$encodedfields = json_encode ( $field_names ); // getting the fieldnames END			
+			
+			//creating the order links
+			$blog_info            = get_bloginfo('url');
+			$orders_details_url   = "$blog_info/wp-admin/index.php?page=wpsc-sales-logs&purchaselog_id=";			
+			
+			//creating the products links
+			$str_products_url = htmlspecialchars_decode ((wpsc_edit_the_product_link ( '', '', '', $id = '')));
+			$regex_pattern = "/<a class=\'(.*)\' href=\'(.*)\'>(.*)<\/a>/";
+			preg_match_all ( $regex_pattern, $str_products_url, $matches );			
+			$products_details_url = "{$matches[2][0]}";			
+			
+			// getting orders fieldnames START
+			$query  = "SELECT processed,track_id,notes FROM $purchaseLogsTbl";
+			$result = mysql_query($query);
+
+			while ($data = mysql_fetch_assoc($result))
+           	$ordersfield_data[] = $data;           	
+           	$ordersfield_result = $ordersfield_data[0];           	
+           	
+           	$ordersfield_names = array();
+           	$cnt = 0;
+           	foreach ($ordersfield_result as $ordersfield_name => $ordersfield_value){
+           	$ordersfield_names ['items'][$cnt]['id']    = $cnt;           	
+			$ordersfield_names ['items'][$cnt]['name'] = ucfirst(mysql_field_name($result,$cnt));
+			if($ordersfield_names ['items'][$cnt]['name'] == 'Processed')
+				$ordersfield_names ['items'][$cnt]['name'] = 'Orders Status';
+			if($ordersfield_names ['items'][$cnt]['name'] == 'Track_id')
+				$ordersfield_names ['items'][$cnt]['name'] = 'Track Id';
+			
+			$ordersfield_names ['items'][$cnt]['type']  = mysql_field_type($result,$cnt);
+		 if($ordersfield_names ['items'][$cnt]['type'] == 'int' && $ordersfield_names ['items'][$cnt]['name'] == 'Orders Status')
+		 	$ordersfield_names ['items'][$cnt]['type'] = 'bigint';
+		 	
+		 if($ordersfield_names ['items'][$cnt]['type'] == 'string' && $ordersfield_names ['items'][$cnt]['name'] == 'Track Id')
+		 	$ordersfield_names ['items'][$cnt]['type'] = 'blob';
+		 
+			$ordersfield_names ['items'][$cnt]['value'] = mysql_field_name($result,$cnt).', '. mysql_field_table($result,$cnt);
+			$cnt++;
+           	}
+			$encodedordersfields = json_encode ( $ordersfield_names );
+			// getting orders fieldnames END
 			
 			echo '<script type="text/javascript">
 			 var fields = ' . $encodedfields . ';
+			 var ordersfields = ' . $encodedordersfields . ';
 			 var newcat = \'' . $cat_name . '\';
-			 var fileExists = \''.$fileExixts.'\';
+			 var fileExists = \''.$fileExists.'\';
 			 var new_cat_id = \'' . $cat_id . '\';
 			 var jsonURL = \''.$jsonURL.'\';
 			 var imgURL  = \''.$imgURL.'\';
+			 var products_details_link = \''.$products_details_url.'\';	
+			 var orders_details_link = \''.$orders_details_url.'\';		 
 			</script>';
 ?>
+<!-- Smart Manager FB Like Button -->
+<div class="wrap">
+<br/>
+<iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fwww.storeapps.org%2F&amp;layout=standard&amp;show_faces=true&amp;width=450&amp;action=like&amp;colorscheme=light&amp;height=80" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:450px; height:80px;" allowTransparency="true"></iframe>
+</div>
+		
