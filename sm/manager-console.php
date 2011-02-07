@@ -43,7 +43,7 @@ $imgURL     = $pluginURL.'/images/';
 $smFilePath = dirname(dirname(__FILE__)).'/pro/sm.js';
 
 // for full version check if the required file exists
-if (SMPRO == 'true')
+if (SMPRO == true)
 $fileExists = 1;
 else
 $fileExists = 0;
@@ -123,7 +123,7 @@ foreach ((array)$categories as $category){
        
        //combine the values of meta_key from two diff arrays in one.
 		$final = array();
-		if (is_array($fields_data)){
+		if ((array)($fields_data)){
 			$final = array_merge($fields_data[0],$fields_data[1]);
 			$final['meta_value'] = array($fields_data[0]['meta_key'],$fields_data[1]['meta_key']);
 		}
@@ -131,7 +131,7 @@ foreach ((array)$categories as $category){
 			
 		$field_names = array ();
 		$i = 0;
-		if (is_array($final)){
+		if ((array)($final)){
 			foreach ($final as $field_name => $field_value){
 				$field_names ['items'] [$i] ['id'] = $i;
 				$field_names ['items'] [$i] ['type']  = mysql_field_type ( $result, $i );
@@ -185,7 +185,11 @@ foreach ((array)$categories as $category){
 				$field_names ['items'][$i]['value'] = $id;
 				$i ++;
 			}
-			$encodedfields = json_encode ( $field_names ); // getting the fieldnames END			
+			if ($field_names ['totalCount'] >= 1)
+			$encodedProductsFields = json_encode ( $field_names ); 
+			else 
+			$encodedProductsFields = 0;
+			// getting the fieldnames END
 			
 			//creating the order links
 			$blog_info            = get_bloginfo('url');
@@ -200,14 +204,16 @@ foreach ((array)$categories as $category){
 			// getting orders fieldnames START
 			$query  = "SELECT processed,track_id,notes FROM $purchaseLogsTbl";
 			$result = mysql_query($query);
-
+			
+			if (mysql_num_rows($result) >= 1){
 			while ($data = mysql_fetch_assoc($result))
-           	$ordersfield_data[] = $data;           	
-           	$ordersfield_result = $ordersfield_data[0];           	
+           		$ordersfield_data[] = $data;           	
+           		$ordersfield_result = $ordersfield_data[0];
+			}
            	
            	$ordersfield_names = array();
            	$cnt = 0;
-           	foreach ($ordersfield_result as $ordersfield_name => $ordersfield_value){
+           	foreach ((array)$ordersfield_result as $ordersfield_name => $ordersfield_value){
            	$ordersfield_names ['items'][$cnt]['id']    = $cnt;           	
 			$ordersfield_names ['items'][$cnt]['name'] = ucfirst(mysql_field_name($result,$cnt));
 			if($ordersfield_names ['items'][$cnt]['name'] == 'Processed')
@@ -225,19 +231,22 @@ foreach ((array)$categories as $category){
 			$ordersfield_names ['items'][$cnt]['value'] = mysql_field_name($result,$cnt).', '. mysql_field_table($result,$cnt);
 			$cnt++;
            	}
-			$encodedordersfields = json_encode ( $ordersfield_names );
+           	if (count($ordersfield_names) >= 1)
+			$encodedOrdersFields = json_encode ( $ordersfield_names );
+			else 
+			$encodedOrdersFields = 0;
 			// getting orders fieldnames END
 			
 			echo '<script type="text/javascript">
-			 var fields = ' . $encodedfields . ';
-			 var ordersfields = ' . $encodedordersfields . ';
+			 var productsFields = ' . $encodedProductsFields . ';
+			 var ordersFields = ' . $encodedOrdersFields . ';
 			 var newcat = \'' . $cat_name . '\';
 			 var fileExists = \''.$fileExists.'\';
-			 var new_cat_id = \'' . $cat_id . '\';
+			 var newCatId = \'' . $cat_id . '\';
 			 var jsonURL = \''.$jsonURL.'\';
 			 var imgURL  = \''.$imgURL.'\';
-			 var products_details_link = \''.$products_details_url.'\';	
-			 var orders_details_link = \''.$orders_details_url.'\';		 
+			 var productsDetailsLink = \''.$products_details_url.'\';	
+			 var ordersDetailsLink = \''.$orders_details_url.'\';		 
 			</script>';
 ?>
 <!-- Smart Manager FB Like Button -->

@@ -2,10 +2,6 @@
 include_once ('../../../../wp-load.php');
 include_once ('../../../../wp-includes/wp-db.php');
 
-// for pro version check if the required file exists
-if (SMPRO == 'true')
-include_once('../pro/sm.php');
-
 $limit = 10;
 $del = 3;
 
@@ -31,6 +27,10 @@ else
 
 if (isset ( $_POST ['limit'] ))
 	$limit = $_POST ['limit'];
+	
+// for pro version check if the required file exists
+if (SMPRO == true)
+include_once('../pro/sm.php');
 	
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
@@ -288,7 +288,7 @@ function update_products($_POST) {
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 		
 	if ($_POST['active_module'] == 'Products'){
-		if (SMPRO == 'true')
+		if (SMPRO == true)
 		$result = data_for_insert_update ( $_POST );
 		else 
 		$result = update_products($_POST);

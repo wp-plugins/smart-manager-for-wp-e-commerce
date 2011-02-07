@@ -291,9 +291,9 @@ Ext.onReady(function () {
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
 				return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
 			}
-		}]
-	});
-	productsColumnModel.defaultSortable = true;
+		}],defaultSortable: true
+	});	
+	
 	var jsonReader = new Ext.data.JsonReader({
 		totalProperty: 'totalCount',
 		root: 'items',
@@ -440,7 +440,7 @@ Ext.onReady(function () {
 		Ext.each(modifiedRecords, function(r, i){
 			if(r.data.category){
 				var categoryName = r.data.category;
-				r.data.category = new_cat_id;
+				r.data.category = newCatId;
 			}
 			edited.push(r.data);
 			r.data.category = categoryName;
@@ -507,12 +507,18 @@ Ext.onReady(function () {
 							return;
 						}try {							
 							var afterDeletePageCount = lastPageTotalRecords - delcnt;
-							if (currentPage == 1 && afterDeletePageCount == 0){
-								myJsonObj.items = '';
-								store.loadData(myJsonObj);
-							} else if (currentPage == lastPage && afterDeletePageCount == 0) pagingToolbar.movePrevious();
-							else
+							
+							// if all the records on the first page are deleted
+							if (currentPage == 1 && afterDeletePageCount == 0)
+							pagingToolbar.moveNext();
+							
+							// if all the records on the last page are deleted
+							else if (currentPage == lastPage && afterDeletePageCount == 0) 
+							pagingToolbar.movePrevious();
+							
+							else 
 							store.load();
+							
 							Ext.notification.msg('Success', myJsonObj.msg);							
 						} catch (e) {
 							Ext.notification.msg('Warning', 'No Records were deleted');
@@ -569,19 +575,22 @@ Ext.onReady(function () {
 		width: 135,
 		listeners: {
 			select: function () {
+				if(batchUpdateWindow.isVisible())
+				batchUpdateWindow.hide();
 				if (this.value == 'Customers') {
 					Ext.notification.msg('Coming Soon', 'This feature will be added in an upcoming release');
 					dashboardComboBox.setValue(activeModule);
-				}else if (this.value == 'Orders') {
+				}else if (this.value == 'Orders') {					
 					activeModule = this.value;
 					searchTextField.setValue('');
-					ordersStore.load();
+					ordersStore.load();					
 					pagingToolbar.bind(ordersStore);
 					pagingToolbar.addProductButton.hide();
 					pagingToolbar.get(14).hide();
 					pagingToolbar.get(20).hide();
 					editorGrid.reconfigure(ordersStore,ordersColumnModel);
-					productFieldStore.loadData(ordersfields);						
+					if(ordersFields != 0)
+					productFieldStore.loadData(ordersFields);					
 					
 					for(var i=2;i<=8;i++)
 					editorGrid.getTopToolbar().get(i).show();
@@ -603,8 +612,9 @@ Ext.onReady(function () {
 
 					pagingToolbar.get(14).show();
 					pagingToolbar.get(20).show();
-					editorGrid.reconfigure(productsStore,productsColumnModel);					
-					productFieldStore.loadData(fields);
+					editorGrid.reconfigure(productsStore,productsColumnModel);
+					if(productsFields != 0);
+					productFieldStore.loadData(productsFields);
 					
 					for(var i=2;i<=8;i++)
 					editorGrid.getTopToolbar().get(i).hide();
@@ -622,10 +632,8 @@ Ext.onReady(function () {
 	});
 
 	//Orders Start.
-	var ordersColumnModel = new Ext.grid.ColumnModel
-	({
-		columns:[
-		mySelectionModel, //checkbox for
+	var ordersColumnModel = new Ext.grid.ColumnModel({	
+		columns:[mySelectionModel, //checkbox for
 		{
 			header: 'Order Id',
 			dataIndex: 'id',
@@ -683,10 +691,8 @@ Ext.onReady(function () {
 			editor: new fm.TextArea({				
 				autoHeight: true
 			})
-		}]
+		}],defaultSortable: true
 	});
-
-	ordersColumnModel.defaultSortable = true;
 
 	// Data reader class to create an Array of Records objects from a JSON packet.
 	var ordersJsonReader = new Ext.data.JsonReader
@@ -704,21 +710,6 @@ Ext.onReady(function () {
 		{name:'order_status', type:'string'},
 		{name:'notes', type:'string'}
 		]
-	});
-
-	var productsStore = new Ext.data.Store({
-		reader: jsonReader,
-		proxy: new Ext.data.HttpProxy({
-			url: jsonURL
-		}),
-		baseParams: {
-			cmd: 'getData',
-			active_module: activeModule,
-			start: 0,
-			limit: limit
-		},
-		dirty: false,
-		pruneModifiedRecords: true
 	});
 	
 	// create the Orders Data Store
@@ -762,9 +753,7 @@ Ext.onReady(function () {
 			}
 		}
 	});
-	var searchLogic = function () {
-		var cmdParams            = '';
-		
+	var searchLogic = function () {		
 		//BOF setting the params to store if search fields are with values (refresh event)
 		switch(activeModule) {
 			case 'Products':
@@ -788,7 +777,7 @@ Ext.onReady(function () {
 				}
 				try {
 					var records_cnt = myJsonObj.totalCount;
-					if (records_cnt == 0) myJsonObj.items = '';
+					if (records_cnt == 0) myJsonObj.items = '';					
 					(activeModule == 'Products') ? productsStore.loadData(myJsonObj) : ordersStore.loadData(myJsonObj);
 				} catch (e) {
 					return;
@@ -828,7 +817,7 @@ Ext.onReady(function () {
 		autoDestroy: false,
 		dirty: false
 	});
-	productFieldStore.loadData(fields);
+	productFieldStore.loadData(productsFields);
 
 	var actionStore = new Ext.data.ArrayStore({
 		fields: ['id', 'name', 'value'],
@@ -925,6 +914,8 @@ Ext.onReady(function () {
 								actions_index = field_type;
 							}else if(field_name == 'Orders Status'){
 								actions_index = field_type;
+								comboWeightUnitCmp.show();
+								setTextfield.hide();
 							} else {
 								setTextfield.show();
 								if (field_type == 'blob') {
@@ -976,7 +967,7 @@ Ext.onReady(function () {
 								var field_type = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].type;
 								var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
 								var actions_index;
-								(field_type == 'category') ? actions_index = field_type + '_actions' : actions_index = field_type;
+							(field_type == 'category') ? actions_index = field_type + '_actions' : actions_index = field_type;
 								for (j = 0; j < actions[actions_index].length; j++) {
 									actionsData[j] = new Array();
 									actionsData[j][0] = actions[actions_index][j].id;
@@ -1156,7 +1147,7 @@ Ext.onReady(function () {
 	});
 	batchUpdateWindow.on('hide', afterClose, this);
 
-	function afterClose(e) {
+	function afterClose(e) {		
 		for (sb = toolbarCount; sb >= 1; sb--){
 			if(batchUpdatePanel.get(sb) != undefined)
 			batchUpdatePanel.remove(batchUpdatePanel.get(sb));
@@ -1172,8 +1163,9 @@ Ext.onReady(function () {
 		categoryDropdown.reset();
 		textValueDropdown.reset();
 		weightUnitDropdown.reset();
-		if(activeModule != 'Orders')
-		weightUnitDropdown.hide();
+		categoryDropdown.hide();
+		if(activeModule == 'Orders')
+		weightUnitDropdown.show();
 		values = '';
 		ids = '';
 		batchUpdateWindow.hide();
@@ -1230,7 +1222,7 @@ Ext.onReady(function () {
 					     maximizable: true,  
 					     maximized: false,
 					     resizeable: true,
-					     html: '<iframe src='+ orders_details_link + '' + record.id +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'  
+					     html: '<iframe src='+ ordersDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'  
 					 });  					
 					billingDetailsWindow.show();
 				}else if(columnIndex == 10 && activeModule == 'Products'){ 					
@@ -1242,7 +1234,7 @@ Ext.onReady(function () {
 					     maximizable: true,  
 					     maximized: false,
 					     resizeable: true,
-					     html: '<iframe src='+ products_details_link + '' + record.id +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'  
+					     html: '<iframe src='+ productsDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'  
 					 });  					
 					productsDetailsWindow.show();
 				}
