@@ -29,6 +29,11 @@ if (isset ( $_POST ['limit'] ))
 	$limit = $_POST ['limit'];
 	
 // for pro version check if the required file exists
+if (file_exists('../pro/sm.php')) {
+    define('SMPRO', true);
+} else {
+    define('SMPRO', false);
+}
 if (SMPRO == true)
 include_once('../pro/sm.php');
 	
