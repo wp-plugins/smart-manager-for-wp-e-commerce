@@ -2,8 +2,8 @@
 /*
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
-Description: 10x productivity gains with WP e-Commerce store administration. Quickly find and update products and orders. (Customer management coming soon)
-Version: 0.6.2
+Description: 10x productivity gains with WP e-Commerce store administration. Quickly find and update products, orders and customers.
+Version: 0.7.0
 Author: Store Apps
 Author URI: http://www.storeapps.org/about/
 Copyright (c) 2010, 2011 Store Apps All rights reserved.
@@ -34,9 +34,10 @@ if ( is_admin() ) {
 	add_action( 'admin_init', 'sm_admin_init' );
 	
 	function sm_admin_init() {
-	    wp_register_script( 'sm_ext_main', plugins_url('/ext/load-resources.php?type=js&ver=3.3.1', __FILE__));
+
+	    wp_register_script( 'sm_ext_main', plugins_url('/ext/load-resources.php?type=js&ver=3.3.1', __FILE__));	    
 	    wp_register_script( 'sm_main', plugins_url('/sm/smart-manager.js', __FILE__));
-	    wp_register_style( 'sm_ext_main', plugins_url('/ext/load-resources.php?type=css&ver=3.3.1', __FILE__));
+	    wp_register_style( 'sm_ext_main', plugins_url('/ext/load-resources.php?type=css&ver=3.3.1', __FILE__));	    
 	    
 	    if (file_exists((dirname(__FILE__)).'/pro/sm.js')) {
 	    	wp_register_script( 'sm_functions', plugins_url('/pro/sm.js', __FILE__));
@@ -56,11 +57,11 @@ if ( is_admin() ) {
 	}
 
 	function sm_admin_scripts() {
-		wp_enqueue_script( 'sm_ext_main' );
-		wp_enqueue_script( 'sm_main' );
-		
 		if (file_exists((dirname(__FILE__)).'/pro/sm.js'))
 		wp_enqueue_script( 'sm_functions' );
+		
+		wp_enqueue_script( 'sm_ext_main' );
+		wp_enqueue_script( 'sm_main' );
 	}
 	
 	function sm_admin_styles() {
@@ -86,13 +87,23 @@ if ( is_admin() ) {
 		#icon-smart-manager {
 			background:url("<?php echo plugins_url('/images', __FILE__); ?>/logo-32x32.png") no-repeat scroll transparent;
 		}		
-		.x-grid3-td-details {
-    		color: #21759B; 
-		}
 
-		.x-grid3-hd-details{
-		color: #000;
-		} 
+		/*	BOF Font color to blue
+			Append the id given to the header */
+		.x-grid3-td-details,.x-grid3-td-total_purchased,.x-grid3-td-last_order,.x-grid3-td-editLink {
+    		color: #21759B; 
+			cursor: pointer;
+		}
+		
+		.x-grid3-hd-details,.x-grid3-hd-total_purchased,.x-grid3-hd-last_order,.x-grid3-hd-editLink {
+    		color: #000; 
+		}
+		
+		.blue {
+			color: #21759B; 
+			cursor: pointer;
+		}				
+		/*EOF*/
 		
 		#msg-div {
 	    position:absolute;
@@ -109,13 +120,13 @@ if ( is_admin() ) {
    		echo _e('Smart Manager');
    		echo ' ';
    		if (SMPRO == true) echo _e('Pro'); else echo _e('Lite');   		
-   		?><p class="wrap"><?php echo __('10x productivity gains with store administration. Quickly find and update products and orders. (Customers management coming soon)'); ?></p></h2>
+   		?><p class="wrap"><?php echo __('10x productivity gains with store administration. Quickly find and update products, orders and customers'); ?></p></h2>
 		</div>		
 		
 		<?php 
 		if (SMPRO == false){  ?>		
 		<div id="message" class="updated fade">		
-		<p><?php printf( __( '<b>Important:</b> Unlock inline editing on all fields, batch update, item addition and other features with <a href="%1s" target=_storeapps>Smart Manager Pro</a>. Try its <a href="%2s" target=_livedemo>Live Demo</a> and decide yourself.'), 'http://storeapps.org/', 'http://demo.storeapps.org/'); ?></p>
+		<p><?php printf( __( '<b>Important:</b> Help us continue developing Smart Manager. Consider upgrading to the Pro version. <a href="%1s" target=_storeapps>Learn more here</a> or take a <a href="%2s" target=_livedemo>Live Demo here</a>.'), 'http://storeapps.org/', 'http://demo.storeapps.org/'); ?></p>
 		</div>
 		<?php } ?>
 		

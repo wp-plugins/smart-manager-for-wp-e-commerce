@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce
 Requires at least: 2.0.2
 Tested up to: 3.1
-Stable tag: 0.6.2
+Stable tag: 0.7.0
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, orders and customers reliably using a fast and familiar interface.
@@ -18,11 +18,11 @@ As a business owner, **your time is better spent on marketing and customer servi
 Unfortunately store administration with WordPress e-Commerce can take significant time. Day after day.
 
 Smart Manager will **boost your productivity 10x** in managing products, customers and orders. You can browse, 
-search, edit and delete multiple products, customers or orders using a **familiar, single page, 
+search, and manage multiple products, customers or orders using a **familiar, single page, 
 spreadsheet like** interface. 
 
 The Pro version also allows inline editing for all fields and adding items. It also provides 
-**smart Batch Update** to change multiple fields on multiple items - all **at once with zero errors**. 
+**Smart Batch Update** to change multiple fields on multiple items - all **at once with zero errors**. 
 You will discover a new way of store administration with this add-on. 
 
 It frees you up from mundane housekeeping tasks. So you can spend that time on anything that makes you more 
@@ -32,10 +32,10 @@ Use that time to develop a new product, or simply present it to your family.
 Highlights:
 
 * Convenient Browsing & Searching - Eliminate Extra Clicks And Long Wait Times
-* Inline Product/Order Management - Get Productive Right Away
-* Quick, In-page detail view for Products/Orders
-* Fast And Reliable Batch Updates With Intelligent Update Actions (Pro only)
-* Customer Management Coming Soon
+* Inline Product/Order/Customer Management - Get Productive Right Away
+* Quick, In-page detail view for Products/Orders/Customers
+* Fast And Reliable Batch Updates With Intelligent Update Actions
+* Note: Some of these features are only in Pro version
 
 == Installation ==
 
@@ -52,14 +52,16 @@ Not yet. But we will release an update quickly after 3.8 stable release is out.
 
 = What do I get in this free version? =
 
-Spreadsheet like view of products, search and navigation, limited inline editing, 
-ability to delete multiple items at once, a quick edit link to WP e-Commerce editing screen.
+Spreadsheet like view of products, customers and orders. Search and navigation, 
+limited inline editing for products and orders, ability to delete multiple items at 
+once, a quick edit link to WP e-Commerce editing screen.
 
 = What does the Pro version give me? =
 
 Pro version allows inline editing on all fields right within the spreadsheet view and a 
 powerful Batch Update screen where you can apply multiple smart update actions 
-to all selected items.
+to all selected items. For Customers, you can see total sales for each customer and 
+their last order details.
 
 It also gives the fuzzy, warm feeling of supporting further development of the plugin.
 
@@ -72,7 +74,15 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 
 3. In-page Order Details
 
+
 == Changelog ==
+
+= 0.7.0 =
+* Added Customers dashboard - view, search, (In Pro: inline editing and batch update)
+* In Pro: Total Purchased and Last Order details
+* If switching dashboards with pending changes, you will now be notified if you want
+  to save before switching.
+* Misc optimizations and usability improvements  
 
 = 0.6.2 =
 * Fixed a critical bug that prevented product list to load
@@ -122,10 +132,10 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 
 == Upgrade Notice ==
 
-= 0.6.2 =
-Must have upgrade. Fixed a critical bug. Now you can manage orders too, and in a much better way than WPeC! Lite version now also supports inline editing for product name and price. Many more enhancements too.    
+= 0.7.0 =
+Customers dashboard added. View and search customers. Recommended upgrade.
 
-= 0.6.0 = 
+= 0.6.0 =
 Must have upgrade. Now you can manage orders too, and in a much better way than WPeC! Lite version now also supports inline editing for product name and price. Many more enhancements too.    
 
 = 0.5.7 =

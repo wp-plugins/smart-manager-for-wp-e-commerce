@@ -15,6 +15,7 @@ if (isset ( $_GET )) {
 $offset = 60 * 60;
 $expires = "Expires: " . gmdate ( "D, d M Y H:i:s", time () + $offset ) . " GMT";
 
+//passing headers
 header ( "content-type: $header; charset: UTF-8" );
 header ( 'Cache-Control: max-age = 2592000' );
 header ( $expires );
