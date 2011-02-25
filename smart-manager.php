@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: 10x productivity gains with WP e-Commerce store administration. Quickly find and update products, orders and customers.
-Version: 0.7.0
+Version: 0.7.1
 Author: Store Apps
 Author URI: http://www.storeapps.org/about/
 Copyright (c) 2010, 2011 Store Apps All rights reserved.
@@ -35,12 +35,16 @@ if ( is_admin() ) {
 	
 	function sm_admin_init() {
 
-	    wp_register_script( 'sm_ext_main', plugins_url('/ext/load-resources.php?type=js&ver=3.3.1', __FILE__));	    
-	    wp_register_script( 'sm_main', plugins_url('/sm/smart-manager.js', __FILE__));
-	    wp_register_style( 'sm_ext_main', plugins_url('/ext/load-resources.php?type=css&ver=3.3.1', __FILE__));	    
+		$plugin_info = get_plugins('/smart-manager');
+		$ext_version = '3.3.1';
+	    wp_register_script( 'sm_ext_base', plugins_url('/ext/ext-base.js', __FILE__), array(), $ext_version);	    
+	    wp_register_script( 'sm_ext_all', plugins_url('/ext/ext-all.js', __FILE__), array('sm_ext_base'), $ext_version);
+	    wp_register_script( 'sm_main', plugins_url('/sm/smart-manager.js', __FILE__), array('sm_ext_all'), $plugin_info['Version']);
+	    wp_register_style( 'sm_ext_all', plugins_url('/ext/ext-all.css', __FILE__), array(), $ext_version);
+	    wp_register_style( 'sm_main', plugins_url('/sm/smart-manager.css', __FILE__), array('sm_ext_all'), $plugin_info['Version']);
 	    
 	    if (file_exists((dirname(__FILE__)).'/pro/sm.js')) {
-	    	wp_register_script( 'sm_functions', plugins_url('/pro/sm.js', __FILE__));
+	    	wp_register_script( 'sm_functions', plugins_url('/pro/sm.js', __FILE__), array('sm_main'), $plugin_info['Version']);
 	    	define('SMPRO', true);
 	    } else {
 	    	define('SMPRO', false);
@@ -57,16 +61,14 @@ if ( is_admin() ) {
 	}
 
 	function sm_admin_scripts() {
-		if (file_exists((dirname(__FILE__)).'/pro/sm.js'))
-		wp_enqueue_script( 'sm_functions' );
-		
-		wp_enqueue_script( 'sm_ext_main' );
+		if (file_exists((dirname(__FILE__)).'/pro/sm.js')) {
+			wp_enqueue_script( 'sm_functions' );
+		}
 		wp_enqueue_script( 'sm_main' );
 	}
 	
 	function sm_admin_styles() {
-		wp_enqueue_style( 'sm_ext_main' );
-		wp_enqueue_style( 'sm_lightbox_css' );
+		wp_enqueue_style( 'sm_main' );
 	}
 	
 	function wpsc_add_modules_admin_pages($page_hooks, $base_page) {
@@ -81,39 +83,7 @@ if ( is_admin() ) {
 	function sm_show_console() {
 		$wp_ecom_path = WP_PLUGIN_DIR.'/wp-e-commerce/';
 		$base_path = WP_PLUGIN_DIR.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__)).'sm/';
-
 		?>
-		<style>
-		#icon-smart-manager {
-			background:url("<?php echo plugins_url('/images', __FILE__); ?>/logo-32x32.png") no-repeat scroll transparent;
-		}		
-
-		/*	BOF Font color to blue
-			Append the id given to the header */
-		.x-grid3-td-details,.x-grid3-td-total_purchased,.x-grid3-td-last_order,.x-grid3-td-editLink {
-    		color: #21759B; 
-			cursor: pointer;
-		}
-		
-		.x-grid3-hd-details,.x-grid3-hd-total_purchased,.x-grid3-hd-last_order,.x-grid3-hd-editLink {
-    		color: #000; 
-		}
-		
-		.blue {
-			color: #21759B; 
-			cursor: pointer;
-		}				
-		/*EOF*/
-		
-		#msg-div {
-	    position:absolute;
-	    left:33%;
-	    top:10px;
-	    right:33%;
-	    width:34%;
-	    z-index:20000;
-		}
-		</style>
 		<div class="wrap">
 		<div id="icon-smart-manager" class="icon32"><br /></div>
    		<h2><?php 
@@ -126,7 +96,7 @@ if ( is_admin() ) {
 		<?php 
 		if (SMPRO == false){  ?>		
 		<div id="message" class="updated fade">		
-		<p><?php printf( __( '<b>Important:</b> Help us continue developing Smart Manager. Consider upgrading to the Pro version. <a href="%1s" target=_storeapps>Learn more here</a> or take a <a href="%2s" target=_livedemo>Live Demo here</a>.'), 'http://storeapps.org/', 'http://demo.storeapps.org/'); ?></p>
+		<p><?php printf( __( '<b>Important:</b> Upgrading to Pro gives you powerful features and helps us continue innovating. <a href="%1s" target=_storeapps>Learn more about Pro version here</a> or take a <a href="%2s" target=_livedemo>Live Demo here</a>.'), 'http://storeapps.org/', 'http://demo.storeapps.org/'); ?></p>
 		</div>
 		<?php } ?>
 		
