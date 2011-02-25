@@ -140,6 +140,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 
 == Upgrade Notice ==
 
+= 0.7.1 =
+Recommended upgrade. Fixes a few issues and enhances JS and CSS loading.
+
 = 0.7.0 =
 Customers dashboard added. View and search customers. Recommended upgrade.
 
