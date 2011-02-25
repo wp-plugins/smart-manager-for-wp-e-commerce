@@ -293,8 +293,7 @@ Ext.onReady(function () {
 		productsStore.load();
 		pagingToolbar.bind(productsStore);		
 		editorGrid.reconfigure(productsStore,productsColumnModel);
-		if(productsFields.totalCount != 0);
-		productFieldStore.loadData(productsFields);
+		productFieldStore.loadData(productsFields);		
 
 		var firstToolbar = batchUpdatePanel.items.items[0].items.items[0];
 		var textfield    = firstToolbar.items.items[5];
@@ -573,21 +572,6 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 //END: Components (ComboBox).
 	
 //START: Customers
-	
-//	Ext.util.Format.comboRenderer = function(combo){
-//	    return function(value){
-//	        var record = combo.findRecord(combo.valueField, value);
-//	        var result = '';
-//	        if(record) {
-//	        	result = record.get(combo.displayField);
-//			}
-//	        else
-//	        	result = combo.valueNotFoundText;
-//	        return result;
-//	        
-//	    }
-//	}
-
 	countriesStore = new Ext.data.Store({
 		reader: new Ext.data.JsonReader({
 			idProperty: 'id',
@@ -607,14 +591,11 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 	    triggerAction: 'all',
 	    lazyRender:true,
 	    mode: 'local',
-//	    valueNotFoundText: 'no match',
 	    store:countriesStore,
 	    value: 'value',
 	    valueField: 'name',
 	    value: 'value',
 	    displayField: 'name',
-//	    hiddenValue: 'value',
-//	    hiddenName: 'countryValue'
 	});
 	
 	var customersColumnModel = new Ext.grid.ColumnModel({	
@@ -673,7 +654,6 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			dataIndex: '6B_Country',
 			tooltip: 'Billing Country',
 			editor:countryCombo,
-//			renderer: Ext.util.Format.comboRenderer(countryCombo),
 			width: 150
 		},{
 			header: 'City',
@@ -752,7 +732,7 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 		},{   
 			header: 'Phone Number',
 			dataIndex: '17S_Phone',
-			tooltip: 'Shipping Phone Number',
+			tooltip: 'Phone Number',
 			editor: new fm.TextField({
 				allowBlank: true,
 				allowNegative: false
@@ -770,7 +750,7 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 		customersColumnModel.columns[8].align = 'center';
 		customersColumnModel.columns[9].align = 'center';
 	}else{
-		totPurDataType = 'int';
+		totPurDataType = 'float';
 		customersColumnModel.setRenderer(8,amountRenderer);		
 	}
 	
@@ -818,47 +798,49 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 		pagingToolbar.saveButton.disable();
 	});
 	
-	showCustomersView = function(emailId){				
-		//initial steps when store: customers is laoded
-		SM.activeModule = 'Customers';
-		SM.dashboardComboBox.setValue(SM.activeModule);
-
-		if(cellClicked == false){
-		ordersStore.baseParams.searchText = ''; //clear the baseParams for ordersStore
-		SM.searchTextField.reset(); //to reset the searchTextField
-		}
-		
-		for(var i=13;i<=17;i++)
-		pagingToolbar.get(i).hide();		
-		pagingToolbar.get(11).show();
-		pagingToolbar.get(15).show();		
-		pagingToolbar.get(18).show();
-		pagingToolbar.get(19).show();
-
-		for(var i=2;i<=8;i++)
-		editorGrid.getTopToolbar().get(i).hide();
-				
+	showCustomersView = function(emailId){
 		try{
-		if(customersFields.totalCount != 0){
-		productFieldStore.loadData(customersFields); //@todo: use a common name fieldStore and load respective fields in it.
-		}
-		weightUnitStore.loadData(countries);
-		customersStore.setBaseParam('searchText',emailId);
-		customersStore.load();
-		pagingToolbar.bind(customersStore);		
-		editorGrid.reconfigure(customersStore,customersColumnModel);
+			//initial steps when store: customers is laoded
+			SM.activeModule = 'Customers';
+			SM.dashboardComboBox.setValue(SM.activeModule);
+
+			if(cellClicked == false){
+				ordersStore.baseParams.searchText = ''; //clear the baseParams for ordersStore
+				SM.searchTextField.reset(); //to reset the searchTextField
+			}
+
+			for(var i=13;i<=17;i++)
+			pagingToolbar.get(i).hide();
+			pagingToolbar.get(11).show();
+			pagingToolbar.get(15).show();
+			pagingToolbar.get(18).show();
+			pagingToolbar.get(19).show();
+
+			for(var i=2;i<=8;i++)
+			editorGrid.getTopToolbar().get(i).hide();
+
+			if(customersFields != 0)
+			productFieldStore.loadData(customersFields); //@todo: use a common name fieldStore and load respective fields in it.
+			else
+			Ext.notification.msg('Sorry!', 'No records found');
+			
+			weightUnitStore.loadData(countries);
+			customersStore.setBaseParam('searchText',emailId);
+			customersStore.load();
+			pagingToolbar.bind(customersStore);
+			editorGrid.reconfigure(customersStore,customersColumnModel);
+
+			var firstToolbar = batchUpdatePanel.items.items[0].items.items[0];
+			var textfield    = firstToolbar.items.items[5];
+			var countriesDropdown = firstToolbar.items.items[7];
+			textfield.show();
+			countriesDropdown.hide();
+			weightUnitStore.loadData(countries);
 		}catch(e){
-				var err = e.toString();
-				Ext.notification.msg('Error', err);			
+			var err = e.toString();
+			Ext.notification.msg('Error', err);
 		}
-		
-		var firstToolbar = batchUpdatePanel.items.items[0].items.items[0];
-		var textfield    = firstToolbar.items.items[5];
-		var countriesDropdown = firstToolbar.items.items[7];
-		textfield.show();
-		countriesDropdown.hide();
-		weightUnitStore.loadData(countries);		
-	};	
+	};
 	
 	var fromDateMenu = new Ext.menu.DateMenu({
 		handler: function(dp, date){
@@ -949,7 +931,7 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 		{name:'id',type:'int'},
 		{name:'date',type:'string'},
 		{name:'name',type:'string'},
-		{name:'amount', type:'int'},
+		{name:'amount', type:'float'},
 		{name:'details', type:'string'},
 		{name:'track_id',type:'string'},
 		{name:'order_status', type:'string'},
@@ -980,7 +962,7 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			//initial steps when store: orders is loaded
 			SM.activeModule = 'Orders';
 			SM.dashboardComboBox.setValue(SM.activeModule);
-			
+
 			if(cellClicked == false){
 				SM.searchTextField.reset(); //to reset the searchTextField
 				fromDateTxt.setValue(lastMonDate.format('M j Y'));
@@ -989,15 +971,17 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 				ordersStore.baseParams.searchText = ''; //clear the baseParams for ordersStore
 				ordersStore.baseParams.fromDate  = lastMonDate.format('M j Y');
 				ordersStore.baseParams.toDate = now.format('M j Y');
-			}else{				
+			}else{
 				fromDateTxt.setValue(initDate.format('M j Y'));
 				ordersStore.setBaseParam('searchText',emailid);
 				SM.searchTextField.setValue(emailid);
-			}			
-
-			if(ordersFields.totalCount != 0) {
-				productFieldStore.loadData(ordersFields); //@todo: use a common name fieldStore and load respective fields in it.
 			}
+
+			if(ordersFields != 0)
+			productFieldStore.loadData(ordersFields); //@todo: use a common name fieldStore and load respective fields in it.
+			else
+			Ext.notification.msg('Sorry!', 'No records found');
+
 			for(var i=13;i<=21;i++)
 			pagingToolbar.get(i).show();
 
@@ -1017,8 +1001,8 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			weightUnitStore.loadData(orderStatus);
 			textfield.hide();
 		}catch(e) {
-				var err = e.toString();
-				Ext.notification.msg('Error', err);
+			var err = e.toString();
+			Ext.notification.msg('Error', err);			
 		}
 	};
 //END: Orders.
@@ -1138,9 +1122,9 @@ var productFieldStore = new Ext.data.Store({
 		totalProperty: 'totalCount',
 		root: 'items',
 		fields: [{ name: 'id' },
-		{ name: 'name'	},
-		{ name: 'type'	},
-		{ name: 'value'}]
+				 { name: 'name'	},
+				 { name: 'type'	},
+				 { name: 'value'}]
 	}),
 	autoDestroy: false,
 	dirty: false

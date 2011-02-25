@@ -106,79 +106,63 @@ foreach ((array)$categories as $category){
 					    	  ".WPSC_TABLE_PRODUCT_LIST.".id = ".WPSC_TABLE_PRODUCTMETA.".product_id
 					 ORDER BY ".WPSC_TABLE_PRODUCT_LIST.".id LIMIT 0,$limit";
 			$result = mysql_query ( $query );
-					
+			
 			while ($data = mysql_fetch_assoc($result)){
            	$fields_data[] = $data;
        	}
-       
-       //combine the values of meta_key from two diff arrays in one.
-		$final = array();
-		if ((array)($fields_data)){
-			$final = array_merge($fields_data[0],$fields_data[1]);
-			$final['meta_value'] = array($fields_data[0]['meta_key'],$fields_data[1]['meta_key']);
-		}
-		unset($final['meta_key']);
-			
-		$field_names = array ();
-		$i = 0;
-		if ((array)($final)){
-			foreach ($final as $field_name => $field_value){
-				$field_names ['items'] [$i] ['id'] = $i;
-				$field_names ['items'] [$i] ['type']  = mysql_field_type ( $result, $i );
-				$field_names ['items'] [$i] ['value'] = mysql_field_name ( $result, $i ).','. mysql_field_table ( $result, $i );
-				if ($field_name == 'special_price')
-				$field_names ['items'] [$i] ['name'] = 'Sale Price';
-				elseif ($field_name == 'quantity')
-				$field_names ['items'] [$i] ['name'] = 'Inventory';
-				elseif ($field_name == 'quantity_limited')
-				$field_names ['items'] [$i] ['name'] = 'Stock: Quantity Limited';
-				elseif ($field_name == 'additional_description')
-				$field_names ['items'] [$i] ['name'] = 'Add. Description';
-				elseif ($field_name == 'variation_price'){
-					$field_names ['items'] [$i] ['name'] = 'Variations: Price';
-					$field_names ['items'] [$i] ['value'] = 'price,'.mysql_field_table ( $result, $i );
-				}elseif ($field_name == 'variation_weight'){
-					if (mysql_field_type ( $result, $i ) == 'real')
-					$field_names ['items'] [$i] ['type']  = mysql_field_type ( $result, $i );
-					else
-					$field_names ['items'] [$i] ['type']  = 'real'; //to use the action array of real
-					$field_names ['items'] [$i] ['name']  = 'Variations: Weight';
-					$field_names ['items'] [$i] ['value'] = 'weight,'.mysql_field_table ( $result, $i );
-				}else
-				$field_names ['items'] [$i] ['name'] = ucfirst($field_name);
+       	       	
+       	for ($i=0;$i<mysql_num_fields($result);$i++){
+       		$field_names ['items'] [$i] ['id']    = $i;
+       		$field_names ['items'] [$i] ['name']  = mysql_field_name ( $result, $i );
+       		$field_names ['items'] [$i] ['type']  = mysql_field_type ( $result, $i );
+       		$field_names ['items'] [$i] ['value'] = mysql_field_name ( $result, $i ).','. mysql_field_table ( $result, $i );
 
-				if ($field_name == 'meta_value'){
-					$field_values = $field_value;
-					$field_values_len = count($field_values);
-					for ($len = 0; $len < $field_values_len ; $len++){
-						$i = $i+$len;
-						$field_names ['items'] [$i] ['id'] = $i;
-						if ($field_values[$len] == 'unpublish_oos'){
-							$field_names ['items'] [$i] ['name'] = 'Stock: Inform When Out Of Stock';
-							$field_names ['items'] [$i] ['type'] = 'string'; //to use the action array of string
-							$field_names ['items'] [$i] ['value'] = mysql_field_name ( $result, $i-$len ) . ', ' . mysql_field_table ( $result, $i-$len ).','.'OOS';
-						}else{
-							$field_names ['items'] [$i] ['name'] = strtoupper($field_values[$len]);
-							$field_names ['items'] [$i] ['type'] = mysql_field_type ( $result, $i-$len );
-	$field_names ['items'] [$i] ['value'] = mysql_field_name ( $result, $i-$len ) . ', ' . mysql_field_table ( $result, $i-$len );
-						}
-					}}
-					$i++;
-			}}
-			$field_names ['totalCount'] = count($field_names ['items']);
+       		if ($field_names ['items'] [$i] ['name'] == 'special_price')
+       		$field_names ['items'] [$i] ['name'] = 'Sale Price';
 
-			//appending categories's groups
-			foreach((array) $groups as $id => $group_name ) {
-				$field_names ['items'][$i]['id']    = $i;
-				$field_names ['items'][$i]['name']  = 'Group: '.$group_name ;
-				$field_names ['items'][$i]['type']  = 'category';
-				$field_names ['items'][$i]['value'] = $id;
-				$i ++;
-			}
-			if ($field_names ['totalCount'] >= 1)
-			$encodedProductsFields = json_encode ( $field_names ); 
-			else 
-			$encodedProductsFields = 0;
+       		elseif ($field_names ['items'] [$i] ['name'] == 'quantity')
+       		$field_names ['items'] [$i] ['name'] = 'Inventory';
+
+       		elseif ($field_names ['items'] [$i] ['name'] == 'quantity_limited')
+       		$field_names ['items'] [$i] ['name'] = 'Stock: Quantity Limited';
+
+       		elseif ($field_names ['items'] [$i] ['name'] == 'additional_description')
+       		$field_names ['items'] [$i] ['name'] = 'Add. Description';
+
+       		elseif ($field_names ['items'] [$i] ['name'] == 'variation_price'){
+       			$field_names ['items'] [$i] ['name'] = 'Variations: Price';
+       			$field_names ['items'] [$i] ['value'] = 'price,'.mysql_field_table ( $result, $i );
+       			
+       		}elseif ($field_names ['items'] [$i] ['name'] == 'variation_weight'){
+       			$field_names ['items'] [$i] ['type']  = 'real'; //to use the action array of real
+       			$field_names ['items'] [$i] ['name']  = 'Variations: Weight';
+       			$field_names ['items'] [$i] ['value'] = 'weight,'.mysql_field_table ( $result, $i );
+       			
+       		}elseif ($field_names ['items'] [$i] ['name'] == 'meta_value'){
+       			$field_names ['items'] [$i] ['name']  = 'SKU';
+       			$field_names ['items'] [$i] ['type']  = 'blob';
+       			$field_names ['items'] [$i] ['value'] = 'meta_value' . ', ' . mysql_field_table ( $result, $i );
+       			
+       		}elseif ($field_names ['items'] [$i] ['name'] == 'meta_key'){
+       			$field_names ['items'] [$i] ['name'] = 'Stock: Inform When Out Of Stock';
+       			$field_names ['items'] [$i] ['type'] = 'string'; //to use the action array of string
+       			$field_names ['items'] [$i] ['value'] = 'meta_value' . ', ' . mysql_field_table ( $result, $i).','.'OOS';
+       		}
+       		$field_names ['items'] [$i] ['name'] = ucfirst($field_names ['items'] [$i] ['name']);
+       	}
+
+       	//appending categories's groups
+       	foreach((array) $groups as $id => $group_name ) {
+       		$field_names ['items'][$i]['id']    = $i;
+       		$field_names ['items'][$i]['name']  = 'Group: '.$group_name ;
+       		$field_names ['items'][$i]['type']  = 'category';
+       		$field_names ['items'][$i]['value'] = $id;
+       		$i ++;
+       	}
+       	$field_names ['totalCount'] = count($field_names ['items']);       	
+       	$encodedProductsFields = json_encode ( $field_names );
+       	// getting products fieldnames END
+       	
 						
 			$weight_unit['items']=array(
 			array('id'=>0, 'name'=>'Pounds', 'value'=>'pound'),
@@ -186,7 +170,7 @@ foreach ((array)$categories as $category){
 			array('id'=>2, 'name'=>'Grams', 'value'=>'gram'),
 			array('id'=>3, 'name'=>'Kilograms', 'value'=>'kilogram')			
 			);
-			$weight_unit['totalCount'] = 4;
+			$weight_unit['totalCount'] = count($weight_unit['items']);
 			$encodedWeightUnits = json_encode($weight_unit);
 			// getting the fieldnames END
 			
@@ -356,4 +340,4 @@ foreach ((array)$categories as $category){
 <div class="wrap">
 <br/>
 <iframe src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fwww.storeapps.org%2F&amp;layout=standard&amp;show_faces=true&amp;width=450&amp;action=like&amp;colorscheme=light&amp;height=80" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:450px; height:80px;" allowTransparency="true"></iframe>
-</div>		
+</div>
