@@ -142,7 +142,6 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
-
 = 0.7.2 =
 Recommended upgrade. Fixed a bug with customers batch update.
 
