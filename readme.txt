@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce
 Requires at least: 2.0.2
 Tested up to: 3.1
-Stable tag: 0.7.1
+Stable tag: 0.7.2
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, orders and customers reliably using a fast and familiar interface.
@@ -77,6 +77,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 
 == Changelog ==
 
+= 0.7.2 =
+* Fixed a bug with customers batch update
+
 = 0.7.1 =
 * Fixed a problem with order amounts being rounded unnecessarily
 * Fixed: error with no products in database
@@ -139,6 +142,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
+
+= 0.7.2 =
+Recommended upgrade. Fixed a bug with customers batch update.
 
 = 0.7.1 =
 Recommended upgrade. Fixes a few issues and enhances JS and CSS loading.
