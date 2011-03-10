@@ -235,77 +235,33 @@ foreach ((array)$categories as $category){
 								  FROM ".WPSC_TABLE_CHECKOUT_FORMS."
 								 WHERE id not in (1,9)";
 			$form_data_result = mysql_query ( $form_data_query );
-			
-			while ( $data = mysql_fetch_assoc ( $form_data_result ) ) {
-			($data['id'] <= 8) ? $form_data [] = $data['id']."B_" . implode('_',explode(' ',$data ['name'])) :
-			$form_data [] = $data['id']."S_" . implode('_',explode(' ',$data ['name']));
-			}
-
-			$customers_query = " SELECT log_id,user_details,Last_Order_Date,Total_Purchased,Last_Order_Amt,bns_countries
-				             	 FROM (SELECT ord_emailid.log_id,user_details, 
-									DATE_FORMAT(FROM_UNIXTIME(date), '%b %e %Y') Last_Order_Date, 
-									sum( totalprice ) Total_Purchased, 
-									totalprice Last_Order_Amt,bns_countries
-									FROM    (SELECT log_id, value email
-											FROM ".WPSC_TABLE_SUBMITED_FORM_DATA." wwsfd1
-											WHERE form_id =8
-											) AS ord_emailid
-											
-											INNER JOIN 
-											(SELECT log_id, group_concat( wwsfd2.value
-											ORDER BY form_id ) user_details
-											FROM ".WPSC_TABLE_SUBMITED_FORM_DATA." wwsfd2
-											GROUP BY log_id
-											) AS ord_all_user_details
-											ON ( ord_emailid.log_id = ord_all_user_details.log_id )
-											
-											INNER JOIN 
-											(SELECT id, date, totalprice
-											FROM ".WPSC_TABLE_PURCHASE_LOGS." wwpl
-											ORDER BY date DESC
-											) AS purchlog_info
-											ON ( purchlog_info.id = ord_emailid.log_id )
-											
-											INNER JOIN
-											(select log_id,group_concat(country order by log_id) bns_countries
-											FROM ".WPSC_TABLE_SUBMITED_FORM_DATA.",".WPSC_TABLE_CURRENCY_LIST."
-											where form_id in (6,15) 
-											and left(substring_index(value,'\"',-2),2) = isocode 
-											group by log_id) as user_country
-											ON ( ord_emailid.log_id = user_country.log_id)
-											GROUP BY email ) as customers_info \n";
-			$result = mysql_query($customers_query);
-			
-			while ( $data = mysql_fetch_assoc ( $result ) ) {
-				$user_details = explode ( ',', $data ['user_details'] );				
-				$combine = array_combine ( $form_data, $user_details );
-				//note: while merging the array, $data as to be the second arg
-				$records = array_merge ($combine, $data );
-			}
-			
+			while ( $data = mysql_fetch_assoc ( $form_data_result ) ) {				
+				$form_data[$data['id']] = $data['name'];
+			}			
 			$cnt = 0;
-			foreach ((array)$records as $records_key => $record){
-				if (intval($records_key)){
+			foreach ((array)$form_data as $form_data_key => $form_data_value){				
 					$customerFields['items'][$cnt]['id'] = $cnt;
 					
-					if (intval($records_key) >= 10)
-					$customerFields['items'][$cnt]['name'] = 'Shipping '.str_replace('_',' ',substr($records_key,4));
-					else
-					$customerFields['items'][$cnt]['name'] = str_replace('_',' ',substr($records_key,3));
-
-					if ($customerFields['items'][$cnt]['name'] == 'Shipping Country' || $customerFields['items'][$cnt]['name'] =='Country')
-					$customerFields['items'][$cnt]['type']  = 'bigint';
-					else
-					$customerFields['items'][$cnt]['type']  = 'blob';
+					if($form_data_value == 'Country'){
+						$customerFields['items'][$cnt]['type']  = 'bigint';
+					}else{
+						$customerFields['items'][$cnt]['type']  = 'blob';
+					}
 					
-					$customerFields['items'][$cnt]['value'] = 'value'.', '.WPSC_TABLE_SUBMITED_FORM_DATA.', '.intval($records_key);
+					if ($form_data_key >= 10){
+						$customerFields['items'][$cnt]['name'] = 'Shipping '.$form_data_value;
+					}else{
+						$customerFields['items'][$cnt]['name'] = $form_data_value;
+					}
+					
+					$customerFields['items'][$cnt]['value'] = 'value'.', '.WPSC_TABLE_SUBMITED_FORM_DATA.', '.$form_data_key;
 					$customerFields['totalCount'] = $cnt++;
-				}			
-			}
+			}			
+						
 			if (count($customerFields) >= 1)
-			$encodedCustomersFields = json_encode($customerFields);
+				$encodedCustomersFields = json_encode($customerFields);
 			else 
-			$encodedCustomersFields = 0;
+				$encodedCustomersFields = 0;
 			
 			$query = "SELECT * FROM `".WPSC_TABLE_CURRENCY_LIST."` ORDER BY `country` ASC";
 			$result = mysql_query($query);
