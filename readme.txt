@@ -15,7 +15,6 @@ Smart Manager is a unique, revolutionary tool that gives you the **power to effi
 and orders** using the popular WordPress e-Commerce plugin from GetShopped / Instinct.
 
 As a business owner, **your time is better spent on marketing and customer service** than on store administration. 
-Unfortunately store administration with WordPress e-Commerce can take significant time. Day after day.
 
 Smart Manager will **boost your productivity 10x** in managing products, customers and orders. You can browse, 
 search, and manage multiple products, customers or orders using a **familiar, single page, 
