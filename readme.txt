@@ -168,6 +168,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 
 == Upgrade Notice ==
 
+= 0.7.3 =
+Adds flat rate shipping management, and adds many minor enhancements.
+
 = 0.7.2 =
 Recommended upgrade. Fixed a bug with customers batch update.
 
