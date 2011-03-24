@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce
 Requires at least: 2.0.2
 Tested up to: 3.1
-Stable tag: 0.7.2
+Stable tag: 0.7.3
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, orders and customers reliably using a fast and familiar interface.
@@ -83,7 +83,7 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Products Dashboard: added Flat rate shipping options - Local & International Shipping Fee, Height, Weight, Length and their Units
 * Products Dashboard: added Disregard Shipping field to the grid
 * Products Dashboard: added Local and International Shipping Fee in Batch Update
-* Products Dashbaord: can now search for all products with quantity limited by typing "-1" in search field
+* Products Dashboard: can now search for all products with quantity limited by typing "-1" in search field
 * Shifted Shipping Details from Customer Dashboard to Orders Dashboard
 * NOTE: Most of these new fields are not visible in the grid by default. Click on downward arrow in a column heading -> Columns and then select columns you want to show.
 * Fixed a problem that did not show Order detail popup in some installations
