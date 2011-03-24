@@ -37,6 +37,16 @@ Highlights:
 * Fast And Reliable Batch Updates With Intelligent Update Actions
 * Note: Some of these features are only in Pro version
 
+Customer Feedback:
+
+* Just bought this Genius Add-on…it’s going to save me hundreds of hours a year...
+* I find it extremely useful and very well done. 
+* Great looking plugin! :D I would recommend your plugin to my customers and readers.
+* I just took a look at Smart Manager and it looks way awesome!
+
+Thousands of customers are extremely happy with Smart Manager! Checkout our website for more details.
+
+
 == Installation ==
 
 1. Ensure you have [WP e-Commerce](http://www.getshopped.org) plugin installed
