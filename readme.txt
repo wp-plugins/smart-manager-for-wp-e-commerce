@@ -1,7 +1,7 @@
 === Smart Manager for WP e-Commerce ===
 Contributors: niravmehta, rohan@storeapps
 Donate link: http://www.storeapps.org/
-Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce
+Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.1
 Stable tag: 0.7.3
@@ -36,6 +36,16 @@ Highlights:
 * Quick, In-page detail view for Products/Orders/Customers
 * Fast And Reliable Batch Updates With Intelligent Update Actions
 * Note: Some of these features are only in Pro version
+
+Customer Feedback:
+
+* Just bought this Genius Add-on…it’s going to save me hundreds of hours a year...
+* I find it extremely useful and very well done. 
+* Great looking plugin! :D I would recommend your plugin to my customers and readers.
+* I just took a look at Smart Manager and it looks way awesome!
+
+Thousands of customers are extremely happy with Smart Manager! Checkout our website for more details.
+
 
 == Installation ==
 
@@ -83,7 +93,7 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Products Dashboard: added Flat rate shipping options - Local & International Shipping Fee, Height, Weight, Length and their Units
 * Products Dashboard: added Disregard Shipping field to the grid
 * Products Dashboard: added Local and International Shipping Fee in Batch Update
-* Products Dashbaord: can now search for all products with quantity limited by typing "-1" in search field
+* Products Dashboard: can now search for all products with quantity limited by typing "-1" in search field
 * Shifted Shipping Details from Customer Dashboard to Orders Dashboard
 * NOTE: Most of these new fields are not visible in the grid by default. Click on downward arrow in a column heading -> Columns and then select columns you want to show.
 * Fixed a problem that did not show Order detail popup in some installations
