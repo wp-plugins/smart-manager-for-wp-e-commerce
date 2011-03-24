@@ -16,7 +16,7 @@ Ext.notification = function(){
             msgCt.alignTo(document, 't-t');
             var s = String.format.apply(String, Array.prototype.slice.call(arguments, 1));
             var m = Ext.DomHelper.append(msgCt, {html:createBox(title, s)}, true);
-            m.slideIn('t').pause(1).ghost("t", {remove:true});
+            m.slideIn('t').pause(2).ghost("t", {remove:true});
         },
 
         init : function(){
@@ -28,12 +28,14 @@ Ext.notification = function(){
     };
 }();// Floating notification end
 
-var actions     = new Array(); //an array for actions combobox in batchupdate window.
-var categories  = new Array(); //an array for category combobox in batchupdate window.
-var cellClicked = false; //flag to check if any cell is clicked in the editor grid.
+var actions           = new Array(); //an array for actions combobox in batchupdate window.
+var categories        = new Array(); //an array for category combobox in batchupdate window.
+var dimensionUnits    = new Array();
+var cellClicked       = false; //flag to check if any cell is clicked in the editor grid.
 var search_timeout_id = 0; //timeout for sending request while searching.
 var colModelTimeoutId = 0; //timeout to reconfigure the grid.
 var limit = 100;//per page records limit.
+
 
 actions['blob']   = [{'id': 0,'name': 'set to','value': 'SET_TO'},
 				     {'id': 1,'name': 'append','value': 'APPEND'},
@@ -61,22 +63,34 @@ actions['string'] = [{'id': 0,'name': 'Yes','value': 'YES'},
 actions['category_actions'] = [{'id': 0,'name': 'set to','value': 'SET_TO'},
 							   {'id': 1,'name': 'add to','value': 'ADD_TO'},
 							   {'id': 2,'name': 'remove from','value': 'REMOVE_FROM'}];
-					
+
+
+dimensionUnits    = {'items': [{'id':0 , 'name':'inches', 'value': 'in'},
+					  	       {'id':1 , 'name':'cm', 'value': 'cm'},
+							   {'id':2 , 'name':'meter', 'value': 'm'}],
+	                 'totalCount': 3 };
+
 // BOF global components & function
 var SM = {
 		searchTextField   : '',
 		dashboardComboBox : '',
 		colModelTimeoutId : '',		
-		activeModule      : 'Products' //default module selected.
+		activeModule      : 'Products', //default module selected.
+		activeRecord      : '',
+		curDataIndex      : ''
 };
-var editorGrid        = '';
-var showOrdersView    = '';
-var showCustomersView = '';
-var weightUnitStore   = '';	
-var countriesStore    = '';
+var editorGrid         = '';
+var showOrdersView     = '';
+var showCustomersView  = '';
+var weightUnitStore    = '';	
+var countriesStore     = '';
+var regionsStore       = '';
+var reloadRegionCombo  = '';
 // EOF
 
 Ext.onReady(function () {
+		
+	try{
 	//START: Tooltips
 	Ext.QuickTips.init();
 	Ext.apply(Ext.QuickTips.getQuickTip(), {
@@ -126,7 +140,29 @@ Ext.onReady(function () {
 		}
 	});//END: CheckBoxes for Grid.
 
-//START: Products.
+	//Renderer for dimension units
+	Ext.util.Format.comboRenderer = function(dimensionCombo){
+		return function(value){
+			var record = dimensionCombo.findRecord(dimensionCombo.valueField, value);
+			return record ? record.get(dimensionCombo.displayField) : dimensionCombo.valueNotFoundText;
+		}
+	}
+	
+	//combo box for dimension units
+	var dimensionCombo = new Ext.form.ComboBox({
+		typeAhead: true,
+		triggerAction: 'all',
+		lazyRender:true,
+		mode: 'local',
+		store: new Ext.data.ArrayStore({
+			id: 0,
+			fields: ['value','name'],
+			data: [['in', 'inches'], ['cm', 'cm'], ['m', 'meter']]
+		}),
+		valueField: 'value',
+		displayField: 'name'
+	});
+		
 	//START: Products ColumnModel.
 	var productsColumnModel = new Ext.grid.ColumnModel({
 		columns: [mySelectionModel,
@@ -207,6 +243,7 @@ Ext.onReady(function () {
 				displayField: 'weightUnit',
 				valueField: 'weight_unit',
 				lazyRender: true,
+				forceSelection: true,
 				listClass: 'x-combo-list-small'
 			})
 		},{
@@ -219,6 +256,7 @@ Ext.onReady(function () {
 				triggerAction: 'all',
 				transform: 'status',
 				lazyRender: true,
+				forceSelection: true,
 				listClass: 'x-combo-list-small'
 			})
 		},{
@@ -231,8 +269,125 @@ Ext.onReady(function () {
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
 				return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
 			}
+		},{
+			header: 'Disregard Shipping',
+			sortable: true,
+			dataIndex: 'disregard_shipping',
+			tooltip: 'Disregard Shipping',
+			editor: new fm.ComboBox({
+				typeAhead: true,
+				triggerAction: 'all',
+				transform: 'disregard_shipping',
+				lazyRender: true,
+				forceSelection: true,
+				listClass: 'x-combo-list-small'
+			})
+		},{
+		header: 'Description',
+		dataIndex: 'description',
+		tooltip: 'Description',
+		width: 180,
+		editor: new fm.TextArea({				
+			autoHeight: true
+		})
+	},{
+		header: 'Additional Description',
+		dataIndex: 'additional_description',
+		tooltip: 'Additional Description',
+		width: 180,
+		editor: new fm.TextArea({				
+			autoHeight: true
+		})
+	},{
+      		header: 'Local Shipping Fee',
+			colSpan: 2,
+			sortable: true,
+			align: 'right',
+			dataIndex: 'pnp',
+//			width: 50,
+			tooltip: 'Local Shipping Fee',			
+			editor: new fm.NumberField({
+				allowBlank: false,
+				allowNegative: false
+			})
+		},{
+			header: 'International Shipping Fee',
+			colSpan: 2,
+			sortable: true,
+			align: 'right',
+//			width: 50,
+			dataIndex: 'international_pnp',
+			tooltip: 'International Shipping Fee',
+			editor: new fm.NumberField({
+				allowBlank: false,
+				allowNegative: false
+			})
+		},{
+			header: 'Height',
+			colSpan: 2,
+			sortable: true,
+			align: 'right',
+//			width: 50,
+			dataIndex: 'height',
+			tooltip: 'Height',			
+			editor: new fm.NumberField({
+				allowBlank: false,
+				allowNegative: false
+			})
+		},{
+			header: 'Height Unit',
+			sortable: true,
+			dataIndex: 'height_unit',
+			tooltip: 'Height Unit',
+//			width: 50,
+			editor: dimensionCombo,
+			renderer: Ext.util.Format.comboRenderer(dimensionCombo)
+		},{
+			header: 'Width',
+			colSpan: 2,
+			sortable: true,
+			align: 'right',
+			dataIndex: 'width',
+			tooltip: 'Width',
+//			width: 50,
+			editor: new fm.NumberField({
+				allowBlank: false,
+				allowNegative: false
+			})
+		},{
+			header: 'Width Unit',
+			sortable: true,
+//			width: 50,
+			dataIndex: 'width_unit',
+			tooltip: 'Width Unit',
+			editor: dimensionCombo,
+			renderer: Ext.util.Format.comboRenderer(dimensionCombo)
+		},{
+			header: 'Length',
+			colSpan: 2,
+			sortable: true,
+//			width: 50,
+			align: 'right',
+			dataIndex: 'length',
+			tooltip: 'Length',			
+			editor: new fm.NumberField({
+				allowBlank: false,
+				allowNegative: false
+			})
+		},{
+			header: 'Length Unit',
+			sortable: true,
+//			width: 50,
+			dataIndex: 'length_unit',
+			tooltip: 'Length Unit',
+			editor: dimensionCombo,
+			renderer: Ext.util.Format.comboRenderer(dimensionCombo)
 		}],defaultSortable: true
-	});
+
+	});	
+	var productsColumnCount = productsColumnModel.getColumnCount();
+	for(var i=11;i<productsColumnCount;i++)
+	productsColumnModel.setHidden(i, true);	
 	//END: Products ColumnModel.
 		
 	//START: Products JsonReader.
@@ -247,8 +402,20 @@ Ext.onReady(function () {
 				 {name: 'sale_price',type: 'float'},
 				 {name: 'sku',type: 'string'},
 				 {name: 'category',type: 'string'},
+				 {name: 'disregard_shipping',type: 'string'},
+				 {name: 'description',type: 'string'},
+				 {name: 'additional_description'},
+				 {name: 'pnp',type: 'float'},
+				 {name: 'international_pnp',type: 'float'},
 				 {name: 'weight',type: 'float'},
-				 {name: 'weight_unit',type: 'string'}]
+				 {name: 'weight_unit',type: 'string'},
+				 {name: 'height',type: 'float'},
+				 {name: 'height_unit',type: 'string'},
+				 {name: 'width',type: 'float'},
+				 {name: 'width_unit',type: 'string'},
+				 {name: 'length',type: 'float'},
+				 {name: 'length_unit',type: 'string'}
+				 ]
 	});
 	//END: Products JsonReader.
 	
@@ -291,9 +458,9 @@ Ext.onReady(function () {
 		pagingToolbar.get(14).show();
 
 		productsStore.load();
-		pagingToolbar.bind(productsStore);		
+		pagingToolbar.bind(productsStore);
 		editorGrid.reconfigure(productsStore,productsColumnModel);
-		productFieldStore.loadData(productsFields);		
+		productFieldStore.loadData(productsFields);
 
 		var firstToolbar = batchUpdatePanel.items.items[0].items.items[0];
 		var textfield    = firstToolbar.items.items[5];
@@ -304,8 +471,7 @@ Ext.onReady(function () {
 		textfield.show();
 	};	
 //END: Products.
-	
-//START: Components (pagingToolbar).
+
 	var pagingToolbar = new Ext.PagingToolbar({
 		items: ['->', '-',
 		{
@@ -362,7 +528,6 @@ Ext.onReady(function () {
 		emptyMsg: 'Product list is empty'
 	});
 	var pagingActivePage = pagingToolbar.getPageData().activePage;
-//END: Components (pagingToolbar).
 
 //START: Functions.
 	// Function to save modified records
@@ -374,12 +539,12 @@ Ext.onReady(function () {
 		if(!modifiedRecords.length) {
 			return;
 		}
-		var edited  = [];		
-		//		var selectedRecords = mySelectionModel.getSelections();		
+		var edited  = [];
 		Ext.each(modifiedRecords, function(r, i){
-			if(r.data.category)
-			r.data.category = newCatId;
-			edited.push(r.data); //made changes since removed the saveRecords from afteredit event. @todo:remove this comment
+		if(r.data.category){
+				r.data.category = newCatId;
+			}
+			edited.push(r.data);
 		});
 		
 		var o = {
@@ -406,7 +571,7 @@ Ext.onReady(function () {
 			{
 				cmd:'saveData',
 				active_module: SM.activeModule,
-				edited:Ext.encode(edited)
+				edited:Ext.encode(edited)				
 			}};
 			Ext.Ajax.request(o);
 	};
@@ -499,13 +664,12 @@ Ext.onReady(function () {
 			SM.activeModule = 'Products';
 			showProductsView();
 		}
-	};	
-//END: Functions.
+	};
 
-//END: Components (ComboBox).
 SM.dashboardComboBox = new Ext.form.ComboBox({
 	store: new Ext.data.ArrayStore({
 		autoDestroy: true,
+		forceSelection: true,
 		fields: ['id', 'fullname'],
 		data: [
 		[0, 'Products'],
@@ -517,7 +681,7 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 	cls: 'searchPanel',
 	mode: 'local',
 	triggerAction: 'all',
-	editable: false,
+//	editable: false,
 	value: 'Products',
 	style: {
 		fontSize: '14px',
@@ -569,7 +733,6 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 		}
 	}
 });
-//END: Components (ComboBox).
 	
 //START: Customers
 	countriesStore = new Ext.data.Store({
@@ -579,14 +742,33 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			root: 'items',
 			fields: [{ name: 'id'  },
 					 { name: 'name' },
-					 { name: 'value'}]
+					 { name: 'value'},
+					 { name: 'country_id'}]
 		}),
 		autoDestroy: false,
 		dirty: false
 	});
 	countriesStore.loadData(countries);
 	
-	var countryCombo = new Ext.form.ComboBox({
+	reloadRegionCombo = function(curCountry) {
+		var countryStoreArr = countriesStore.reader.jsonData.items;
+		var countryIndex    = 0;
+		//resetting the column value to empty of the current record
+		if(curCountry != '') {
+			for(var i=0;i<=countriesStore.reader.jsonData.totalCount;i++){
+				var country = countryStoreArr[i].name; //not to include id w/o countyriID
+				if(country == curCountry) {
+					var curCountryId = countryStoreArr[i].country_id;
+					(regions[curCountryId]!= undefined) ? regionsStore.loadData(regions[curCountryId]) : regionsStore.removeAll(true);
+					break;
+				}
+			}
+		}else {
+			regionsStore.removeAll(true);
+		}
+	};
+	
+	var countriesCombo = new Ext.form.ComboBox({
 		typeAhead: true,
 	    triggerAction: 'all',
 	    lazyRender:true,
@@ -596,6 +778,46 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 	    valueField: 'name',
 	    value: 'value',
 	    displayField: 'name',
+	    forceSelection: true,
+	    listeners: {
+			select: function() {
+				// setting the region of current record to empty
+				if(SM.curDataIndex == '6B_Country')
+					SM.activeRecord.set('6B_Region','')
+				else if(SM.curDataIndex == 'shippingcountry')
+					SM.activeRecord.set('shippingregion','');
+					 
+			    var curCountry = this.value;
+			    reloadRegionCombo(curCountry);
+			}
+		}
+	});
+	
+	regionsStore = new Ext.data.Store({
+		reader: new Ext.data.JsonReader({
+			idProperty: 'id',
+			totalProperty: 'totalCount',
+			root: 'items',
+			fields: [{ name: 'id'  },
+			{ name: 'name' },
+			{ name: 'value'},
+			{ name: 'region_id'}]
+		}),
+		autoDestroy: false,
+		dirty: false
+	});	
+
+	var regionCombo = new Ext.form.ComboBox({
+		typeAhead: true,
+		triggerAction: 'all',
+		lazyRender:true,
+		mode: 'local',
+		store:regionsStore,
+		value: 'value',
+		valueField: 'name',
+		value: 'value',
+		displayField: 'name',
+		forceSelection: true
 	});
 	
 	var customersColumnModel = new Ext.grid.ColumnModel({	
@@ -650,21 +872,28 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			}),
 			width: 150
 		},{
-			header: 'Country',
-			dataIndex: '6B_Country',
-			tooltip: 'Billing Country',
-			editor:countryCombo,
-			width: 150
-		},{
 			header: 'City',
 			dataIndex: '5B_City',
 			tooltip: 'Billing City',
-			align: 'left',			 
+			align: 'left',
 			editor: new fm.TextField({
 				allowBlank: false,
 				allowNegative: false
 			}),
 			width: 150
+		},{
+			header: 'Region',
+			dataIndex: '6B_Region',
+			tooltip: 'Billing Region',
+			align: 'center',
+			editor: regionCombo,
+			width: 100
+		},{
+			header: 'Country',
+			dataIndex: '6B_Country',
+			tooltip: 'Billing Country',
+			editor:countriesCombo,
+			width: 120
 		},{
 			header: 'Total Purchased',
 			id: 'total_purchased',
@@ -679,79 +908,28 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			tooltip: 'Last Order Details',
 			width: 220			
 		},{   
-			header: 'Shipping First Name',
-			dataIndex: '10S_First_Name',
-			tooltip: 'Shipping First Name',
-			editor: new fm.TextField({
-				allowBlank: false,
-				allowNegative: false
-			}),
-			width: 200
-		},{   
-			header: 'Shipping Last Name',
-			dataIndex: '11S_Last_Name',
-			tooltip: 'Shipping Last Name',
-			editor: new fm.TextField({
-				allowBlank: false,
-				allowNegative: false
-			}),
-			width: 200
-		},{   
-			header: 'Shipping Address',
-			dataIndex: '12S_Address',
-			tooltip: 'Shipping Address',
-			editor: new fm.TextField({
-				allowBlank: false,
-				allowNegative: false
-			}),
-			width: 200		
-		},{
-			header: 'Shipping Postal Code',
-			dataIndex: '16S_Postal_Code',
-			tooltip: 'Shipping Postal Code',
-			editor: new fm.TextField({
-					allowBlank: true,
-					allowNegative: false
-			}),
-				width: 200
-		},{   
-			header: 'Shipping City',
-			dataIndex: '13S_City',
-			tooltip: 'Shipping City',
-			editor: new fm.TextField({
-				allowBlank: false,
-				allowNegative: false
-			}),
-			width: 200		
-		},{   
-			header: 'Shipping Country',
-			dataIndex: '15S_Country',
-			tooltip: 'Shipping Country',
-			editor:countryCombo,
-			width: 200		
-		},{   
 			header: 'Phone Number',
-			dataIndex: '17S_Phone',
+			dataIndex: '17B_Phone',
 			tooltip: 'Phone Number',
 			editor: new fm.TextField({
 				allowBlank: true,
 				allowNegative: false
 			}),
 			width: 180		
-		}],defaultSortable: true
+		}],
+		defaultSortable: true,
 	});
 	var customersColumnCount = customersColumnModel.getColumnCount();
-	for(var i=10;i<customersColumnCount;i++)
-	customersColumnModel.setHidden(i, true);
+	for(var i=11;i<customersColumnCount;i++)
 	
 	var totPurDataType = '';	
 	if (fileExists != 1) { 
 		totPurDataType = 'string';
-		customersColumnModel.columns[8].align = 'center';
 		customersColumnModel.columns[9].align = 'center';
+		customersColumnModel.columns[10].align = 'center';
 	}else{
 		totPurDataType = 'float';
-		customersColumnModel.setRenderer(8,amountRenderer);		
+		customersColumnModel.setRenderer(9,amountRenderer);		
 	}
 	
 	// Data reader class to create an Array of Records objects from a JSON packet.
@@ -768,17 +946,12 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 		{name:'4B_Address',type:'string'},
 		{name:'7B_Postal_Code',type:'string'},
 		{name:'6B_Country', type:'string'},
+		{name:'6B_Region', type:'string'},
 		{name:'5B_City', type:'string'},
 		{name:'Total_Purchased',type:totPurDataType},		
 		{name:'Last_Order', type:'string'},
-		{name:'10S_First_Name', type:'string'},
-		{name:'11S_Last_Name', type:'string'},
-		{name:'12S_Address', type:'string'},
-		{name:'16S_Postal_Code',type:'string'},
-		{name:'13S_City', type:'string'},
-		{name:'15S_Country', type:'string'},		
-		{name:'17S_Phone', type:'string'},
-		{name: 'Old_Email_Id', type: 'string'}
+		{name:'17B_Phone', type:'string'},
+		{name:'Old_Email_Id', type: 'string'}
 		]
 	});
 	
@@ -824,7 +997,6 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			else
 			Ext.notification.msg('Sorry!', 'No records found');
 			
-			weightUnitStore.loadData(countries);
 			customersStore.setBaseParam('searchText',emailId);
 			customersStore.load();
 			pagingToolbar.bind(customersStore);
@@ -906,6 +1078,7 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			width: 150,
 			editor: new fm.ComboBox({
 				typeAhead: true,
+				forceSelection: true,
 				triggerAction: 'all',
 				transform: 'order_status',
 				lazyRender: true,
@@ -919,7 +1092,73 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			editor: new fm.TextArea({				
 				autoHeight: true
 			})
-		}],defaultSortable: true
+		},{   
+			header: 'Shipping First Name',
+			dataIndex: 'shippingfirstname',
+			tooltip: 'Shipping First Name',
+			hidden: true,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
+			width: 200
+		},{   
+			header: 'Shipping Last Name',
+			dataIndex: 'shippinglastname',
+			tooltip: 'Shipping Last Name',
+			hidden: true,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
+			width: 200
+		},{   
+			header: 'Shipping Address',
+			dataIndex: 'shippingaddress',
+			tooltip: 'Shipping Address',
+			hidden: true,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
+			width: 200		
+		},{
+			header: 'Shipping Postal Code',
+			dataIndex: 'shippingpostcode',
+			tooltip: 'Shipping Postal Code',
+			hidden: true,
+			editor: new fm.TextField({
+					allowBlank: true,
+					allowNegative: false
+			}),
+				width: 200
+		},{   
+			header: 'Shipping City',
+			dataIndex: 'shippingcity',
+			tooltip: 'Shipping City',
+			hidden: true,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
+			width: 200		
+		},{   
+			header: 'Shipping Region',
+			dataIndex: 'shippingregion',
+			tooltip: 'Shipping Region',
+			align: 'center',
+			hidden: true,
+			editor: regionCombo,
+			width: 100		
+		},{
+			header: 'Shipping Country',
+			dataIndex: 'shippingcountry',
+			tooltip: 'Shipping Country',
+			editor:countriesCombo,
+			hidden: true,
+			width: 120
+		}],
+		defaultSortable: true
 	});
 
 	// Data reader class to create an Array of Records objects from a JSON packet.
@@ -935,7 +1174,14 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 		{name:'details', type:'string'},
 		{name:'track_id',type:'string'},
 		{name:'order_status', type:'string'},
-		{name:'notes', type:'string'}
+		{name:'notes', type:'string'},
+		{name:'shippingfirstname', type:'string'},
+		{name:'shippinglastname', type:'string'},
+		{name:'shippingaddress', type:'string'},
+		{name:'shippingcity', type:'string'},
+		{name:'shippingcountry', type:'string'},
+		{name:'shippingregion', type:'string'},
+		{name:'shippingpostcode', type:'string'}
 		]
 	});
 	
@@ -977,8 +1223,11 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 				SM.searchTextField.setValue(emailid);
 			}
 
-			if(ordersFields != 0)
-			productFieldStore.loadData(ordersFields); //@todo: use a common name fieldStore and load respective fields in it.
+			if(ordersFields != 0) {
+				
+				productFieldStore.loadData(ordersFields); //@todo: use a common name fieldStore and load respective fields in it.
+			
+			}
 			else
 			Ext.notification.msg('Sorry!', 'No records found');
 
@@ -998,7 +1247,7 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			var textfield = firstToolbar.items.items[5];
 			var weightUnitDropdown = firstToolbar.items.items[7];
 			weightUnitDropdown.show();
-			weightUnitStore.loadData(orderStatus);
+			weightUnitStore.loadData(ordersStatus);
 			textfield.hide();
 		}catch(e) {
 			var err = e.toString();
@@ -1056,7 +1305,7 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 					icon: Ext.MessageBox.QUESTION
 				})
 			}
-		}, 700);
+		}, 500);
 	}}
 });
 //END: Component
@@ -1090,11 +1339,11 @@ var searchLogic = function () {
 				var records_cnt = myJsonObj.totalCount;
 				if (records_cnt == 0) myJsonObj.items = '';
 				if(SM.activeModule == 'Products')
-				productsStore.loadData(myJsonObj)
+					productsStore.loadData(myJsonObj)
 				if(SM.activeModule == 'Orders')
-				ordersStore.loadData(myJsonObj);
+					ordersStore.loadData(myJsonObj);
 				else
-				customersStore.loadData(myJsonObj);
+					customersStore.loadData(myJsonObj);
 			} catch (e) {
 				return;
 			}
@@ -1153,7 +1402,8 @@ var categoryStore = new Ext.data.ArrayStore({
 		root: 'items',
 		fields: [{ name: 'id'  },
 		{ name: 'name' },
-		{ name: 'value'}
+		{ name: 'value'},
+		{ name: 'country_id'}
 		]
 	}),
 	autoDestroy: false,
@@ -1167,6 +1417,7 @@ var mask = new Ext.LoadMask(Ext.getBody(), {
 	//		msg: "Loading..."
 });
 
+//batch update window
 var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 	cls: 'batchtoolbar',
 	constructor: function (config) {
@@ -1174,8 +1425,9 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 			items: [{
 				xtype: 'combo',
 				allowBlank: false,
-				align: 'center',
+				align: 'center',				
 				store: productFieldStore,
+				typeAhead: true,
 				style: {
 					fontSize: '12px',
 					paddingLeft: '2px',
@@ -1187,7 +1439,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				cls: 'searchPanel',
 				emptyText: 'Select a field...',
 				triggerAction: 'all',
-				editable: false,
+				editable: false,				
 				selectOnFocus: true,
 				listeners: {
 					select: function () {
@@ -1202,27 +1454,39 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var comboActionCmp = toolbarParent.get(2);
 						var comboWeightUnitCmp = toolbarParent.get(7);
 						objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;;
-						regexError = 'Only numbers are allowed';
+						regexError = 'Only numbers are allowed';						
 						if (field_type == 'category') {
 							setTextfield.hide();
 							comboWeightUnitCmp.hide();
 							comboCategoriesActionCmp.show();
 							actions_index = field_type + '_actions';
 							categoryStore.loadData(categories[this.getValue()]);
+						}else if (field_type == 'string') {
+							setTextfield.hide();
+							comboWeightUnitCmp.hide();
+							comboCategoriesActionCmp.hide();
+							actions_index = field_type;
 						} else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock') {
 							setTextfield.hide();
 							comboWeightUnitCmp.hide();
 							comboCategoriesActionCmp.hide();
 							actions_index = field_type;
-						} else if (field_name == 'Weight' || field_name == 'Variations: Weight') {
+						} else if (field_name == 'Weight' || field_name == 'Variations: Weight'||field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
 							comboWeightUnitCmp.hide();
 							setTextfield.show();
 							comboCategoriesActionCmp.hide();
 							actions_index = field_type;
 						}else if(field_name == 'Orders Status' || field_name == 'Country' || field_name == 'Shipping Country'){
-							actions_index = field_type;
-							comboWeightUnitCmp.show();
+							
+							if(field_name == 'Shipping Country' || field_name == 'Country') {
+								actions_index = 'bigint';
+								weightUnitStore.loadData(countries);
+							}else {
+								weightUnitStore.loadData(ordersStatus);
+								actions_index = field_type;
+							}
 							setTextfield.hide();
+							comboWeightUnitCmp.show();
 						} else {
 							setTextfield.show();
 							if (field_type == 'blob') {
@@ -1266,16 +1530,18 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				editable: false,
 				selectOnFocus: true,
 				listeners: {
-					focus: function () {
-						if (this.lastSelectionText != undefined) {
+					focus: function () {							
 							var actionsData = new Array();
 							var toolbarParent = this.findParentByType(batchUpdateToolbarInstance, true);
 							var comboFieldCmp = toolbarParent.get(0);
 							var selectedFieldIndex = comboFieldCmp.selectedIndex;
 							var field_type = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].type;
-							var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
+							var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;							
 							var actions_index;
-							(field_type == 'category') ? actions_index = field_type + '_actions' : actions_index = field_type;
+							
+							actions_index = (field_type == 'category') ? field_type + '_actions' :((field_name == 'Shipping Country') ? 'bigint' : field_type);							
+							(field_name == 'Shipping Country') ? weightUnitStore.loadData(countries) : '';
+							
 							for (j = 0; j < actions[actions_index].length; j++) {
 								actionsData[j] = new Array();
 								actionsData[j][0] = actions[actions_index][j].id;
@@ -1283,22 +1549,30 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								actionsData[j][2] = actions[actions_index][j].value;
 							}
 							actionStore.loadData(actionsData);
-						}
-					},
-					select: function () {
-						var toolbarParent = this.findParentByType(batchUpdateToolbarInstance, true);
-						var comboFieldCmp = toolbarParent.get(0);
-						var selectedFieldIndex = comboFieldCmp.selectedIndex;
-						var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
+						},					
+					select: function() {
+						var toolbarParent      = this.findParentByType(batchUpdateToolbarInstance, true);
+						var comboFieldCmp      = toolbarParent.get(0);
+						var comboactionCmp     = toolbarParent.get(2);
 						var comboWeightUnitCmp = toolbarParent.get(7);
-						if (this.getValue() == 'SET_TO' && (field_name == 'Weight' || field_name == 'Variations: Weight' || field_name == 'Orders Status' || field_name == 'Country' || field_name == 'Shipping Country'))
-						comboWeightUnitCmp.show();
-						else
-						comboWeightUnitCmp.hide();
+						var selectedFieldIndex = comboFieldCmp.selectedIndex;
+						var field_name         = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
+						
+						if (field_name == 'Weight' || field_name == 'Variations: Weight'||field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
+							if (field_name == 'Weight' || field_name == 'Variations: Weight') {
+								weightUnitStore.loadData(weightUnits);
+							}
+							else if(field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
+								weightUnitStore.loadData(dimensionUnits);
+							}
+							if(comboactionCmp.value == 'SET_TO')
+								comboWeightUnitCmp.show();
+							else
+								comboWeightUnitCmp.hide();
+						}
 					}
 				}
-			}, '',
-			{
+			},'',{
 				xtype: 'combo',
 				width: 180,
 				allowBlank: false,
@@ -1314,6 +1588,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				emptyText: 'Select a category...',
 				triggerAction: 'all',
 				editable: false,
+				forceSelection: false,
 				hidden: true,
 				selectOnFocus: true,
 				listeners: {
@@ -1336,8 +1611,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						categoryStore.loadData(categories[comboFieldCmp.getValue()]);
 					}
 				}
-			},
-			{
+			},{
 				xtype: 'textfield',
 				width: 180,
 				allowBlank: false,
@@ -1356,9 +1630,8 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 			}, '',
 			{
 				xtype: 'combo',
-				typeAhead: true,
-				editable: true,
 				allowBlank: false,
+				typeAhead: true,
 				hidden: false,
 				width: 180,
 				align: 'center',
@@ -1374,8 +1647,69 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				cls: 'searchPanel',
 				emptyText: 'Select a value...',
 				triggerAction: 'all',
-//				editable: false,
-				selectOnFocus: true
+				editable: true,
+				forceSelection: true,
+				selectOnFocus: true,
+				listeners: {
+					select: function(){
+						// this combo is used for weight unit, countries
+						var toolbarParent = this.findParentByType(batchUpdateToolbarInstance, true);
+						var comboFieldCmp = toolbarParent.get(0);
+						var selectedFieldIndex = comboFieldCmp.selectedIndex;
+						var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
+						var comboRegionCmp = toolbarParent.get(9);
+						comboRegionCmp.reset();
+						
+						if(field_name == 'Shipping Country' || field_name == 'Country') {
+							var selectCountryIndex = this.selectedIndex;
+							var countryId = this.store.data.items[selectCountryIndex].data['country_id'];
+							 
+							if(regions[countryId]==undefined){
+							regionsStore.removeAll(false);
+							comboRegionCmp.hide();
+							}else{
+								regionsStore.loadData(regions[countryId]);
+								comboRegionCmp.show();
+							}			
+						}
+					}}
+			},'',{
+				xtype: 'combo',
+				forceSelection: false,
+				typeAhead: true,
+				editable: true,
+				allowBlank: false,
+				hidden: false,
+				width: 180,
+				align: 'center',
+				store: regionsStore,
+				style: {
+					fontSize: '12px',
+					paddingLeft: '2px'
+				},
+				hidden: true,
+				valueField: 'region_id',
+				displayField: 'name',
+				mode: 'local',
+				cls: 'searchPanel',
+				emptyText: 'Select a value...',
+				triggerAction: 'all',
+				selectOnFocus: true,
+				listeners: {
+			        focus: function(){
+			            var toolbarParent       = this.findParentByType(batchUpdateToolbarInstance, true);			            
+			            var comboCountryCmp     = toolbarParent.get(7);                               
+			            var selectedCountryName = comboCountryCmp.lastSelectionText;
+			            console.debug(selectedCountryName);
+			            var countryData = comboCountryCmp.store.reader.jsonData;
+			            //comparing the countries name selected by user with the ones from datastore reader.
+			            for(var i=0;i<=countryData.totalCount;i++){
+			                if(selectedCountryName == countryData.items[i].name)
+			                countryId = countryData.items[i].country_id;
+			            }
+			            regionsStore.loadData(regions[countryId]);
+			        }
+				}
 			}, '->',
 			{
 				icon: imgURL + 'del_row.png',
@@ -1408,7 +1742,7 @@ var batchUpdateToolbar = new Ext.Toolbar({
 		}
 	}]
 });
-batchUpdateToolbar.get(0).get(9).hide();
+batchUpdateToolbar.get(0).get(11).hide(); //hide delete row icon from first toolbar.
 
 var batchUpdatePanel = new Ext.Panel({
 	animCollapse: true,
@@ -1446,12 +1780,11 @@ batchUpdateWindow = new Ext.Window({
 	animEl: 'BU',
 	items: batchUpdatePanel,
 	layout: 'fit',
-	width: 800,
+	width: 810,
 	height: 300,
 	plain: true,
 	closeAction: 'hide',
 });
-batchUpdateWindow.on('hide', afterClose, this);
 
 function afterClose(e) {
 	for (sb = toolbarCount; sb >= 1; sb--){
@@ -1469,10 +1802,26 @@ function afterClose(e) {
 
 	firstToolbar.items.items[7].reset();
 	firstToolbar.items.items[7].hide();
+	
+	firstToolbar.items.items[9].reset();
+	firstToolbar.items.items[9].hide();
 	values = '';
 	ids = '';
 	batchUpdateWindow.hide();
 };
+batchUpdateWindow.on('hide', afterClose, this);
+
+batchUpdateWindow = new Ext.Window({
+	title: 'Batch Update - available only in Pro version',
+	animEl: 'BU',
+	items: batchUpdatePanel,
+	layout: 'fit',
+	width: 810,
+	height: 300,
+	plain: true,
+	closeAction: 'hide',
+});
+batchUpdateWindow.on('hide', afterClose, this);
 
 var billingDetailsIframe = function(recordId){
 	var billingDetailsWindow = new Ext.Window({
@@ -1568,15 +1917,21 @@ var showCustomerDetails = function(record,rowIndex){
 	listeners: {
 		cellclick: function(editorGrid,rowIndex, columnIndex, e) {
 			try{
-				var record = editorGrid.getStore().getAt(rowIndex);
+				var record  = editorGrid.getStore().getAt(rowIndex);
 				cellClicked = true;
+				var editLinkColumnIndex       = productsColumnModel.findColumnIndex('edit_url');
+				var totalPurchasedColumnIndex = customersColumnModel.findColumnIndex('Total_Purchased');
+				var lastOrderColumnIndex      = customersColumnModel.findColumnIndex('Last_Order');
+				var nameLinkColumnIndex       = ordersColumnModel.findColumnIndex('name');
+				var orderDetailsColumnIndex   = ordersColumnModel.findColumnIndex('details');
+
 				if(SM.activeModule == 'Orders'){
-					if(columnIndex == 5){
+					if(columnIndex == orderDetailsColumnIndex){
 						billingDetailsIframe(record.id);
-					}else if(columnIndex == 3){
+					}else if(columnIndex == nameLinkColumnIndex){
 						checkModifiedAndshowDetails(record,rowIndex);
 					}
-				}else if(columnIndex == 10 && SM.activeModule == 'Products'){
+				}else if(columnIndex == editLinkColumnIndex && SM.activeModule == 'Products'){
 					var productsDetailsWindow = new Ext.Window({
 						title: 'Products Details',
 						width:500,
@@ -1589,17 +1944,44 @@ var showCustomerDetails = function(record,rowIndex){
 						html: '<iframe src='+ productsDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'
 					});
 					productsDetailsWindow.show();
-				}else if(SM.activeModule == 'Customers'){
+				}
+				else if(SM.activeModule == 'Customers'){
 					if(fileExists == 1){
-					if(columnIndex == 8){
-						checkModifiedAndshowDetails(record,rowIndex);
-					}else if(columnIndex == 9){
-						billingDetailsIframe(record.json.id);
-					}}
+						if(columnIndex == totalPurchasedColumnIndex){
+							checkModifiedAndshowDetails(record,rowIndex);
+						}else if(columnIndex == lastOrderColumnIndex){
+							billingDetailsIframe(record.json.id);
+						}
+					}
 				}
 			}catch(e) {
 				var err = e.toString();
 				Ext.notification.msg('Error', err);
+			}
+		},
+		cellmousedown : function(editorGrid,rowIndex, columnIndex, e) {
+			SM.activeRecord = editorGrid.getStore().getAt(rowIndex);
+			// Get field name for the column
+			SM.curDataIndex = editorGrid.getColumnModel().getDataIndex(columnIndex);
+			var curCountry;
+			
+			if(SM.activeModule == 'Customers'){
+				if(fileExists == 1){
+					var bill_country = SM.activeRecord.data['6B_Country'];
+					var curCountry;
+					    
+						if(SM.curDataIndex == '6B_Country' || SM.curDataIndex == '6B_Region') {
+							curCountry = bill_country;
+						}
+						reloadRegionCombo(curCountry);
+				}
+			}else if(SM.activeModule == 'Orders') {
+				var ship_country = SM.activeRecord.data['shippingcountry'];
+				
+				if(SM.curDataIndex == 'shippingcountry' || SM.curDataIndex == 'shippingregion') {
+					 curCountry = ship_country;
+				}
+				reloadRegionCombo(curCountry);
 			}
 		}
 	}
@@ -1608,13 +1990,13 @@ var showCustomerDetails = function(record,rowIndex){
 for(var i=2;i<=8;i++)
 editorGrid.getTopToolbar().get(i).hide();
 
-editorGrid.on('afteredit', afterEdit, this);
 function afterEdit(e) {
 	pagingToolbar.saveButton.enable();
 };
+editorGrid.on('afteredit', afterEdit, this);
 productsStore.load();
 	
-//for pro version check if the required file exists
+//For pro version check if the required file exists
 if(fileExists == 1){
 	batchUpdateWindow.title = 'Batch Update';
 	pagingToolbar.addProductButton.enable();
@@ -1632,4 +2014,9 @@ if(fileExists == 1){
 	for(var i=1; i<customersColumnCount; i++)
 	customersColumnModel.setEditable(i,false);
 }
+	}catch(e){
+		var err = e.toString();
+		Ext.notification.msg('Error', err);
+		return;
+	}
 });
