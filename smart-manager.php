@@ -86,11 +86,13 @@ if ( is_admin() ) {
 		?>
 		<div class="wrap">
 		<div id="icon-smart-manager" class="icon32"><br /></div>
+		
    		<h2><?php 
    		echo _e('Smart Manager');
    		echo ' ';
    		if (SMPRO == true) echo _e('Pro'); else echo _e('Lite');   		
-   		?><p class="wrap"><?php echo __('10x productivity gains with store administration. Quickly find and update products, orders and customers'); ?></p></h2>
+   		?>
+   		<p class="wrap"><span style="float: right"> <?php printf(__('<a href="%1s" target=_storeapps>Need Help?</a>'), "http://www.storeapps.org/support"); ?> </span><?php echo __('10x productivity gains with store administration. Quickly find and update products, orders and customers'); ?></p></h2>
 		</div>		
 		
 		<?php 

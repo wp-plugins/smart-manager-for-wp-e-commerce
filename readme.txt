@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce
 Requires at least: 2.0.2
 Tested up to: 3.1
-Stable tag: 0.7.2
+Stable tag: 0.7.3
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, orders and customers reliably using a fast and familiar interface.
@@ -15,6 +15,7 @@ Smart Manager is a unique, revolutionary tool that gives you the **power to effi
 and orders** using the popular WordPress e-Commerce plugin from GetShopped / Instinct.
 
 As a business owner, **your time is better spent on marketing and customer service** than on store administration. 
+Unfortunately store administration with WordPress e-Commerce can take significant time. Day after day.
 
 Smart Manager will **boost your productivity 10x** in managing products, customers and orders. You can browse, 
 search, and manage multiple products, customers or orders using a **familiar, single page, 
@@ -73,8 +74,23 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 
 3. In-page Order Details
 
+4. Column selection for display
 
 == Changelog ==
+
+= 0.7.3 =
+* Products Dashboard: added Description & Additional Description fields to the grid
+* Products Dashboard: added Flat rate shipping options - Local & International Shipping Fee, Height, Weight, Length and their Units
+* Products Dashboard: added Disregard Shipping field to the grid
+* Products Dashboard: added Local and International Shipping Fee in Batch Update
+* Products Dashbaord: can now search for all products with quantity limited by typing "-1" in search field
+* Shifted Shipping Details from Customer Dashboard to Orders Dashboard
+* NOTE: Most of these new fields are not visible in the grid by default. Click on downward arrow in a column heading -> Columns and then select columns you want to show.
+* Fixed a problem that did not show Order detail popup in some installations
+* Fixed an issue with moving around Edit column in the grid
+* Fixed issues with Country and State comboboxes in Customers and Orders dashboards
+* Added global error handler to show a description of JS errors if any - this will help debug blank page situations
+* Added "Need Help?" link
 
 = 0.7.2 =
 * Fixed a bug with customers batch update
