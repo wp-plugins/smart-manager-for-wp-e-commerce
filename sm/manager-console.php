@@ -236,10 +236,7 @@ foreach ((array)$categories as $category){
            	
            	if (count($ordersfield_names) >= 1){
            		
-           		$query  = "SELECT id,name\n"
-           					. "from wp_wpsc_checkout_forms\n"
-           					. "where id between 10 and 16 \n"
-           					. "and id != 14";
+           		$query  = "SELECT id,name from ".WPSC_TABLE_CHECKOUT_FORMS." where id between 10 and 16 and id != 14";
            		$res    = mysql_query($query);
 
            		$cnt = $ordersfield_names['totalCount'] + 1;
