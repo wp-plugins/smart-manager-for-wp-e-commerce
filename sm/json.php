@@ -30,7 +30,7 @@ $active_module = $_POST ['active_module'];
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	if ($active_module == 'Products') { // <-products
-		$select_query = "SELECT pl.id,
+	   $select_query = "SELECT pl.id,
 	   						   pl.name,
 	                           pl.description,
 	                           pl.additional_description,
@@ -63,7 +63,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
                      	    WHERE meta_key = 'sku' 
                      	    OR meta_key = 'dimensions'
                      	    GROUP BY product_id) pm
-                     	   ON ( pl.id = pm.product_id)";
+                     	    ON ( pl.id = pm.product_id)";
 		
 		$where = " WHERE pl.active = 1 ";
 		$group_by = " GROUP BY pl.id ";
@@ -111,19 +111,25 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		}
 		
 		$i = 0;
-		while ($i < $num_records ){
-			foreach ($records[$i] as $record_key => $record_value){
-				if ($record_key == 'sku_dimension')
-				$sku_dimension_arr = explode(',',$record_value);
-				$dimension_arr 				= unserialize($sku_dimension_arr[1]);
-				$records[$i]['sku']         = $sku_dimension_arr[0];
-				$records[$i]['height']      = $dimension_arr['height'];
-				$records[$i]['height_unit'] = $dimension_arr['height_unit'];
-				$records[$i]['width']       = $dimension_arr['width'];
-				$records[$i]['width_unit']  = $dimension_arr['width_unit'];
-				$records[$i]['length']      = $dimension_arr['length'];
-				$records[$i]['length_unit'] = $dimension_arr['length_unit'];
-				unset($records[$i]['sku_dimension']);
+		// compare $i against $num_rows and not against $num_records
+		// since $num_records gives the overall total count of the records in the database
+		// whereas $num_rows gives the total count of records from current query
+		while ($i < $num_rows ){
+			if (is_array($records[$i])){
+				foreach ($records[$i] as $record_key => $record_value){
+					if ($record_key == 'sku_dimension')
+					$sku_dimension_arr = explode(',',$record_value);
+
+					$dimension_arr 				= unserialize($sku_dimension_arr[1]);
+					$records[$i]['sku']         = $sku_dimension_arr[0];
+					$records[$i]['height']      = $dimension_arr['height'];
+					$records[$i]['height_unit'] = $dimension_arr['height_unit'];
+					$records[$i]['width']       = $dimension_arr['width'];
+					$records[$i]['width_unit']  = $dimension_arr['width_unit'];
+					$records[$i]['length']      = $dimension_arr['length'];
+					$records[$i]['length_unit'] = $dimension_arr['length_unit'];
+					unset($records[$i]['sku_dimension']);
+				}
 			}
 			$i++;
 		}

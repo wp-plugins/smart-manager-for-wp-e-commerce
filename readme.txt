@@ -39,7 +39,7 @@ Highlights:
 
 Customer Feedback:
 
-* Just bought this Genius Add-on…it’s going to save me hundreds of hours a year...
+* Just bought this Genius Add-on... it's going to save me hundreds of hours a year...
 * I find it extremely useful and very well done. 
 * Great looking plugin! :D I would recommend your plugin to my customers and readers.
 * I just took a look at Smart Manager and it looks way awesome!
@@ -87,6 +87,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 4. Column selection for display
 
 == Changelog ==
+
+= 0.7.4 =
+* Fixed: blank grid if you had more than 100 products
 
 = 0.7.3 =
 * Products Dashboard: added Description & Additional Description fields to the grid
@@ -167,6 +170,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
+
+= 0.7.4 =
+Fixed an issue that showed blank grid if you had more than 100 products.
 
 = 0.7.3 =
 Adds flat rate shipping management, and adds many minor enhancements.
