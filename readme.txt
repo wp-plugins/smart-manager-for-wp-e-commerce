@@ -39,7 +39,7 @@ Highlights:
 
 Customer Feedback:
 
-* Just bought this Genius Add-on... it's going to save me hundreds of hours a year...
+* Just bought this Genius Add-on... It's going to save me hundreds of hours a year...
 * I find it extremely useful and very well done. 
 * Great looking plugin! :D I would recommend your plugin to my customers and readers.
 * I just took a look at Smart Manager and it looks way awesome!
@@ -56,9 +56,9 @@ Thousands of customers are extremely happy with Smart Manager! Checkout our webs
 
 == Frequently Asked Questions ==
 
-= Does this work with WP e-Commerce 3.8 beta? =
+= Does this work with WP e-Commerce 3.8? =
 
-Not yet. But we will release an update quickly after 3.8 stable release is out.
+Yes. Smart Manager is compatible with both WP e-Commerce 3.7 and 3.8.
 
 = What do I get in this free version? =
 
@@ -87,6 +87,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 4. Column selection for display
 
 == Changelog ==
+
+= 0.8 =
+* NEW: WPeC 3.8 compatible release
 
 = 0.7.4 =
 * Fixed: blank grid if you had more than 100 products
@@ -170,6 +173,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
+
+= 0.8 =
+First WPeC 3.8 compatible release. We recommed trying this version on a test server before going live.
 
 = 0.7.4 =
 Fixed an issue that showed blank grid if you had more than 100 products.

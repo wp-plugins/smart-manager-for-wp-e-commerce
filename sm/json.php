@@ -1,6 +1,7 @@
 <?php
 include_once ('../../../../wp-load.php');
 include_once ('../../../../wp-includes/wp-db.php');
+include_once ( ABSPATH . WPINC . '/functions.php');
 
 $limit = 10;
 $del = 3;
@@ -35,22 +36,16 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	                           pl.description,
 	                           pl.additional_description,
 	                           pl.price,
-							if(pl.no_shipping = 1,'Yes','No') as disregard_shipping,
+							   pl.no_shipping as no_shipping,
 	                           pl.pnp,
 	                           pl.international_pnp,
 	                        if(pl.quantity_limited = 1,pl.quantity,-1 ) as quantity,
 	                           pl.weight as weight,
-	                        if(pl.publish = 1,'Published','Draft') as status,
+	                        if(pl.publish = 1,'publish','draft') as publish,
 	                           pl.price - pl.special_price as sale_price,
 	                           sku_dimension,
 	      	      			   GROUP_CONCAT(pc.name separator ', ') as category,
-	                           CASE  pl.weight_unit
-	                           WHEN 'pound' THEN 'Pounds'
-	                           WHEN 'ounce' THEN 'Ounces'
-	                           WHEN 'gram' THEN 'Grams'
-	                           WHEN 'kilogram' THEN 'Kilograms'
-	                           ELSE 'Pounds'
-	                           END as weight_unit";
+	                           pl.weight_unit as weight_unit";
 		
 		$from = " FROM ".WPSC_TABLE_PRODUCT_LIST." AS pl
             		       LEFT OUTER JOIN (".WPSC_TABLE_ITEM_CATEGORY_ASSOC." AS ic  
@@ -75,14 +70,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 										price LIKE '%$search_on%'  OR
                            	       	 quantity LIKE '%$search_on%'  OR
                               		   weight LIKE '%$search_on%'  OR
-                              			CASE  weight_unit
-                               			WHEN 'pound' THEN 'Pounds'
-		                                WHEN 'ounce' THEN 'Ounces'
-		                                WHEN 'gram' THEN 'Grams'
-		                                WHEN 'kilogram' THEN 'Kilograms'
-		                                ELSE 'Pounds'
-		                                END LIKE '%$search_on%'
-                               		OR if(pl.publish = 1,'Published','Draft') LIKE '%$search_on%'
+                               pl.weight_unit LIKE '%$search_on%'
+                               		OR if(pl.publish = 1,'publish','draft') LIKE '%$search_on%'
                                		OR if(pl.no_shipping = 1,'Yes','No') LIKE '%$search_on%'
                               	    OR pl.price - pl.special_price LIKE '%$search_on%'
                               	    OR concat(' ',pc.name) LIKE '% $search_on%'
@@ -93,7 +82,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
                               	    OR if(pl.quantity_limited = 1,pl.quantity,-1 ) LIKE '%$search_on%'                              	    
                               	    OR pl.additional_description LIKE '%$search_on%') ";
 		}
-//		pl.no_shipping
 		$recordcount_query = "SELECT COUNT( DISTINCT pl.id ) as count" . $from . "" . $where;
 		$query = $select_query . "" . $from . "" . $where . "" . $group_by . "" . $limit_query;
 		$result = mysql_query ( $query );
@@ -168,12 +156,7 @@ elseif ($active_module == 'Orders') {
 						  	                             " . WPSC_TABLE_PURCHASE_LOGS . ".date order_time,
 							   						     " . WPSC_TABLE_PURCHASE_LOGS . ".totalprice amount,
 							   							 " . WPSC_TABLE_PURCHASE_LOGS . ".track_id, 			                 
-													CASE " . WPSC_TABLE_PURCHASE_LOGS . ".processed 
-													WHEN 1 THEN 'Order Received'
-													WHEN 2 THEN 'Accepted Payment'
-													WHEN 3 THEN 'Job Dispatched'
-													ELSE 'Closed Order'
-													END order_status,
+														 " . WPSC_TABLE_PURCHASE_LOGS . ".processed order_status,
                             						sessionid,
                             " . WPSC_TABLE_PURCHASE_LOGS . ".notes
 						    FROM " . WPSC_TABLE_SUBMITED_FORM_DATA . ", 
@@ -285,8 +268,7 @@ elseif ($active_module == 'Orders') {
 			}			
 		}	
 	} else {
-		//BOF Customer's module
-
+		//Customer's module
 		//BOF getting the form data
 		$form_data_query = "SELECT id,name FROM " . WPSC_TABLE_CHECKOUT_FORMS . "
 							WHERE id BETWEEN 2 AND 8
@@ -294,7 +276,7 @@ elseif ($active_module == 'Orders') {
 		$form_data_result = mysql_query ( $form_data_query );
 		while ( $data = mysql_fetch_assoc ( $form_data_result ) )
 			 $form_data [] = $data ['id'] . "B_" . implode ( '_', explode ( ' ', $data ['name'] ) ) ;
-			// EOF
+		// EOF
 		
 
 		if (SMPRO == true) {
@@ -369,7 +351,7 @@ elseif ($active_module == 'Orders') {
 			foreach ( $records as &$record ) {
 				// change the orginal array
 				$record ['6B_Country'] = $record['country'];				
-				$record ['6B_Region'] = $record['region'];
+				$record ['6B_Region']  = $record['region'];
 				$record ['Last_Order'] = $record ['Last_Order_Date'] . ', ' . $record ['Last_Order_Amt'];
 				//create an extra array for email and merge it with the actual array because if we allow user to edit email addresses
 				//then we cannot fire a query using email in the where clause since in the backend we will get a modified email address.
@@ -460,22 +442,13 @@ function data_for_update_orders($_POST) {
 	    $id_uniquename[$data['unique_name']] = $data['id'];
 	    // region is not present in db
 	    $id_uniquename['shippingregion'] = 15;
-	//EOF
+	//EOF	
 	
-	$all_status_info = wpsc_the_purch_item_statuses ();
 	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
 	$_POST = array ();
-	
-	$status_count = 0;
-	while ( $status_count < count ( $all_status_info ) ) :
-		$status_id_pair [$all_status_info [$status_count]->id] = $all_status_info [$status_count]->name;
-		$status_count ++;
-	endwhile;
-	
 	$ordersCnt = 1;
+	
 	foreach ( $edited_object as $obj ) {
-		//setting the status id
-		$obj->order_status = array_search ( $obj->order_status, $status_id_pair );
 		$query = "UPDATE `" . WPSC_TABLE_PURCHASE_LOGS . "`
 				                    SET processed ='{$obj->order_status}',notes='{$obj->notes}',track_id ='{$obj->track_id}'
 				                    WHERE id='{$obj->id}'";

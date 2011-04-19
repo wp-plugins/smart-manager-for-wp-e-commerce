@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: 10x productivity gains with WP e-Commerce store administration. Quickly find and update products, orders and customers.
-Version: 0.7.4
+Version: 0.8
 Author: Store Apps
 Author URI: http://www.storeapps.org/about/
 Copyright (c) 2010, 2011 Store Apps All rights reserved.
@@ -103,11 +103,22 @@ if ( is_admin() ) {
 		<?php } ?>
 		
 		<?php
+		// checking the version for WPSC plugin
+		define ( 'IS_WPSC37', version_compare ( WPSC_VERSION, '3.8', '<' ) );
+		define ( 'IS_WPSC38', version_compare ( WPSC_VERSION, '3.8', '>=' ) );
+		
+		define ( 'ADMIN_URL', get_admin_url () ); //defining the admin url
+		define ( 'SM_PLUGIN_DIRNAME', plugins_url ( '', __FILE__ ) );
+		define ( 'IMG_URL', SM_PLUGIN_DIRNAME . '/images/' );
+		
+		$json_filename = (IS_WPSC37) ? 'json' : 'json_new';
+		define ( 'JSON_URL', SM_PLUGIN_DIRNAME . "/sm/$json_filename.php" );
+		
 		$error_message = '';
 		if(file_exists($wp_ecom_path.'wp-shopping-cart.php')) {
 			if ( is_plugin_active('wp-e-commerce/wp-shopping-cart.php' ) ) {
 				require_once( $wp_ecom_path .'wp-shopping-cart.php' );
-				if(WPSC_VERSION == '3.7') {
+				if(IS_WPSC37 || IS_WPSC38) {
 					if(file_exists($base_path.'manager-console.php')) {
 						include_once($base_path.'manager-console.php');
 						return;
