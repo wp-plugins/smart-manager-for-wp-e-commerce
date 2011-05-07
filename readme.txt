@@ -88,6 +88,12 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 
 == Changelog ==
 
+= 0.9 =
+* NEW: Auto upgrade feature for Pro version added
+* Fixed: products not loading in some cases
+* Optimizations for large number of products
+* Misc other fixes and optimizations
+
 = 0.8 =
 * NEW: WPeC 3.8 compatible release
 
@@ -173,6 +179,8 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
+= 0.9 =
+Optimization and compatibility release. Recommended upgrade.
 
 = 0.8 =
 First WPeC 3.8 compatible release. We recommed trying this version on a test server before going live.
