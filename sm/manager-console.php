@@ -51,22 +51,24 @@ foreach ( ( array ) $ordersfield_result as $ordersfield_name => $ordersfield_val
 }
 
 if (count ( $ordersfield_names ) >= 1) {	
-	if (IS_WPSC37){
-		$query = "SELECT id,name from " . WPSC_TABLE_CHECKOUT_FORMS . " where id between 10 and 16 and id != 14";
-	}elseif (IS_WPSC38){
-		$query = "SELECT id,name from " . WPSC_TABLE_CHECKOUT_FORMS . " where id between 11 and 17 ";
+	if (IS_WPSC38 ) {
+		$query = "SELECT id,name,unique_name
+		 		FROM " . WPSC_TABLE_CHECKOUT_FORMS . " 
+				WHERE unique_name IN ('shippingfirstname', 'shippinglastname', 'shippingaddress', 'shippingcity', 'shippingstate','shippingcountry', 'shippingpostcode')";
+	}elseif (IS_WPSC37){
+		$query = "SELECT id,name,unique_name
+		 		FROM " . WPSC_TABLE_CHECKOUT_FORMS . " 
+				WHERE unique_name IN ('shippingfirstname', 'shippinglastname', 'shippingaddress', 'shippingcity','shippingcountry', 'shippingpostcode')";
 	}
-	$res = mysql_query ( $query );
-	
+	$res = mysql_query ( $query );	
 	$cnt = count($ordersfield_names ['items']);
 	while ( $data = mysql_fetch_assoc ( $res ) ) {
 		$ordersfield_names ['items'] [$cnt] ['id']    = $cnt;
 		$ordersfield_names ['items'] [$cnt] ['name']  = "Shipping" . ' ' . $data ['name'];
 		$ordersfield_names ['items'] [$cnt] ['type']  = 'blob';
 		$ordersfield_names ['items'] [$cnt] ['value'] = 'value' . ',' . WPSC_TABLE_SUBMITED_FORM_DATA . ',' . $data ['id'];
-		$cnt ++;
-	}
-	$ordersfield_names ['totalCount'] = count($ordersfield_names ['items']);
+		$ordersfield_names ['totalCount'] = $cnt ++;
+	}	
 	$encodedOrdersFields = json_encode ( $ordersfield_names );
 }else
 	$encodedOrdersFields = 0;
@@ -100,20 +102,13 @@ if (count ( $ordersfield_names ) >= 1) {
 
 
 //getting customers fieldnames START
-if (IS_WPSC37){
-	$form_data_query = "SELECT id,name
-								  FROM " . WPSC_TABLE_CHECKOUT_FORMS . "
-								 WHERE id between 2 and 8
-								 OR    id = 17";
-}elseif (IS_WPSC38){
-	$form_data_query = "SELECT id,name
-								  FROM " . WPSC_TABLE_CHECKOUT_FORMS . "
-								 WHERE id between 2 and 9
-								 OR    id = 18";
-}
-
+$form_data_query  = "SELECT id,name,unique_name FROM " . WPSC_TABLE_CHECKOUT_FORMS . " WHERE unique_name in ('billingfirstname', 'billinglastname', 'billingaddress', 'billingcity', 'billingstate', 'billingcountry', 'billingpostcode', 'billingphone', 'billingemail')";
 $form_data_result = mysql_query ( $form_data_query );
 while ( $data = mysql_fetch_assoc ( $form_data_result ) ) {
+	if (IS_WPSC37 ) {
+		if ($data ['unique_name'] != 'billingstate')
+		$form_data [$data ['id']] = $data ['name'];
+	}elseif (IS_WPSC38)
 	$form_data [$data ['id']] = $data ['name'];
 }
 
@@ -121,7 +116,7 @@ $cnt = 0;
 foreach ( ( array ) $form_data as $form_data_key => $form_data_value ) {
 	$customerFields ['items'] [$cnt] ['id'] = $cnt;
 	
-	if ($form_data_value == 'Country') {
+	if ($form_data_value == 'Country' || strstr($form_data_value,'Country')) {
 		$customerFields ['items'] [$cnt] ['type'] = 'bigint';
 	} else {
 		$customerFields ['items'] [$cnt] ['type'] = 'blob';
@@ -131,7 +126,6 @@ foreach ( ( array ) $form_data as $form_data_key => $form_data_value ) {
 	$customerFields ['items'] [$cnt] ['value'] = 'value' . ', ' . WPSC_TABLE_SUBMITED_FORM_DATA . ', ' . $form_data_key;
 	$customerFields ['totalCount'] = $cnt ++;
 }
-
 if (count ( $customerFields ) >= 1)
 	$encodedCustomersFields = json_encode ( $customerFields );
 else
@@ -496,8 +490,9 @@ if (IS_WPSC37){
 	categories = ".$categories."; // creating categories
 	</script>";	
 
-	foreach($groups as $group_key=>$categories) {
-		echo "<script type='text/javascript'>
+	if (is_array($groups)){
+		foreach($groups as $group_key=>$categories) {
+			echo "<script type='text/javascript'>
 		var obj1 = new Object;
 		obj1.id         = cntProd+1;
 		obj1.name       =  '".$categories['name']."';
@@ -524,6 +519,7 @@ if (IS_WPSC37){
 		cntTotProd++;
 		cntProd++;
 		</script>";
+		}
 	}
 }
 ?>
