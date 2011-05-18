@@ -1,5 +1,5 @@
 === Smart Manager for WP e-Commerce ===
-Contributors: niravmehta, rohan@storeapps
+Contributors: niravmehta, rohan@storeapps, angelin.nadar
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
