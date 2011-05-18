@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.1
-Stable tag: 0.9
+Stable tag: 1.0
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, orders and customers reliably using a fast and familiar interface.
@@ -87,6 +87,10 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 4. Column selection for display
 
 == Changelog ==
+
+= 1.0 =
+* NEW: Batch Update for Categories in Products now available for WPeC 3.8 also
+* Fixed: Problem with loading Products
 
 = 0.9 =
 * NEW: Auto upgrade feature for Pro version added
