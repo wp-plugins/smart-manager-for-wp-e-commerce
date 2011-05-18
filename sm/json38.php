@@ -6,7 +6,6 @@ include_once (ABSPATH . WPINC . '/functions.php');
 // for delete logs.
 require_once ('../../' . WPSC_FOLDER . '/wpsc-includes/purchaselogs.class.php');
 
-$limit = 10;
 $del   = 3;
 $result = array ();
 $encoded = array ();
@@ -43,48 +42,52 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			       GROUP_CONCAT( wt.name ) AS category";
 		
 		$from = "FROM ( select p.`id`,
-			       post_title,
-			       post_content,
-			       post_excerpt,
-			       post_status
-					FROM {$wpdb->prefix}posts p 
-					WHERE post_status IN ('publish', 'draft')
-					AND post_type    = 'wpsc-product'
-					ORDER BY p.id desc  
-					LIMIT 0,100) AS products
+				       post_title,
+				       post_content,
+				       post_excerpt,
+				       post_status
+						FROM {$wpdb->prefix}posts p 
+						WHERE post_status IN ('publish', 'draft')
+						AND post_type    = 'wpsc-product'
+						ORDER BY p.id desc  
+						LIMIT $offset,$limit) AS products
 					
-					LEFT JOIN
-					(SELECT pm.post_id,
-					GROUP_CONCAT(meta_key order by meta_id) as prod_meta_key,
-					cast(GROUP_CONCAT(meta_value order by meta_id) as char(4000)) as prod_meta_value
-					FROM `{$wpdb->prefix}postmeta` pm
-					WHERE meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock', '_wpsc_product_metadata')
-					GROUP BY post_id) as products_meta 
-					ON products_meta.post_id = products.id 
-					left join {$wpdb->prefix}term_relationships wtr on (products.id = wtr.object_id)	
-			        left join {$wpdb->prefix}term_taxonomy wtt on (wtr.term_taxonomy_id = wtt.term_taxonomy_id)
-			        left join {$wpdb->prefix}terms wt on(wtt.term_id = wt.term_id)";
+						LEFT JOIN
+						(SELECT pm.post_id,
+						GROUP_CONCAT(meta_key order by meta_id SEPARATOR '#') as prod_meta_key,
+						cast(GROUP_CONCAT(meta_value order by meta_id SEPARATOR '#') as char(4000)) as prod_meta_value
+						FROM `{$wpdb->prefix}postmeta` pm
+						WHERE meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock', '_wpsc_product_metadata')
+						GROUP BY post_id) as products_meta 
+						ON products_meta.post_id = products.id 
+						left join {$wpdb->prefix}term_relationships as wtr on (products.id = wtr.object_id)	
+				        left join {$wpdb->prefix}term_taxonomy as wtt on (wtr.term_taxonomy_id = wtt.term_taxonomy_id)
+				        left join {$wpdb->prefix}terms as wt on(wtt.term_id = wt.term_id)";
 		
 		$order_by = " ORDER BY products.id desc ";
 		$group_by = "GROUP BY products.id";
 		
-		$limit_query = " LIMIT " . $offset . "," . $limit . "";
-		
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 			$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
-			$where .= " AND ( concat(' ',post_title) LIKE '% $search_on%'
+			$where = "where concat(' ',post_title) LIKE '% $search_on%'
                             OR post_content LIKE '%$search_on%'
                             OR post_excerpt LIKE '%$search_on%'
                             OR if(post_status = 'publish','Published','Draft') LIKE '%$search_on%'
                             OR prod_meta_value LIKE '%$search_on%'
-                            )";
+                            OR wt.name LIKE '%$search_on%'
+                            ";
 		}
 		
-		$query    = "$select $from $where $group_by $order_by $limit_query";
+		$query    = "$select $from $where $group_by $order_by";
 		$records  = $wpdb->get_results ( $query );
 		$num_rows = $wpdb->num_rows;
 		
-		$recordcount_query = "SELECT COUNT( DISTINCT `products_meta`.`post_id` ) as count $from  $where ";
+		$recordcount_query = "SELECT count(id) as count
+							  FROM {$wpdb->prefix}posts p 
+							  WHERE post_status IN ('publish', 'draft')
+							  AND post_type    = 'wpsc-product'
+		                      ";
+		$recordcount_query .= $where;
 		$recordcount_result = $wpdb->get_results ( $recordcount_query, 'ARRAY_A' );		
 		$num_records = $recordcount_result[0]['count'];
 		
@@ -94,8 +97,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			$encoded ['msg'] = 'No Records Found';
 		} else {
 			foreach ( $records as &$record ) {
-				$prod_meta_values = explode ( ',', $record->prod_meta_value );
-				$prod_meta_key = explode ( ',', $record->prod_meta_key );
+				$prod_meta_values = explode ( '#', $record->prod_meta_value );
+				$prod_meta_key = explode ( '#', $record->prod_meta_key );
+			
 				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );
 				
 				foreach ( $prod_meta_key_values as $key => $value ) {
@@ -170,7 +174,7 @@ elseif ($active_module == 'Orders') {
 						       
 						       LEFT JOIN 
 						       (SELECT CONCAT(CAST(sum(quantity) AS CHAR) , ' items') details,
-						       	GROUP_CONCAT(name) products_name,
+						       	GROUP_CONCAT(name SEPARATOR '#') products_name,
 						    	purchaseid
 						    	FROM ".WPSC_TABLE_CART_CONTENTS."
 						    	GROUP BY " . WPSC_TABLE_CART_CONTENTS.".purchaseid) as quantity_details
