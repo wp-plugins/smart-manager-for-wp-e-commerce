@@ -308,7 +308,7 @@ if (IS_WPSC37) {
           		cg.id     = pc.group_id ";
 
 } else { // is_wpc38
-	$query = "SELECT {$wpdb->prefix}terms.term_id as category_id,
+	$query = "SELECT {$wpdb->prefix}term_taxonomy.term_taxonomy_id as category_id,
 		          {$wpdb->prefix}terms.name as category_name,
 		          {$wpdb->prefix}term_taxonomy.parent as group_id,
 		          IFNULL(parent_terms.name,'Categories') as group_name

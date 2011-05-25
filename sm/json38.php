@@ -41,6 +41,36 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			       prod_meta_value,
 			       GROUP_CONCAT( wt.name ) AS category";
 		
+		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
+			$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
+			
+			$sub_query  = "AND p.id in (
+						   select {$wpdb->prefix}posts.id
+			               FROM {$wpdb->prefix}posts
+						   WHERE post_status IN ('publish', 'draft')
+						   AND post_type    = 'wpsc-product'
+						   AND (concat(' ',post_title) LIKE '% $search_on%'
+			               OR post_content LIKE '%$search_on%'
+			               OR post_excerpt LIKE '%$search_on%'
+			               OR if(post_status = 'publish','Published','Draft') LIKE '%$search_on%')
+						
+			               UNION 
+			
+			    		   SELECT pm.post_id
+				     	   FROM `{$wpdb->prefix}postmeta` pm
+						   WHERE meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock', '_wpsc_product_metadata')
+						   AND meta_value LIKE '%$search_on%'
+						
+						   UNION
+		                   
+						   SELECT wtr.object_id
+						   FROM {$wpdb->prefix}term_relationships AS wtr	
+				           LEFT JOIN {$wpdb->prefix}term_taxonomy AS wtt ON (wtr.term_taxonomy_id = wtt.term_taxonomy_id and taxonomy = 'wpsc_product_category')
+				           LEFT JOIN {$wpdb->prefix}terms AS wt ON (wtt.term_id = wt.term_id)
+				           WHERE wt.name LIKE '%$search_on%'
+				           )";
+		}
+		
 		$from = "FROM ( select p.`id`,
 				       post_title,
 				       post_content,
@@ -49,6 +79,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 						FROM {$wpdb->prefix}posts p 
 						WHERE post_status IN ('publish', 'draft')
 						AND post_type    = 'wpsc-product'
+						".$sub_query."
 						ORDER BY p.id desc  
 						LIMIT $offset,$limit) AS products
 					
@@ -58,27 +89,16 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 						cast(GROUP_CONCAT(meta_value order by meta_id SEPARATOR '#') as char(4000)) as prod_meta_value
 						FROM `{$wpdb->prefix}postmeta` pm
 						WHERE meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock', '_wpsc_product_metadata')
-						GROUP BY post_id) as products_meta 
-						ON products_meta.post_id = products.id 
-						left join {$wpdb->prefix}term_relationships as wtr on (products.id = wtr.object_id)	
-				        left join {$wpdb->prefix}term_taxonomy as wtt on (wtr.term_taxonomy_id = wtt.term_taxonomy_id)
-				        left join {$wpdb->prefix}terms as wt on(wtt.term_id = wt.term_id)";
+						GROUP BY post_id ) as products_meta ON products_meta.post_id = products.id 
+						 
+						LEFT JOIN {$wpdb->prefix}term_relationships AS wtr ON (products.id = wtr.object_id)	
+				        LEFT JOIN {$wpdb->prefix}term_taxonomy AS wtt ON (wtr.term_taxonomy_id = wtt.term_taxonomy_id and taxonomy = 'wpsc_product_category')
+				        LEFT JOIN {$wpdb->prefix}terms AS wt ON (wtt.term_id = wt.term_id)";
 		
 		$order_by = " ORDER BY products.id desc ";
 		$group_by = "GROUP BY products.id";
 		
-		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
-			$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
-			$where = "where concat(' ',post_title) LIKE '% $search_on%'
-                            OR post_content LIKE '%$search_on%'
-                            OR post_excerpt LIKE '%$search_on%'
-                            OR if(post_status = 'publish','Published','Draft') LIKE '%$search_on%'
-                            OR prod_meta_value LIKE '%$search_on%'
-                            OR wt.name LIKE '%$search_on%'
-                            ";
-		}
-		
-		$query    = "$select $from $where $group_by $order_by";
+		$query    = "$select $from $group_by $order_by";
 		$records  = $wpdb->get_results ( $query );
 		$num_rows = $wpdb->num_rows;
 		
@@ -86,6 +106,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 							  FROM {$wpdb->prefix}posts p 
 							  WHERE post_status IN ('publish', 'draft')
 							  AND post_type    = 'wpsc-product'
+							  $sub_query
 		                      ";
 		$recordcount_query .= $where;
 		$recordcount_result = $wpdb->get_results ( $recordcount_query, 'ARRAY_A' );		
