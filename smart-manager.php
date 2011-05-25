@@ -3,13 +3,14 @@
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce store administration. Quickly find and update products, orders and customers.
-Version: 1.0
+Version: 1.1
 Author: Store Apps
 Author URI: http://www.storeapps.org/about/
 Copyright (c) 2010, 2011 Store Apps All rights reserved.
 */
 
 //Hooks
+
 register_activation_hook ( __FILE__, 'sm_activate' );
 register_deactivation_hook ( __FILE__, 'sm_deactivate' );
 

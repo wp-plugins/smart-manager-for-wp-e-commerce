@@ -520,7 +520,6 @@ Ext.onReady(function () {
 		textfield.show();
 	};	
 //END: Products.
-
 	var pagingToolbar = new Ext.PagingToolbar({
 		items: ['->', '-',
 		{
@@ -655,19 +654,16 @@ Ext.onReady(function () {
 						}try {							
 							var afterDeletePageCount = lastPageTotalRecords - delcnt;
 
-							//if all the records on the first page are deleted & 
-							//there are no more records to populate in the grid.
+							//if all the records on the first page are deleted & there are no more records to populate in the grid.
 							if (currentPage == 1 && afterDeletePageCount == 0 && totalPages == 1){							
 									myJsonObj.items = '';
 									store.loadData(myJsonObj);									
-							}
+							}else if (currentPage == lastPage && afterDeletePageCount == 0) { //if all the records on the last page are deleted
+								pagingToolbar.movePrevious();
+						    }else {
+						    	pagingToolbar.doRefresh();
+						    }
 							
-							//if all the records on the last page are deleted
-							else if (currentPage == lastPage && afterDeletePageCount == 0)
-							pagingToolbar.movePrevious();
-							
-							else
-							pagingToolbar.doRefresh();							
 							Ext.notification.msg('Success', myJsonObj.msg);							
 						} catch (e) {
 							var err = e.toString();
@@ -701,7 +697,7 @@ Ext.onReady(function () {
 			icon: Ext.MessageBox.QUESTION
 		})
 	};
-	
+
 	var showSelectedModule = function(clickedActiveModule){
 		if(clickedActiveModule == 'Customers'){
 			SM.activeModule = 'Customers';
@@ -768,7 +764,7 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 					if (btn == 'yes')
 					saveRecords(store,pagingToolbar,jsonURL,mySelectionModel);
 					showSelectedModule(clickedActiveModule);
-				}
+				};
 				Ext.Msg.show({
 					title: 'Confirm Save',
 					msg: 'Do you want to save the modified records?',
@@ -778,12 +774,13 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 					animEl: 'del',
 					closable: false,
 					icon: Ext.MessageBox.QUESTION
-				})
+				});
 			}
 		}
 	}
 });
 	
+
 //START: Customers
 	countriesStore = new Ext.data.Store({
 		reader: new Ext.data.JsonReader({
@@ -975,8 +972,9 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			}),
 			width: 180		
 		}],
-		defaultSortable: true,
+		defaultSortable: true
 	});
+	
 	var customersColumnCount = customersColumnModel.getColumnCount();
 	for(var i=11;i<customersColumnCount;i++)
 	
@@ -991,8 +989,7 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 	}
 	
 	// Data reader class to create an Array of Records objects from a JSON packet.
-	var customersJsonReader = new Ext.data.JsonReader
-	({
+	var customersJsonReader = new Ext.data.JsonReader ({
 		totalProperty: 'totalCount',
 		root: 'items',
 		fields:
@@ -1105,7 +1102,7 @@ if(isWPSC38 == '1'){
 					['accepted_payment', 'Accepted Payment', 3],
 					['job_dispatched',   'Job Dispatched',   4],
 					['closed_order',     'Closed Order',     5],
-					['declined_payment', 'Payment Declined', 6],
+					['declined_payment', 'Payment Declined', 6]
 			]
 		}),
 		valueField: 'value',
@@ -1124,14 +1121,13 @@ if(isWPSC38 == '1'){
 					['Order Received',   1],
 					['Accepted Payment', 2],
 					['Job Dispatched',   3],
-					['Closed Order',     4],
+					['Closed Order',     4]
 				 ]
 		}),
 		valueField: 'value',
 		displayField: 'label'
 	});
 }
-
 	var ordersColumnModel = new Ext.grid.ColumnModel({	
 		columns:[mySelectionModel, //checkbox for
 		{
@@ -1324,8 +1320,9 @@ if(isWPSC38 == '1'){
 			if(ordersFields != 0) {				
 				productFieldStore.loadData(ordersFields); //@todo: use a common name fieldStore and load respective fields in it.			
 			}
-			else
-			Ext.notification.msg('Sorry!', 'No records found');
+			else{
+				Ext.notification.msg('Sorry!', 'No records found');
+				}
 
 			for(var i=13;i<=21;i++)
 			pagingToolbar.get(i).show();
@@ -1352,7 +1349,7 @@ if(isWPSC38 == '1'){
 	};
 //END: Orders.
 
-//START: Component
+	 //START: Component
  SM.searchTextField = new Ext.form.TextField({
 	id: 'tf',
 	width: 400,
@@ -1420,7 +1417,8 @@ var searchLogic = function () {
 		break;
 		default :
 		customersStore.setBaseParam('searchText',SM.searchTextField.getValue());
-	}//END setting the params to store if search fields are with values (refresh event)
+	};
+	//END setting the params to store if search fields are with values (refresh event)
 
 	var o = {
 		url: jsonURL,
@@ -1456,7 +1454,7 @@ var searchLogic = function () {
 			viewCols: Ext.encode(productsViewCols)
 		}
 	};
-	Ext.Ajax.request(o)
+	Ext.Ajax.request(o);
 };
 //END: Functions.
 	
@@ -1511,7 +1509,6 @@ weightUnitStore.loadData(weightUnits);
 
 var mask = new Ext.LoadMask(Ext.getBody(), {
 	msg: "Please wait..."
-	//		msg: "Loading..."
 });
 
 //batch update window
@@ -1752,7 +1749,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				emptyText: 'Enter the value...',
 				cls: 'searchPanel',
 				hidden: false,
-				selectOnFocus: true,
+				selectOnFocus: true
 			}, '',
 			{
 				xtype: 'combo',
@@ -1895,7 +1892,7 @@ var batchUpdatePanel = new Ext.Panel({
 				store = productsStore;
 				cm = productsColumnModel;
 			}
-			batchUpdateRecords(batchUpdatePanel,toolbarCount,cnt_array,store,jsonURL,batchUpdateWindow)
+			batchUpdateRecords(batchUpdatePanel,toolbarCount,cnt_array,store,jsonURL,batchUpdateWindow);
 		}}
 	}]
 });
@@ -1910,7 +1907,7 @@ batchUpdateWindow = new Ext.Window({
 	width: 810,
 	height: 300,
 	plain: true,
-	closeAction: 'hide',
+	closeAction: 'hide'
 });
 
 function afterClose(e) {
@@ -1946,7 +1943,7 @@ batchUpdateWindow = new Ext.Window({
 	width: 810,
 	height: 300,
 	plain: true,
-	closeAction: 'hide',
+	closeAction: 'hide'
 });
 batchUpdateWindow.on('hide', afterClose, this);
 
@@ -1991,7 +1988,7 @@ var checkModifiedAndshowDetails = function(record,rowIndex){
 				showOrderDetails(record,rowIndex);
 			else if(SM.activeModule == 'Orders')
 				showCustomerDetails(record,rowIndex);
-		}
+		};
 		Ext.Msg.show({
 			title: 'Confirm Save',
 			msg: 'Do you want to save the modified records?',
@@ -2001,7 +1998,7 @@ var checkModifiedAndshowDetails = function(record,rowIndex){
 			animEl: 'del',
 			closable: false,
 			icon: Ext.MessageBox.QUESTION
-		})
+		});
 	}
 };
 
@@ -2015,7 +2012,7 @@ var showCustomerDetails = function(record,rowIndex){
 	clearTimeout(SM.colModelTimeoutId);
 	SM.colModelTimeoutId = showCustomersView.defer(100,this,[emailId]);
 	SM.searchTextField.setValue(emailId);
-}
+};
 
 
 	// Grid panel for the records to display
