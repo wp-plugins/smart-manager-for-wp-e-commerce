@@ -3,7 +3,7 @@ Contributors: niravmehta, rohan@storeapps, angelin.nadar
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
-Tested up to: 3.1
+Tested up to: 3.1.2
 Stable tag: 1.1
 
 10x productivity gains with WP e-Commerce store administration. 
