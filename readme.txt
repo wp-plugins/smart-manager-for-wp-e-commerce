@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.1
-Stable tag: 1.0
+Stable tag: 1.1
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, orders and customers reliably using a fast and familiar interface.
@@ -28,6 +28,8 @@ You will discover a new way of store administration with this add-on.
 It frees you up from mundane housekeeping tasks. So you can spend that time on anything that makes you more 
 money. Use that time to leverage social media for higher sales, or develop deeper customer relationships. 
 Use that time to develop a new product, or simply present it to your family.
+
+Smart Manager works with both WP e-Commerce 3.7 and 3.8.
 
 Highlights:
 
@@ -87,6 +89,11 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 4. Column selection for display
 
 == Changelog ==
+
+= 1.1 =
+* Fixed: An issue with Category batch update
+* Fixed: Search was not working correctly with more than 100 products
+* Fixed: Compatibility issue with Internet Explorer
 
 = 1.0 =
 * NEW: Batch Update for Categories in Products now available for WPeC 3.8 also
@@ -183,6 +190,12 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
+= 1.1 = 
+Fixes bugs and IE compatibility issues. Recommended upgrade.
+
+= 1.0 =
+Batch update for product categories added. Milestone release 1.0!
+
 = 0.9 =
 Optimization and compatibility release. Recommended upgrade.
 
