@@ -25,7 +25,7 @@ if (file_exists ( '../pro/sm37.php' )) {
 if (SMPRO == true)
 	include_once ('../pro/sm37.php');
 	
-// getting the active module
+// getting the active module in the grid
 $active_module = $_POST ['active_module'];
 
 // Searching a product in the grid
@@ -138,9 +138,10 @@ elseif ($active_module == 'Orders') {
 			while ($data = mysql_fetch_assoc($result))
 				$countries[$data['isocode']] = $data['country'];
 		}
-					
-		$select_query = "SELECT id,date,order_details,shipping_ids,shipping_unique_names,amount,track_id,order_status,details,notes";
 		
+	$select_query = "SELECT id,date,order_details,shipping_ids,shipping_unique_names,amount,track_id,order_status,details,notes";
+		
+	// added one more condition of active = 1 to where clause and replaced OR with AND for getting the submitted form id and added billing first name & last name in IN clause also added a for loop to create an array of key value
 		$from = " FROM (SELECT GROUP_CONCAT( " . WPSC_TABLE_SUBMITED_FORM_DATA . ".value 
 							   ORDER BY " . WPSC_TABLE_SUBMITED_FORM_DATA . ".`form_id` 
 							   SEPARATOR '#' ) AS order_details, 
@@ -165,18 +166,36 @@ elseif ($active_module == 'Orders') {
 						    	 
 							WHERE " . WPSC_TABLE_SUBMITED_FORM_DATA . ".log_id = " . WPSC_TABLE_PURCHASE_LOGS . ".id
 							 AND form_id = " . WPSC_TABLE_CHECKOUT_FORMS . ".id
-							 AND  " . WPSC_TABLE_SUBMITED_FORM_DATA . ".form_id IN ( 2, 3, 8,9,10,11,12,13,15,16) 
+							 AND " . WPSC_TABLE_CHECKOUT_FORMS . ".active = 1 
+							 AND  " . WPSC_TABLE_SUBMITED_FORM_DATA . ".form_id IN 
+							 
+							 (							 
+							 SELECT distinct id from " . WPSC_TABLE_CHECKOUT_FORMS . " WHERE unique_name
+									IN (
+										'billingfirstname',
+										'billinglastname',
+										'shippingfirstname',
+										'shippinglastname',										
+										'shippingaddress',
+										'shippingcity',
+										'shippingstate',
+										'shippingcountry',
+										'shippingpostcode',
+										'billingemail',										
+										'shippingphone'
+									  )
+							 	)
 							 
 							GROUP BY " . WPSC_TABLE_SUBMITED_FORM_DATA . ".log_id
 							ORDER BY form_id DESC) as purchlog_info 
 							
-							INNER JOIN (SELECT CONCAT(CAST(sum(quantity) AS CHAR) , ' items') details,
+							LEFT JOIN (SELECT CONCAT(CAST(sum(quantity) AS CHAR) , ' items') details,
 							GROUP_CONCAT(name) product_name,purchaseid
 							
 							FROM " . WPSC_TABLE_CART_CONTENTS . "
 							GROUP BY " . WPSC_TABLE_CART_CONTENTS . ".purchaseid) as quantity_details 
 							ON (purchlog_info.id = quantity_details.purchaseid)
-							INNER JOIN
+							LEFT JOIN
 							(SELECT  log_id,form_id,country,".WPSC_TABLE_REGION_TAX.".name as region
 											FROM
 											(SELECT log_id,form_id,country,CAST(CAST(SUBSTRING_INDEX(value,'\"',-2) AS signed)AS char) AS region_id
@@ -246,12 +265,17 @@ elseif ($active_module == 'Orders') {
 						$shipping_ids = explode ( '#', $data ['shipping_ids'] );
 						$shipping_unique_names = explode ( '#', $data ['shipping_unique_names'] );
 						
-						$name_emailid [0] = "<font class=blue> $order_details[0]</font>";
-						$name_emailid [1] = "<font class=blue> $order_details[1]</font>";
-						$name_emailid [2] = "($order_details[2])";
+						for($i = 0; $i < count ( $order_details ); $i ++) {
+							$records [$count] [$shipping_unique_names [$i]] = $order_details [$i];
+						}
+						
+						$name_emailid [0] = "<font class=blue>". $records [$count]['billingfirstname']."</font>";
+						$name_emailid [1] = "<font class=blue>". $records [$count]['billinglastname']."</font>";
+						$name_emailid [2] = "(".$records [$count]['billingemail'].")"; 
 						$records [$count] ['name'] = implode ( ' ', $name_emailid ); //in front end,splitting is done with this space.
+						
 						//@todo confirm do u req formid in dataindex
-						for($i = 3; $i < count ( $order_details ); $i ++) {
+						for($i = 0; $i < count ( $order_details ); $i ++) {
 							// creating key by concat(id,unique name)
 							if($shipping_unique_names [$i] == 'shippingcountry') {
 								$order_details [$i]         = unserialize($order_details [$i]);
@@ -266,25 +290,39 @@ elseif ($active_module == 'Orders') {
 				}
 				$count ++;
 			}			
-		}	
+		}
 	} else {
-		//Customer's module
-		if (SMPRO == true) {
-			$customers_query = customers_query ( $_POST ['searchText'] );
+		//Customer's module start
+		
+		$query 	  = "SELECT " . WPSC_TABLE_SUBMITED_FORM_DATA . ".id from " . WPSC_TABLE_SUBMITED_FORM_DATA . "
+				  	 where form_id in (SELECT id FROM ". WPSC_TABLE_CHECKOUT_FORMS ." 
+				  	 where `unique_name`in ('billingcountry', 'billingstate'))
+				  	 LIMIT " . $offset . "," . $limit . "";
+		
+		$result   = mysql_query ( $query );
+		$num_rows = mysql_num_rows ( $result );		
+		
+		if ($num_rows){
+			$region_exists  = true;
+			$country_region = ', country, region';
 		} else {
-			$customers_query = "SELECT log_id AS id,user_details,Last_Order_Date,Total_Purchased,Last_Order_Amt,country,region
+			$region_exists = false;
+			$country_region = ' ';
+		}
+		
+		if (SMPRO == true) {
+			$customers_query = customers_query ( $_POST ['searchText'], $region_exists, $country_region);
+		} else {
+				$customers_query = "SELECT log_id AS id,user_details,unique_names $country_region
                             FROM   (SELECT ord_emailid.log_id,
-                                   user_details,
-                                   DATE_FORMAT(FROM_UNIXTIME(date), '%b %e %Y') AS Last_Order_Date,
-                                   SUM( totalprice ) Total_Purchased,
-                                   totalprice AS Last_Order_Amt,country,region
+                                   user_details,unique_names $country_region
                                    FROM    (SELECT log_id, value email
                                            FROM " . WPSC_TABLE_SUBMITED_FORM_DATA . " wwsfd1
                                            WHERE form_id =( SELECT id
 															  FROM ". WPSC_TABLE_CHECKOUT_FORMS ."
 											WHERE unique_name =  'billingemail')) AS ord_emailid
 											
-                                            INNER JOIN
+                                     LEFT JOIN
 									( SELECT log_id, 
 									GROUP_CONCAT( wwsfd2.value ORDER BY form_id SEPARATOR  '#' ) user_details, 
 									GROUP_CONCAT( wwcf.unique_name ORDER BY wwcf.id SEPARATOR  '#' ) unique_names					
@@ -304,35 +342,34 @@ elseif ($active_module == 'Orders') {
 										'billingphone'
 									) 
 									GROUP BY log_id
-									) AS ord_all_user_details ON ( ord_emailid.log_id = ord_all_user_details.log_id ) 
-                                                                                      INNER JOIN
-                                           (SELECT id, date, totalprice
-                                           FROM " . WPSC_TABLE_PURCHASE_LOGS . " wwpl
-                                           ORDER BY date DESC
-                                           ) AS purchlog_info
-                                           ON ( purchlog_info.id = ord_emailid.log_id )
-                                                                                      INNER JOIN
-                                           (SELECT  log_id,form_id,country," . WPSC_TABLE_REGION_TAX . ".name as region
-                                           FROM
-                                           (SELECT log_id,form_id,country,CAST(CAST(SUBSTRING_INDEX(value,'\"',-2) AS signed)AS char) AS region_id
-                                           FROM " . WPSC_TABLE_SUBMITED_FORM_DATA . "," . WPSC_TABLE_CURRENCY_LIST . " wwcl WHERE form_id = 6
-                                           AND RIGHT(SUBSTRING_INDEX(value,'\"',2),2) = isocode
-                                           ) AS country_info
-                                           LEFT OUTER JOIN " . WPSC_TABLE_REGION_TAX . " ON (country_info.region_id = " . WPSC_TABLE_REGION_TAX . ".id)) AS user_country_regions
-                                           ON ( ord_emailid.log_id = user_country_regions.log_id)
-                                           GROUP BY email ) AS customers_info \n";
-			
+									) AS ord_all_user_details ON ( ord_emailid.log_id = ord_all_user_details.log_id )";                                           
+
+			if ($region_exists == true){
+		     $customers_query .=   "LEFT JOIN
+		                            (SELECT  log_id,form_id,country," . WPSC_TABLE_REGION_TAX . ".name as region
+		                            FROM
+		                            (SELECT log_id,form_id,country,CAST(CAST(SUBSTRING_INDEX(value,'\"',-2) AS signed)AS char) AS region_id
+		                            FROM " . WPSC_TABLE_SUBMITED_FORM_DATA . " LEFT JOIN " . WPSC_TABLE_CURRENCY_LIST . " wwcl 
+		                            ON (RIGHT(SUBSTRING_INDEX(value,'\"',2),2) = isocode) WHERE form_id = (SELECT id from ". WPSC_TABLE_CHECKOUT_FORMS ." WHERE unique_name = 'billingcountry')
+		                            ) AS country_info
+		                            LEFT OUTER JOIN " . WPSC_TABLE_REGION_TAX . " ON (country_info.region_id = " . WPSC_TABLE_REGION_TAX . ".id)) AS user_country_regions
+		                            ON ( ord_emailid.log_id = user_country_regions.log_id)";
+			}
+
+			$customers_query .=   "GROUP BY email ) AS customers_info \n";
+
 			if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 				$search_text = mysql_real_escape_string ( $_POST ['searchText'] );
 				$customers_query .= "WHERE user_details LIKE '%$search_text%'
 	    					         OR country   LIKE '$search_text%'
 	    					         OR region   LIKE '$search_text%'";
 			}
-		}
+		}	
+		
 		$limit_query = " LIMIT " . $offset . "," . $limit . "";
-		$query = $customers_query . "" . $limit_query;
-		$result = mysql_query ( $query );
-		$num_rows = mysql_num_rows ( $result );
+		$query 	     = $customers_query . "" . $limit_query;
+		$result 	 = mysql_query ( $query );
+		$num_rows 	 = mysql_num_rows ( $result );
 		
 		//To get Total count
 		$customers_count_query = $customers_query;
@@ -354,13 +391,8 @@ elseif ($active_module == 'Orders') {
 			}			
 			
 			//getting records
-			foreach ( $records as &$record ) {				
+			foreach ( $records as &$record ) {
 				$record ['Last_Order'] = $record ['Last_Order_Date'] . ', ' . $record ['Last_Order_Amt'];
-				
-//				$country_state_code  = unserialize($record ['billingcountry']);				
-//				$record ['billingcountry'] = $country_state_code[0];
-//				$record ['billingstate']   = $country_state_code[1];
-				
 				$record ['billingcountry'] = $record['country'];
 				$record ['billingstate']   = $record['region'];
 				
@@ -376,11 +408,12 @@ elseif ($active_module == 'Orders') {
 				
 				if (SMPRO == false) {
 					$record ['Total_Purchased'] = 'Pro only';
-					$record ['Last_Order'] = 'Pro only';
+					$record ['Last_Order'] 	 	= 'Pro only';
 				}
 			}
 		}
 	}
+	
 	$encoded ['items'] = $records;
 	$encoded ['totalCount'] = $num_records;
 	echo json_encode ( $encoded );
