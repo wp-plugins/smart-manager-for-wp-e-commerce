@@ -3,7 +3,7 @@ Contributors: niravmehta, rohan@storeapps, angelin.nadar
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
-Tested up to: 3.1.2
+Tested up to: 3.1
 Stable tag: 1.1
 
 10x productivity gains with WP e-Commerce store administration. 
@@ -89,6 +89,13 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 4. Column selection for display
 
 == Changelog ==
+
+= 1.2 =
+* Fixed: Batch update on "Quantity Limited" did not work
+* Fixed: Publish / Unpublish not working
+* Fixed: Orders / Customers Dashboard blank screen issues
+* Fixed: Table Rate Pricing lost issue
+* Product weights are now converted to Pounds to match WPeC standard
 
 = 1.1 =
 * Fixed: An issue with Category batch update
@@ -190,6 +197,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
+= 1.2 =
+Important bug fixes and overall enhancements. 
+
 = 1.1 = 
 Fixes bugs and IE compatibility issues. Recommended upgrade.
 
