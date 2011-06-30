@@ -157,139 +157,140 @@ $encodedRegions = json_encode ( $regions );
 $products_cols['id']['name']='id';
 $products_cols['id']['actionType']='';
 $products_cols['id']['colName']='id';
-$products_cols['id']['tableName']='wp_posts';
+$products_cols['id']['tableName']="{$wpdb->prefix}posts";
 
 $products_cols['name']['name']='Name';
 $products_cols['name']['actionType']='modStrActions';
 $products_cols['name']['colName']='post_title';
-$products_cols['name']['tableName']='wp_posts';
+$products_cols['name']['tableName']="{$wpdb->prefix}posts";
 
 $products_cols['price']['name']='Price';
 $products_cols['price']['actionType']='modIntPercentActions';
 $products_cols['price']['colName']='_wpsc_price';
-$products_cols['price']['tableName']='wp_postmeta';
+$products_cols['price']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['price']['colFilter']='meta_key:_wpsc_price';
 $products_cols['price']['updateColName']='meta_value';
 
 $products_cols['salePrice']['name']='Sale Price';
 $products_cols['salePrice']['actionType']='modIntPercentActions';
 $products_cols['salePrice']['colName']='_wpsc_special_price';
-$products_cols['salePrice']['tableName']='wp_postmeta';
+$products_cols['salePrice']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['salePrice']['colFilter']='meta_key:_wpsc_special_price';
 $products_cols['salePrice']['updateColName']='meta_value';
 
 $products_cols['inventory']['name']='Inventory';
 $products_cols['inventory']['actionType']='modIntActions';
 $products_cols['inventory']['colName']='_wpsc_stock';
-$products_cols['inventory']['tableName']='wp_postmeta';
+$products_cols['inventory']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['inventory']['colFilter']='meta_key:_wpsc_stock';
 $products_cols['inventory']['updateColName']='meta_value';
 
 $products_cols['sku']['name']='SKU';
 $products_cols['sku']['actionType']='modStrActions';
 $products_cols['sku']['colName']='_wpsc_sku';
-$products_cols['sku']['tableName']='wp_postmeta';
+$products_cols['sku']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['sku']['colFilter']='meta_key:_wpsc_sku';
 $products_cols['sku']['updateColName']='meta_value';
 
 $products_cols['group']['name']='Group';
 $products_cols['group']['actionType']='setAdDelActions';
 $products_cols['group']['colName']='category';
-$products_cols['group']['tableName']='wp_term_relationships';
+$products_cols['group']['tableName']="{$wpdb->prefix}term_relationships";
 $products_cols['group']['updateColName']='term_taxonomy_id';
 
 $products_cols['weight']['name']='Weight';
 $products_cols['weight']['actionType']='modIntPercentActions';
 $products_cols['weight']['colName']='weight';
-$products_cols['weight']['tableName']='wp_postmeta';
+$products_cols['weight']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['weight']['colFilter']='meta_key:_wpsc_product_metadata';
 
 $products_cols['weightUnit']['name']='Unit';
 $products_cols['weightUnit']['actionType']='';
 $products_cols['weightUnit']['colName']='weight_unit';
-$products_cols['weightUnit']['tableName']='wp_postmeta';
+$products_cols['weightUnit']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['weightUnit']['colFilter']='meta_key:_wpsc_product_metadata';
 
 $products_cols['publish']['name']='Publish';
 $products_cols['publish']['actionType']='YesNoActions';
 $products_cols['publish']['colName']='post_status';
-$products_cols['publish']['tableName']='wp_posts';
+$products_cols['publish']['tableName']="{$wpdb->prefix}posts";
 
 $products_cols['disregardShipping']['name']='Disregard Shipping';
 $products_cols['disregardShipping']['actionType']='YesNoActions';
 $products_cols['disregardShipping']['colName']='no_shipping';
-$products_cols['disregardShipping']['tableName']='wp_postmeta';
+$products_cols['disregardShipping']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['disregardShipping']['colFilter']='meta_key:_wpsc_product_metadata';
 
 $products_cols['desc']['name']='Description';
 $products_cols['desc']['actionType']='modStrActions';
 $products_cols['desc']['colName']='post_content';
-$products_cols['desc']['tableName']='wp_posts';
+$products_cols['desc']['tableName']="{$wpdb->prefix}posts";
 
 $products_cols['addDesc']['name']='Additional Description';
 $products_cols['addDesc']['actionType']='modStrActions';
 $products_cols['addDesc']['colName']='post_excerpt';
-$products_cols['addDesc']['tableName']='wp_posts';
+$products_cols['addDesc']['tableName']="{$wpdb->prefix}posts";
 
 $products_cols['pnp']['name']='Local Shipping Fee';
 $products_cols['pnp']['actionType']='modIntPercentActions';
 $products_cols['pnp']['colName']='local';
-$products_cols['pnp']['tableName']='wp_postmeta';
+$products_cols['pnp']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['pnp']['colFilter']='meta_key:_wpsc_product_metadata:shipping';
 
 $products_cols['intPnp']['name']='International Shipping Fee';
 $products_cols['intPnp']['actionType']='modIntPercentActions';
 $products_cols['intPnp']['colName']='international';
-$products_cols['intPnp']['tableName']='wp_postmeta';
+$products_cols['intPnp']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['intPnp']['colFilter']='meta_key:_wpsc_product_metadata:shipping';
 
 $products_cols['height']['name']='Height';
 $products_cols['height']['actionType']='modIntPercentActions';
 $products_cols['height']['colName']='height';
-$products_cols['height']['tableName']='wp_postmeta';
+$products_cols['height']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['height']['colFilter']='meta_key:_wpsc_product_metadata';
 
 $products_cols['heightUnit']['id']=16;
 $products_cols['heightUnit']['name']='Unit';
 $products_cols['heightUnit']['actionType']='';
 $products_cols['heightUnit']['colName']='height_unit';
-$products_cols['heightUnit']['tableName']='wp_postmeta';
+$products_cols['heightUnit']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['heightUnit']['colFilter']='meta_key:_wpsc_product_metadata';
 
 $products_cols['width']['name']='Width';
 $products_cols['width']['actionType']='modIntPercentActions';
 $products_cols['width']['colName']='width';
-$products_cols['width']['tableName']='wp_postmeta';
+$products_cols['width']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['width']['colFilter']='meta_key:_wpsc_product_metadata';
 
 $products_cols['widthUnit']['name']='Unit';
 $products_cols['widthUnit']['actionType']='';
 $products_cols['widthUnit']['colName']='width_unit';
-$products_cols['widthUnit']['tableName']='wp_postmeta';
+$products_cols['widthUnit']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['widthUnit']['colFilter']='meta_key:_wpsc_product_metadata';
 
 $products_cols['lengthCol']['name']='Length';
 $products_cols['lengthCol']['actionType']='modIntPercentActions';
 $products_cols['lengthCol']['colName']='length';
-$products_cols['lengthCol']['tableName']='wp_postmeta';
+$products_cols['lengthCol']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['lengthCol']['colFilter']='meta_key:_wpsc_product_metadata';
 
 $products_cols['lengthUnit']['name']='Unit';
 $products_cols['lengthUnit']['actionType']='';
 $products_cols['lengthUnit']['colName']='length_unit';
-$products_cols['lengthUnit']['tableName']='wp_postmeta';
+$products_cols['lengthUnit']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['lengthUnit']['colFilter']='meta_key:_wpsc_product_metadata';
 
 $products_cols['qtyLimited']['name']='Stock: Quantity Limited';
 $products_cols['qtyLimited']['actionType']='YesNoActions';
-$products_cols['qtyLimited']['colName']='quantity_limited';
-$products_cols['qtyLimited']['tableName']='wp_postmeta';
-$products_cols['qtyLimited']['colFilter']='meta_key:_wpsc_product_metadata';
+$products_cols['qtyLimited']['colName']='_wpsc_price';
+$products_cols['qtyLimited']['tableName']="{$wpdb->prefix}postmeta";
+$products_cols['qtyLimited']['colFilter']='meta_key:_wpsc_stock';
+$products_cols['qtyLimited']['updateColName']='meta_value'; //@todo qty limited
 
 $products_cols['oos']['name']='Stock: Inform When Out Of Stock';
 $products_cols['oos']['actionType']='YesNoActions';
 $products_cols['oos']['colName']='unpublish_when_none_left';
-$products_cols['oos']['tableName']='wp_postmeta';
+$products_cols['oos']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['oos']['colFilter']='meta_key:_wpsc_product_metadata';
 
 // BOF Product category

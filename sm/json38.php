@@ -6,7 +6,7 @@ include_once (ABSPATH . WPINC . '/functions.php');
 // for delete logs.
 require_once ('../../' . WPSC_FOLDER . '/wpsc-includes/purchaselogs.class.php');
 
-$del   = 3;
+$del = 3;
 $result = array ();
 $encoded = array ();
 
@@ -17,8 +17,8 @@ else
 
 if (isset ( $_POST ['limit'] ))
 	$limit = $_POST ['limit'];
-	
-// For pro version check if the required file exists
+
+	// For pro version check if the required file exists
 if (file_exists ( '../pro/sm38.php' )) {
 	define ( 'SMPRO', true );
 } else {
@@ -26,8 +26,8 @@ if (file_exists ( '../pro/sm38.php' )) {
 }
 if (SMPRO == true)
 	include_once ('../pro/sm38.php');
-	
-// getting the active module
+
+	// getting the active module
 $active_module = $_POST ['active_module'];
 
 // Searching a product in the grid
@@ -44,7 +44,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 			$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
 			
-			$sub_query  = "AND p.id in (
+			$sub_query = "AND p.id in (
 						   select {$wpdb->prefix}posts.id
 			               FROM {$wpdb->prefix}posts
 						   WHERE post_status IN ('publish', 'draft')
@@ -79,7 +79,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 						FROM {$wpdb->prefix}posts p 
 						WHERE post_status IN ('publish', 'draft')
 						AND post_type    = 'wpsc-product'
-						".$sub_query."
+						" . $sub_query . "
 						ORDER BY p.id desc  
 						LIMIT $offset,$limit) AS products
 					
@@ -106,11 +106,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 							  FROM {$wpdb->prefix}posts p 
 							  WHERE post_status IN ('publish', 'draft')
 							  AND post_type    = 'wpsc-product'
-							  $sub_query
-		                      ";
-		$recordcount_query .= $where;
-		$recordcount_result = $wpdb->get_results ( $recordcount_query, 'ARRAY_A' );		
-		$num_records = $recordcount_result[0]['count'];
+							  $sub_query ";
+		$recordcount_result = $wpdb->get_results ( $recordcount_query, 'ARRAY_A' );
+		$num_records = $recordcount_result [0] ['count'];
 		
 		if ($num_rows <= 0) {
 			$encoded ['totalCount'] = '';
@@ -119,20 +117,19 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		} else {
 			foreach ( $records as &$record ) {
 				$prod_meta_values = explode ( '#', $record->prod_meta_value );
-				$prod_meta_key = explode ( '#', $record->prod_meta_key );
-			
-				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );
+				$prod_meta_key 	  = explode ( '#', $record->prod_meta_key );
 				
+				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );		
+								
 				foreach ( $prod_meta_key_values as $key => $value ) {
 					if (is_serialized ( $value )) {
 						$unsez_data = unserialize ( $value );
+						$unsez_data['weight'] = wpsc_convert_weight( $unsez_data['weight'], "pound", $unsez_data['weight_unit'], true ); // get the weight by converting it to repsective unit
 						
 						foreach ( $unsez_data as $meta_key => $meta_value ) {
 							if (is_array ( $meta_value )) {
-								
 								foreach ( $meta_value as $sub_metakey => $sub_metavalue )
-									(in_array ( $sub_metakey, $view_columns )) ? $record->$sub_metakey = $sub_metavalue : '';
-							
+								(in_array ( $sub_metakey, $view_columns )) ? $record->$sub_metakey = $sub_metavalue : '';
 							} else {
 								(in_array ( $meta_key, $view_columns )) ? $record->$meta_key = $meta_value : '';
 							}
@@ -158,73 +155,74 @@ elseif ($active_module == 'Orders') {
 				$regions [$result ['id']] = $result ['name'];
 		}
 		
-		$query = "SELECT isocode,country FROM `" . WPSC_TABLE_CURRENCY_LIST . "` ORDER BY `country` ASC";
+		$query   = "SELECT isocode,country FROM `" . WPSC_TABLE_CURRENCY_LIST . "` ORDER BY `country` ASC";
 		$results = $wpdb->get_results ( $query, 'ARRAY_A' );
 		
 		if ($wpdb->num_rows > 0) {
 			foreach ( $results as $result )
 				$countries [$result ['isocode']] = $result ['country'];
 		}
-
-		$select_query = "SELECT ".WPSC_TABLE_PURCHASE_LOGS.".id,
-						       GROUP_CONCAT( ".WPSC_TABLE_SUBMITED_FORM_DATA.".value 
-							   ORDER BY ".WPSC_TABLE_SUBMITED_FORM_DATA.".`form_id` 
+		
+		$select_query = "SELECT " . WPSC_TABLE_PURCHASE_LOGS . ".id,
+						       GROUP_CONCAT( " . WPSC_TABLE_SUBMITED_FORM_DATA . ".value 
+							   ORDER BY " . WPSC_TABLE_SUBMITED_FORM_DATA . ".`form_id` 
 							   SEPARATOR '#' ) AS order_details,
-							    
+
 							   GROUP_CONCAT( CAST(form_id AS CHAR)
 						       ORDER BY form_id  
 							   SEPARATOR '#' ) AS shipping_ids,
 							   
-							   GROUP_CONCAT(".WPSC_TABLE_CHECKOUT_FORMS.".unique_name
-						       ORDER BY ".WPSC_TABLE_CHECKOUT_FORMS.".`id` 
+							   GROUP_CONCAT(" . WPSC_TABLE_CHECKOUT_FORMS . ".unique_name
+						       ORDER BY " . WPSC_TABLE_CHECKOUT_FORMS . ".`id` 
 							   SEPARATOR '#' ) AS shipping_unique_names,
 						       details,
 						       
-					  	       date_format(FROM_UNIXTIME(".WPSC_TABLE_PURCHASE_LOGS.".date),'%b %e %Y, %r') date,
-						  	   ".WPSC_TABLE_PURCHASE_LOGS.".date as unixdate,
-							   ".WPSC_TABLE_PURCHASE_LOGS.".totalprice amount,
-							   ".WPSC_TABLE_PURCHASE_LOGS.".track_id, 			                 
-							   ".WPSC_TABLE_PURCHASE_LOGS.".processed order_status,
+					  	       date_format(FROM_UNIXTIME(" . WPSC_TABLE_PURCHASE_LOGS . ".date),'%b %e %Y, %r') date,
+						  	   " . WPSC_TABLE_PURCHASE_LOGS . ".date as unixdate,
+							   " . WPSC_TABLE_PURCHASE_LOGS . ".totalprice amount,
+							   " . WPSC_TABLE_PURCHASE_LOGS . ".track_id, 			                 
+							   " . WPSC_TABLE_PURCHASE_LOGS . ".processed order_status,
                                sessionid,
-                               ".WPSC_TABLE_PURCHASE_LOGS.".notes,
+                               " . WPSC_TABLE_PURCHASE_LOGS . ".notes,
                                country_info.shippingcountry
                             
-						       FROM ".WPSC_TABLE_PURCHASE_LOGS." 
-						       LEFT JOIN ".WPSC_TABLE_SUBMITED_FORM_DATA." ON (".WPSC_TABLE_PURCHASE_LOGS.".id = ".WPSC_TABLE_SUBMITED_FORM_DATA.".log_id)
-						       LEFT JOIN ".WPSC_TABLE_CHECKOUT_FORMS."    ON (".WPSC_TABLE_SUBMITED_FORM_DATA.".form_id = ".WPSC_TABLE_CHECKOUT_FORMS.".id)
+						       FROM " . WPSC_TABLE_PURCHASE_LOGS . " 
+						       LEFT JOIN " . WPSC_TABLE_SUBMITED_FORM_DATA . " ON (" . WPSC_TABLE_PURCHASE_LOGS . ".id = " . WPSC_TABLE_SUBMITED_FORM_DATA . ".log_id)
+						       LEFT JOIN " . WPSC_TABLE_CHECKOUT_FORMS . "    ON (" . WPSC_TABLE_SUBMITED_FORM_DATA . ".form_id = " . WPSC_TABLE_CHECKOUT_FORMS . ".id)
 						       
 						       LEFT JOIN 
 						       (SELECT CONCAT(CAST(sum(quantity) AS CHAR) , ' items') details,
 						       	GROUP_CONCAT(name SEPARATOR '#') products_name,
 						    	purchaseid
-						    	FROM ".WPSC_TABLE_CART_CONTENTS."
-						    	GROUP BY " . WPSC_TABLE_CART_CONTENTS.".purchaseid) as quantity_details
-						        ON (".WPSC_TABLE_PURCHASE_LOGS.".id = quantity_details.purchaseid)
+						    	FROM " . WPSC_TABLE_CART_CONTENTS . "
+						    	GROUP BY " . WPSC_TABLE_CART_CONTENTS . ".purchaseid) as quantity_details
+						        ON (" . WPSC_TABLE_PURCHASE_LOGS . ".id = quantity_details.purchaseid)
 						        
 						       LEFT JOIN 
 						       (
-						        SELECT ".WPSC_TABLE_SUBMITED_FORM_DATA.".log_id,country AS shippingcountry
-						        from   ".WPSC_TABLE_SUBMITED_FORM_DATA.",".WPSC_TABLE_CURRENCY_LIST.",".WPSC_TABLE_CHECKOUT_FORMS."
+						        SELECT " . WPSC_TABLE_SUBMITED_FORM_DATA . ".log_id,country AS shippingcountry
+						        from   " . WPSC_TABLE_SUBMITED_FORM_DATA . "," . WPSC_TABLE_CURRENCY_LIST . "," . WPSC_TABLE_CHECKOUT_FORMS . "
 						        where unique_name = 'shippingcountry'
-						        and   ".WPSC_TABLE_CHECKOUT_FORMS.".id = form_id  
-						        and   ".WPSC_TABLE_SUBMITED_FORM_DATA.".value = isocode
-						       ) as country_info on (country_info.log_id = ".WPSC_TABLE_PURCHASE_LOGS.".id)";
+						        and " . WPSC_TABLE_CHECKOUT_FORMS . ".id = form_id  
+						        and " . WPSC_TABLE_SUBMITED_FORM_DATA . ".value = isocode
+						        and " . WPSC_TABLE_CHECKOUT_FORMS . ".active =1 
+						       ) as country_info on (country_info.log_id = " . WPSC_TABLE_PURCHASE_LOGS . ".id)";
 		
-		$group_by = "GROUP BY ".WPSC_TABLE_SUBMITED_FORM_DATA.".log_id
+		$group_by = "GROUP BY " . WPSC_TABLE_SUBMITED_FORM_DATA . ".log_id
 							   ORDER BY form_id DESC ";
 		
 		$limit_query = " LIMIT " . $offset . "," . $limit . "";
-		$where = ' WHERE 1 ';
+		$where = " WHERE " . WPSC_TABLE_CHECKOUT_FORMS . ".active = 1 ";
 		
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 			$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
-			$where .= " AND (".WPSC_TABLE_PURCHASE_LOGS.".id in ('$search_on')
+			$where .= " AND (" . WPSC_TABLE_PURCHASE_LOGS . ".id in ('$search_on')
 							   OR sessionid like '%$search_on%'
-							   OR date_format(FROM_UNIXTIME(".WPSC_TABLE_PURCHASE_LOGS.".date),'%b %e %Y, %r') like '%$search_on%'
+							   OR date_format(FROM_UNIXTIME(" . WPSC_TABLE_PURCHASE_LOGS . ".date),'%b %e %Y, %r') like '%$search_on%'
 							   
-							   OR ".WPSC_TABLE_PURCHASE_LOGS.".totalprice like '$search_on%'
-							   OR ".WPSC_TABLE_PURCHASE_LOGS.".track_id like '%$search_on%' OR							    
-							   CASE ".WPSC_TABLE_PURCHASE_LOGS.".processed
+							   OR " . WPSC_TABLE_PURCHASE_LOGS . ".totalprice like '$search_on%'
+							   OR " . WPSC_TABLE_PURCHASE_LOGS . ".track_id like '%$search_on%' OR							    
+							   CASE " . WPSC_TABLE_PURCHASE_LOGS . ".processed
 							   	  WHEN 1 THEN 'Incomplete Sale'
 								  WHEN 2 THEN 'Order Received'
 								  WHEN 3 THEN 'Accepted Payment'
@@ -233,13 +231,13 @@ elseif ($active_module == 'Orders') {
 								  ELSE 'Payment Declined'
 								  END like '%$search_on%'
 									
-							   OR ".WPSC_TABLE_PURCHASE_LOGS.".notes like '%$search_on%'
+							   OR " . WPSC_TABLE_PURCHASE_LOGS . ".notes like '%$search_on%'
 							   OR quantity_details.details like '%$search_on%'
 							   
 							   OR quantity_details.products_name like '%$search_on%' 
 							   OR country_info.shippingcountry like '%$search_on%'
-							   OR ".WPSC_TABLE_PURCHASE_LOGS.".id in (SELECT distinct log_id 
-							    							   FROM `".WPSC_TABLE_SUBMITED_FORM_DATA."`
+							   OR " . WPSC_TABLE_PURCHASE_LOGS . ".id in (SELECT distinct log_id 
+							    							   FROM `" . WPSC_TABLE_SUBMITED_FORM_DATA . "`
 							                                   WHERE value like '%$search_on%')
 					 )";
 		}
@@ -259,21 +257,23 @@ elseif ($active_module == 'Orders') {
 				$to_date = $from_date;
 				$from_date = $temp;
 			}
-			$where .= " AND (".WPSC_TABLE_PURCHASE_LOGS.".date between '$from_date' and '$to_date') ";
+			$where .= " AND (" . WPSC_TABLE_PURCHASE_LOGS . ".date between '$from_date' and '$to_date') ";
 		}
 		
 		//get the state id if the shipping state is numeric or blank
-		$sql = "SELECT DISTINCT `" . WPSC_TABLE_PURCHASE_LOGS . "` . * FROM `" . WPSC_TABLE_SUBMITED_FORM_DATA . "` LEFT JOIN `" . WPSC_TABLE_PURCHASE_LOGS . "` ON `" . WPSC_TABLE_SUBMITED_FORM_DATA . "`.`log_id` = `" . WPSC_TABLE_PURCHASE_LOGS . "`.`id`";
-		$extrainfo = $wpdb->get_results( $sql );
+		$sql = "SELECT DISTINCT `" . WPSC_TABLE_PURCHASE_LOGS . "` . *
+		        FROM `" . WPSC_TABLE_SUBMITED_FORM_DATA . "` LEFT JOIN `" . WPSC_TABLE_PURCHASE_LOGS . "`
+		        ON `" . WPSC_TABLE_SUBMITED_FORM_DATA . "`.`log_id` = `" . WPSC_TABLE_PURCHASE_LOGS . "`.`id`";
+		$extrainfo = $wpdb->get_results ( $sql );
 		
 		$query    = "$select_query $from $where $group_by $limit_query";
-		$results  = $wpdb->get_results($query, 'ARRAY_A');
-		$num_rows = $wpdb->num_rows;				
+		$results  = $wpdb->get_results ( $query, 'ARRAY_A' );
+		$num_rows = $wpdb->num_rows;
 		
 		//To get the total count
-		$orders_count_query  = "$select_query $from $where $group_by";
-		$orders_count_result = $wpdb->get_results($orders_count_query, 'ARRAY_A');		
-		$num_records         = $wpdb->num_rows;
+		$orders_count_query = "$select_query $from $where $group_by";
+		$orders_count_result = $wpdb->get_results ( $orders_count_query, 'ARRAY_A' );
+		$num_records = $wpdb->num_rows;
 		
 		if ($num_rows == 0) {
 			$encoded ['totalCount'] = '';
@@ -281,30 +281,32 @@ elseif ($active_module == 'Orders') {
 			$encoded ['msg'] = 'No Records Found';
 		} else {
 			$count = 0;
-			foreach ($results as $result) {
-				foreach ($result as $key => $value ) {
+			foreach ( $results as $result ) {
+				foreach ( $result as $key => $value ) {
 					if ($key == 'order_details' || $key == 'shipping_ids' || $key == 'shipping_unique_names') {
 						$order_details = explode ( '#', $result ['order_details'] );
-						$shipping_ids = explode ( '#', $result ['shipping_ids'] );
+						$shipping_ids  = explode ( '#', $result ['shipping_ids'] );
 						$shipping_unique_names = explode ( '#', $result ['shipping_unique_names'] );
-
-						$name_emailid [0] = "<font class=blue> $order_details[0]</font>";
-						$name_emailid [1] = "<font class=blue> $order_details[1]</font>";
-						$name_emailid [2] = "($order_details[7])"; //email comes at 7th position.
+						
+						for($i = 0; $i < count ( $order_details ); $i ++) {
+							$records [$count] [$shipping_unique_names [$i]] = $order_details [$i];
+						}
+						 
+						$name_emailid [0] = "<font class=blue>". $records [$count]['billingfirstname']."</font>";
+						$name_emailid [1] = "<font class=blue>". $records [$count]['billinglastname']."</font>";
+						$name_emailid [2] = "(".$records [$count]['billingemail'].")"; //email comes at 7th position.
 						$records [$count] ['name'] = implode ( ' ', $name_emailid ); //in front end,splitting is done with this space.
+					
 
-
-						for($i = 3; $i < count ( $order_details ); $i ++)
-						$records [$count] [$shipping_unique_names [$i]] = $order_details [$i];
-					}else{
+					} else {
 						$records [$count] [$key] = $value;
 					}
-
+					
 					// To get the name of the state through state id
-					if ($records [$count]['shippingstate'] == '' || is_numeric($records [$count]['shippingstate'])){
-						foreach ($extrainfo as $extrainfo_object){
-							if (is_numeric($extrainfo_object -> shipping_region) && ($records [$count]['id'] == $extrainfo_object->id)){
-								$records [$count]['shippingstate']  = wpsc_get_region($extrainfo_object -> shipping_region);
+					if ($records [$count] ['shippingstate'] == '' || is_numeric ( $records [$count] ['shippingstate'] )) {
+						foreach ( $extrainfo as $extrainfo_object ) {
+							if (is_numeric ( $extrainfo_object->shipping_region ) && ($records [$count] ['id'] == $extrainfo_object->id)) {
+								$records [$count] ['shippingstate'] = wpsc_get_region ( $extrainfo_object->shipping_region );
 							}
 						}
 					}
@@ -330,16 +332,17 @@ elseif ($active_module == 'Orders') {
 													 
 									FROM ( SELECT log_id, 
 												 	value as email
-											FROM ". WPSC_TABLE_SUBMITED_FORM_DATA ." AS wwsfd1
+											FROM " . WPSC_TABLE_SUBMITED_FORM_DATA . " AS wwsfd1
 											WHERE wwsfd1.form_id = ( SELECT id
-																	 FROM ". WPSC_TABLE_CHECKOUT_FORMS ."
-																 	WHERE unique_name =  'billingemail')) AS ord_emailid
+																	 FROM " . WPSC_TABLE_CHECKOUT_FORMS . "
+																 	WHERE unique_name =  'billingemail'
+																 	and active = 1)) AS ord_emailid
 						LEFT JOIN ( SELECT log_id, 
 									GROUP_CONCAT( wwsfd2.value ORDER BY form_id SEPARATOR  '#' ) user_details, 
 									GROUP_CONCAT( wwcf.unique_name ORDER BY wwcf.id SEPARATOR  '#' ) unique_names					
-									FROM ". WPSC_TABLE_SUBMITED_FORM_DATA ." as wwsfd2 
+									FROM " . WPSC_TABLE_SUBMITED_FORM_DATA . " as wwsfd2 
 					
-									LEFT JOIN ". WPSC_TABLE_CHECKOUT_FORMS ." wwcf ON ( wwcf.id = wwsfd2.form_id) 					
+									LEFT JOIN " . WPSC_TABLE_CHECKOUT_FORMS . " wwcf ON ( wwcf.id = wwsfd2.form_id) 					
 									WHERE unique_name
 									IN (
 										'billingfirstname',  
@@ -352,25 +355,27 @@ elseif ($active_module == 'Orders') {
 										'billingemail',
 										'billingphone'
 									) 
+									and wwcf.active = 1
 									GROUP BY log_id
 									) AS ord_all_user_details ON ( ord_emailid.log_id = ord_all_user_details.log_id ) 
 									
 						LEFT JOIN (
 					
 					SELECT id, DATE, totalprice
-					FROM ". WPSC_TABLE_PURCHASE_LOGS ." wwpl
+					FROM " . WPSC_TABLE_PURCHASE_LOGS . " wwpl
 					ORDER BY DATE DESC
 					) AS purchlog_info ON ( purchlog_info.id = ord_emailid.log_id ) 
 					LEFT JOIN (
 					
 					SELECT wwsfd.log_id, country
-					FROM ". WPSC_TABLE_SUBMITED_FORM_DATA ." AS wwsfd, ". WPSC_TABLE_CURRENCY_LIST ."
+					FROM " . WPSC_TABLE_SUBMITED_FORM_DATA . " AS wwsfd, " . WPSC_TABLE_CURRENCY_LIST . "
 					WHERE wwsfd.value = isocode
 					AND wwsfd.form_id = (
 					
 					SELECT id
-					FROM ". WPSC_TABLE_CHECKOUT_FORMS ."
+					FROM " . WPSC_TABLE_CHECKOUT_FORMS . "
 					WHERE unique_name =  'billingcountry'
+					and active = 1
 					)
 					) AS users_countries ON ( ord_emailid.log_id = users_countries.log_id ) 
 					GROUP BY email
@@ -386,15 +391,15 @@ elseif ($active_module == 'Orders') {
 		// First get the id of the state then use FUNCTION 'wpsc_get_region' to get the name of the state if in the
 		// submitted_form_data table the state value id empty or is present but in numeric
 		$sql = "SELECT DISTINCT `" . WPSC_TABLE_PURCHASE_LOGS . "` . * FROM `" . WPSC_TABLE_SUBMITED_FORM_DATA . "` LEFT JOIN `" . WPSC_TABLE_PURCHASE_LOGS . "` ON `" . WPSC_TABLE_SUBMITED_FORM_DATA . "`.`log_id` = `" . WPSC_TABLE_PURCHASE_LOGS . "`.`id`";
-		$extrainfo = $wpdb->get_results( $sql );
+		$extrainfo = $wpdb->get_results ( $sql );
 		
 		$limit_query = " LIMIT " . $offset . "," . $limit . "";
-		$query 	  = $customers_query . "" . $limit_query;
-		$result   = $wpdb->get_results ( $query, 'ARRAY_A' );
+		$query = $customers_query . "" . $limit_query;
+		$result = $wpdb->get_results ( $query, 'ARRAY_A' );
 		$num_rows = $wpdb->num_rows;
 		
 		//To get Total count
-		$customers_count_query  = $customers_query;
+		$customers_count_query = $customers_query;
 		$customers_count_result = $wpdb->get_results ( $customers_count_query, 'ARRAY_A' );
 		$num_records = $wpdb->num_rows;
 		
@@ -402,38 +407,39 @@ elseif ($active_module == 'Orders') {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
 			$encoded ['msg'] = 'No Records Found';
-		} else {			
-			foreach ((array)$result as $data){
+		} else {
+			foreach ( ( array ) $result as $data ) {
 				$user_details = explode ( '#', $data ['user_details'] );
 				$unique_names = explode ( '#', $data ['unique_names'] );
-								
+				
 				//note: while merging the array, $data as to be the second arg
 				if (count ( $unique_names ) == count ( $user_details ))
-					$records [] = array_merge ( array_combine($unique_names, $user_details), $data );				
+					$records [] = array_merge ( array_combine ( $unique_names, $user_details ), $data );
 			}
 			
 			//getting records
 			foreach ( $records as &$record ) {
-				$record ['Last_Order']     = $record ['Last_Order_Date'] . ', ' . $record ['Last_Order_Amt'];
+				$record ['Last_Order'] = $record ['Last_Order_Date'] . ', ' . $record ['Last_Order_Amt'];
 				$record ['billingcountry'] = $record ['country'];
-
-//				if ($record['billingstate'] == '' || is_numeric($record['billingstate'])){
-					foreach ($extrainfo as $extrainfo_object){
-						if (is_numeric($extrainfo_object -> billing_region) && ($record['id'] == $extrainfo_object->id)){							
-								$record['billingstate']  = wpsc_get_region($extrainfo_object -> billing_region);							
-								$extrainfo_object -> billing_region = '';
-						}
-					}
-//				}
 				
-		//create an extra array for email and merge it with the actual array because if we allow user to edit email addresses
-		//then we cannot fire a query using email in the where clause since in the backend we will get a modified email address.
+				//				if ($record['billingstate'] == '' || is_numeric($record['billingstate'])){
+				foreach ( $extrainfo as $extrainfo_object ) {
+					if (is_numeric ( $extrainfo_object->billing_region ) && ($record ['id'] == $extrainfo_object->id)) {
+						$record ['billingstate'] = wpsc_get_region ( $extrainfo_object->billing_region );
+						$extrainfo_object->billing_region = '';
+					}
+				}
+				//				}
+				
+
+				//create an extra array for email and merge it with the actual array because if we allow user to edit email addresses
+				//then we cannot fire a query using email in the where clause since in the backend we will get a modified email address.
 				$record ['Old_Email_Id'] = $record ['billingemail'];
 				
 				//no need to send this to front end
-				unset($record['unique_names']);
-				unset($record['user_details']);
-				unset($record ['country']);				
+				unset ( $record ['unique_names'] );
+				unset ( $record ['user_details'] );
+				unset ( $record ['country'] );
 				
 				if (SMPRO == false) {
 					$record ['Total_Purchased'] = 'Pro only';
@@ -451,24 +457,24 @@ elseif ($active_module == 'Orders') {
 // Delete product.
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 	global $purchlogs;
-	$purchlogs = new wpsc_purchaselogs();
+	$purchlogs = new wpsc_purchaselogs ();
 	$delCnt = 0;
-
+	
 	if ($active_module == 'Products') {
 		$data = json_decode ( stripslashes ( $_POST ['data'] ) );
 		$delCnt = count ( $data );
-
+		
 		for($i = 0; $i < $delCnt; $i ++) {
 			$post_id = $data [$i];
 			$post_data [] = wp_trash_post ( $post_id );
 		}
-
+		
 		$deleted_count = count ( $post_data );
 		if ($deleted_count == $delCnt)
-		$result = true;
+			$result = true;
 		else
-		$result = false;
-
+			$result = false;
+		
 		if ($result == true) {
 			if ($delCnt == 1) {
 				$encoded ['msg'] = $delCnt . " Product deleted Successfully";
@@ -485,10 +491,10 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 	} else if ($active_module == 'Orders') {
 		$data = json_decode ( stripslashes ( $_POST ['data'] ) );
 		foreach ( $data as $key => $id ) {
-			$output = $purchlogs->deletelog( $id );
+			$output = $purchlogs->deletelog ( $id );
 			$delCnt ++;
 		}
-
+		
 		if ($output) {
 			//			$encoded ['msg'] = strip_tags($output);
 			if ($delCnt == 1) {
@@ -499,40 +505,40 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 				$encoded ['delCnt'] = $delCnt;
 			}
 		} else
-		$encoded ['msg'] = "Purchase Logs removed from the grid";
+			$encoded ['msg'] = "Purchase Logs removed from the grid";
 	}
 	echo json_encode ( $encoded );
 }
 
 function data_for_update_orders($_POST) {
-	global $wpdb;// to use as global
+	global $wpdb; // to use as global
 	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
-	$_POST = array ();	
+	$_POST = array ();
 	
-	$query  = "SELECT isocode,country FROM `" . WPSC_TABLE_CURRENCY_LIST . "` ORDER BY `country` ASC";
-	$result = $wpdb->get_results( $query, 'ARRAY_A' );
+	$query = "SELECT isocode,country FROM `" . WPSC_TABLE_CURRENCY_LIST . "` ORDER BY `country` ASC";
+	$result = $wpdb->get_results ( $query, 'ARRAY_A' );
 	
-	if (count($result) >= 1) {
-		foreach ($result as $key => $arr_value)
-		$countries [$arr_value ['isocode']] = $arr_value ['country'];
+	if (count ( $result ) >= 1) {
+		foreach ( $result as $key => $arr_value )
+			$countries [$arr_value ['isocode']] = $arr_value ['country'];
 	}
 	
-	$sql 	= "SELECT * FROM  `rohu_wpsc_region_tax` ";
-	$result_regions = $wpdb->get_results( $sql, 'ARRAY_A' );
+	$sql = "SELECT * FROM  `rohu_wpsc_region_tax` ";
+	$result_regions = $wpdb->get_results ( $sql, 'ARRAY_A' );
 	
-	if (count($result_regions) >= 1) {
-		foreach ($result_regions as $key => $arr_value)
-		$regions [$arr_value ['id']] = $arr_value ['name'];
+	if (count ( $result_regions ) >= 1) {
+		foreach ( $result_regions as $key => $arr_value )
+			$regions [$arr_value ['id']] = $arr_value ['name'];
 	}
-		
-	$query  = "SELECT id,unique_name 					  
+	
+	$query = "SELECT id,unique_name 					  
 		 		FROM " . WPSC_TABLE_CHECKOUT_FORMS . " 
 				WHERE unique_name IN ('shippingfirstname', 'shippinglastname', 'shippingaddress', 'shippingcity', 'shippingstate','shippingcountry', 'shippingpostcode')";
-	$result = $wpdb->get_results( $query, 'ARRAY_A' );
+	$result = $wpdb->get_results ( $query, 'ARRAY_A' );
 	
-	if ( count($result) >= 1 ){
-		foreach ($result as $key => $arr_value)
-		$id_uniquename [$arr_value ['unique_name']] = $arr_value ['id'];
+	if (count ( $result ) >= 1) {
+		foreach ( $result as $key => $arr_value )
+			$id_uniquename [$arr_value ['unique_name']] = $arr_value ['id'];
 	}
 	
 	$ordersCnt = 1;
@@ -544,10 +550,10 @@ function data_for_update_orders($_POST) {
 				$update_value = array_search ( $obj->$uniquename, $countries );
 			}
 			
-			if ($uniquename == 'shippingstate'){				
+			if ($uniquename == 'shippingstate') {
 				if ($obj->$uniquename != '' && array_search ( $obj->$uniquename, $regions ))
 					$region_id = array_search ( $obj->$uniquename, $regions );
-				else 
+				else
 					$region_id = '';
 			}
 			
@@ -557,14 +563,14 @@ function data_for_update_orders($_POST) {
 						  shipping_region = '$region_id',
 								 track_id ='{$obj->track_id}'
 				   				 WHERE id ='{$obj->id}'";
-			$update_result = $wpdb->query($query);
+			$update_result = $wpdb->query ( $query );
 			
 			//$key contains unique name
 			$query = "UPDATE `" . WPSC_TABLE_SUBMITED_FORM_DATA . "`
 				         SET value   = '" . $update_value . "'
 				       WHERE form_id = $form_id
 				         AND log_id  = '" . $obj->id . "'";
-			$update_result = $wpdb->query($query);
+			$update_result = $wpdb->query ( $query );
 		}
 		$result ['updateCnt'] = $ordersCnt ++;
 		unset ( $ship_country_info ); // unsetting the $ship_country_info
@@ -575,17 +581,17 @@ function data_for_update_orders($_POST) {
 }
 
 function update_products($_POST) {
-	global $result,$wpdb;
+	global $result, $wpdb;
 	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
-	$updateCnt = 1;	
+	$updateCnt = 1;
 	foreach ( $edited_object as $obj ) {
-				
-		$update_name  = $wpdb->query("UPDATE $wpdb->posts SET `post_title`= '$obj->post_title' WHERE ID = $obj->id");
-		$update_price = $wpdb->query("UPDATE $wpdb->postmeta SET `meta_value`= $obj->_wpsc_price WHERE meta_key = '_wpsc_price' AND post_id = $obj->id");		
+		
+		$update_name = $wpdb->query ( "UPDATE $wpdb->posts SET `post_title`= '$obj->post_title' WHERE ID = $obj->id" );
+		$update_price = $wpdb->query ( "UPDATE $wpdb->postmeta SET `meta_value`= $obj->_wpsc_price WHERE meta_key = '_wpsc_price' AND post_id = $obj->id" );
 		$result ['updateCnt'] = $updateCnt ++;
 	}
 	
-	if (($update_name >= 1 || $update_price >= 1)  && $result ['updateCnt'] >= 1) {
+	if (($update_name >= 1 || $update_price >= 1) && $result ['updateCnt'] >= 1) {
 		$result ['result'] = true;
 		$result ['updated'] = 1;
 	}
@@ -604,7 +610,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 
 	elseif ($active_module == 'Orders')
 		$result = data_for_update_orders ( $_POST );
-	elseif ($_POST ['active_module'] == 'Customers')
+	elseif ($active_module == 'Customers')
 		$result = update_customers ( $_POST );
 	
 	if ($result ['result']) {

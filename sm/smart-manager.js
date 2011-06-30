@@ -271,8 +271,8 @@ Ext.onReady(function () {
 			align: 'right',
 			dataIndex: SM.productsCols.inventory.colName,
 			tooltip: 'Inventory',
-			editor: new fm.NumberField({
-				allowBlank: false
+			editor: new fm.TextField({
+				allowBlank: true
 			})
 		},{
 			header: SM.productsCols.sku.name,
@@ -445,7 +445,7 @@ Ext.onReady(function () {
 				 {name: SM.productsCols.name.colName,              type: 'string'},
 				 {name: SM.productsCols.price.colName,             type: 'float'},
 				 {name: SM.productsCols.salePrice.colName,         type: 'int'},
-				 {name: SM.productsCols.inventory.colName,         type: 'int'},
+				 {name: SM.productsCols.inventory.colName,         type: 'string'},
 				 {name: SM.productsCols.publish.colName,           type: 'string'},
 				 {name: SM.productsCols.salePrice.colName,         type: 'float'},
 				 {name: SM.productsCols.sku.colName,               type: 'string'},
@@ -1049,8 +1049,8 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 						
 			if(customersFields != 0)
 			productFieldStore.loadData(customersFields); //@todo: use a common name fieldStore and load respective fields in it.
-			else
-			Ext.notification.msg('Sorry!', 'No records found');
+//			else
+//			Ext.notification.msg('Sorry!', 'No records found');
 			
 			customersStore.setBaseParam('searchText',emailId);
 			customersStore.load();
@@ -1316,13 +1316,14 @@ if(isWPSC38 == '1'){
 				ordersStore.setBaseParam('fromDate', fromDateTxt.getValue());
 				ordersStore.setBaseParam('toDate', toDateTxt.getValue());
 			}
-			
+						
 			if(ordersFields != 0) {				
 				productFieldStore.loadData(ordersFields); //@todo: use a common name fieldStore and load respective fields in it.			
 			}
-			else{
-				Ext.notification.msg('Sorry!', 'No records found');
-				}
+			
+//			else{
+//				Ext.notification.msg('Sorry!', 'No records found');
+//				}
 
 			for(var i=13;i<=21;i++)
 			pagingToolbar.get(i).show();
@@ -1567,7 +1568,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								setTextfield.hide();
 								comboWeightUnitCmp.hide();
 								comboCategoriesActionCmp.hide();
-							} else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping') {
+							} else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping') {								
 								setTextfield.hide();
 								comboWeightUnitCmp.hide();
 								comboCategoriesActionCmp.hide();
@@ -1659,7 +1660,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								}
 								actionStore.loadData(actionsData);
 							}else{
-							// on swapping between the toolbars	
+								// on swapping between the toolbars	
 							actionStore.loadData(actions[SM['productsCols'][selectedValue].actionType]);
 							}
 						},					
