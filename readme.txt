@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.1
-Stable tag: 1.2
+Stable tag: 1.3
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, orders and customers reliably using a fast and familiar interface.
@@ -54,7 +54,7 @@ Thousands of customers are extremely happy with Smart Manager! Checkout our webs
 1. Ensure you have [WP e-Commerce](http://www.getshopped.org) plugin installed
 2. Unzip and upload contents of the plugin to your `/wp-content/plugins/` directory
 3. Activate the plugin through the 'Plugins' menu in WordPress
-4. Click on `Smart Manager` option within WP e-Commerce sidebar menu
+4. Click on 'Smart Manager' option within WP e-Commerce sidebar menu
 
 == Frequently Asked Questions ==
 
@@ -89,6 +89,11 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 4. Column selection for display
 
 == Changelog ==
+
+= 1.3 =
+* NEW: Smart Manager now remembers changes you made to grid columns, edit product window dimensions and selected dashboard
+* NEW: Batch Update on Variations price and weight for WPeC version 3.7
+* Fixed: Products Dashboard empty issue
 
 = 1.2 =
 * Fixed: Batch update on "Quantity Limited" did not work
@@ -197,6 +202,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
+= 1.3 =
+Feature update and bug fix release. 
+
 = 1.2 =
 Important bug fixes and overall enhancements. 
 
