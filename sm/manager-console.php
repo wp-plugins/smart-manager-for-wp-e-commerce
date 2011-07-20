@@ -249,7 +249,7 @@ $products_cols['height']['colName']='height';
 $products_cols['height']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['height']['colFilter']='meta_key:_wpsc_product_metadata';
 
-$products_cols['heightUnit']['id']=16;
+//$products_cols['heightUnit']['id']=16;
 $products_cols['heightUnit']['name']='Unit';
 $products_cols['heightUnit']['actionType']='';
 $products_cols['heightUnit']['colName']='height_unit';
@@ -282,10 +282,10 @@ $products_cols['lengthUnit']['colFilter']='meta_key:_wpsc_product_metadata';
 
 $products_cols['qtyLimited']['name']='Stock: Quantity Limited';
 $products_cols['qtyLimited']['actionType']='YesNoActions';
-$products_cols['qtyLimited']['colName']='_wpsc_price';
+$products_cols['qtyLimited']['colName']='_wpsc_stock';// @todo: check the serialized quantity limited value
 $products_cols['qtyLimited']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['qtyLimited']['colFilter']='meta_key:_wpsc_stock';
-$products_cols['qtyLimited']['updateColName']='meta_value'; //@todo qty limited
+$products_cols['qtyLimited']['updateColName']='meta_value';
 
 $products_cols['oos']['name']='Stock: Inform When Out Of Stock';
 $products_cols['oos']['actionType']='YesNoActions';
@@ -306,7 +306,8 @@ if (IS_WPSC37) {
           		
           WHERE cg.active = 1 AND 
           		pc.active = 1 AND 
-          		cg.id     = pc.group_id ";
+          		cg.id     = pc.group_id 
+          ORDER BY pc.id";
 
 } else { // is_wpc38
 	$query = "SELECT {$wpdb->prefix}term_taxonomy.term_taxonomy_id as category_id,
@@ -323,6 +324,12 @@ if (IS_WPSC37) {
 $result = mysql_query ( $query );
 while ( $data = mysql_fetch_assoc ( $result ) ) {
 	$count = ($old_group_id != $data ['group_id']) ? 0 : ++ $count;
+	
+	 if($count == 0){//setting the default categories for new product
+	 	$cat_id = $data ['category_id'];
+	 	$cat_name = mysql_escape_string ( $data ['category_name']);
+	 }
+	
 	
 	$categories ["category-" . $data ['group_id']] [$count] [0] = mysql_real_escape_string ( $data ['category_id'] );
 	$categories ["category-" . $data ['group_id']] [$count] [1] = mysql_real_escape_string ( $data ['category_name'] );
@@ -352,7 +359,7 @@ var countries           = " . $encodedCountries . ";
 var regions             = " . $encodedRegions . ";
 var weightUnits         = " . $encodedWeightUnits . ";
 var ordersStatus        = " . $encodedOrderStatus . ";
-var newcat              = '" . $cat_name . "';
+var newCatName          = '" . $cat_name . "';
 var fileExists          = '" . $fileExists . "';
 var newCatId            = '" . $cat_id . "';
 var jsonURL             = '" . JSON_URL . "';
@@ -412,6 +419,20 @@ if(isWPSC37 != ''){
 	SM.productsCols.oos.colName       		   = 'unpublish_oos';
 	SM.productsCols.oos.tableName       	   = '" . WPSC_TABLE_PRODUCTMETA . "';
 	SM.productsCols.oos.updateColName    	   = 'meta_value'; 
+	
+	SM.productsCols.variationsPrice		   	   = {
+													name       :'Variations: Price', 
+													colName    :'price',
+													actionType :'modIntPercentActions',
+													tableName  :'".WPSC_TABLE_VARIATION_PROPERTIES."'
+												 };
+					
+	SM.productsCols.variationsWeight	   	   = {
+													name       :'Variations: Weight',
+													colName    :'weight',
+													actionType :'modIntPercentActions',
+													tableName  :'".WPSC_TABLE_VARIATION_PROPERTIES."'
+												 };
 }
 
 var i = 0 ;
