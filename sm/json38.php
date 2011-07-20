@@ -39,6 +39,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		$select = "SELECT products.*,
 			       prod_meta_key,
 			       prod_meta_value,
+			       prod_meta_data_key,
+			       prod_meta_data,			       
 			       GROUP_CONCAT( wt.name ) AS category";
 		
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
@@ -75,7 +77,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 				       post_title,
 				       post_content,
 				       post_excerpt,
-				       post_status
+				       post_status				       
 						FROM {$wpdb->prefix}posts p 
 						WHERE post_status IN ('publish', 'draft')
 						AND post_type    = 'wpsc-product'
@@ -86,10 +88,17 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 						LEFT JOIN
 						(SELECT pm.post_id,
 						GROUP_CONCAT(meta_key order by meta_id SEPARATOR '#') as prod_meta_key,
-						cast(GROUP_CONCAT(meta_value order by meta_id SEPARATOR '#') as char(4000)) as prod_meta_value
+						GROUP_CONCAT(meta_value order by meta_id SEPARATOR '#') as prod_meta_value
 						FROM `{$wpdb->prefix}postmeta` pm
-						WHERE meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock', '_wpsc_product_metadata')
-						GROUP BY post_id ) as products_meta ON products_meta.post_id = products.id 
+						WHERE meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock')
+						GROUP BY post_id ) as products_meta ON products_meta.post_id = products.id
+						
+						LEFT JOIN
+						(SELECT pmt.post_id,
+							    meta_key   as prod_meta_data_key,
+							 	meta_value as prod_meta_data
+						FROM `{$wpdb->prefix}postmeta` pmt
+						WHERE meta_key = '_wpsc_product_metadata') AS prod_meta on prod_meta.post_id = products.id
 						 
 						LEFT JOIN {$wpdb->prefix}term_relationships AS wtr ON (products.id = wtr.object_id)	
 				        LEFT JOIN {$wpdb->prefix}term_taxonomy AS wtt ON (wtr.term_taxonomy_id = wtt.term_taxonomy_id and taxonomy = 'wpsc_product_category')
@@ -116,13 +125,17 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			$encoded ['msg'] = 'No Records Found';
 		} else {
 			foreach ( $records as &$record ) {
-				$prod_meta_values = explode ( '#', $record->prod_meta_value );
-				$prod_meta_key 	  = explode ( '#', $record->prod_meta_key );
+				$prod_meta_values 	= explode ( '#', $record->prod_meta_value );
+				$prod_meta_key 	  	= explode ( '#', $record->prod_meta_key );
+				$prod_meta_data	  	= $record->prod_meta_data;
+				$prod_meta_data_key	= $record->prod_meta_data_key;
 				
-				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );		
-								
+				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );
+				$prod_meta_key_values[$prod_meta_data_key] = $prod_meta_data;
+				
 				foreach ( $prod_meta_key_values as $key => $value ) {
 					if (is_serialized ( $value )) {
+						
 						$unsez_data = unserialize ( $value );
 						$unsez_data['weight'] = wpsc_convert_weight( $unsez_data['weight'], "pound", $unsez_data['weight_unit'], true ); // get the weight by converting it to repsective unit
 						
@@ -134,13 +147,13 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 								(in_array ( $meta_key, $view_columns )) ? $record->$meta_key = $meta_value : '';
 							}
 						}
-					
 					} else {
 						(in_array ( $key, $view_columns )) ? $record->$key = $value : '';
 					}
 				
 				}
 				unset ( $record->prod_meta_value );
+				unset ( $record->prod_meta_data );
 				unset ( $record->prod_meta_key );
 			}
 		}
@@ -448,7 +461,6 @@ elseif ($active_module == 'Orders') {
 			}
 		}
 	}
-	
 	$encoded ['items'] = $records;
 	$encoded ['totalCount'] = $num_records;
 	echo json_encode ( $encoded );
