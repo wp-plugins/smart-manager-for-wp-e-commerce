@@ -1,28 +1,31 @@
 === Smart Manager for WP e-Commerce ===
-Contributors: niravmehta, rohan@storeapps, angelin.nadar
+Contributors: niravmehta, rohankamble, angelin.nadar
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.1
-Stable tag: 1.3
+Stable tag: 1.4
 
 10x productivity gains with WP e-Commerce store administration. 
-Manage products, orders and customers reliably using a fast and familiar interface.
+Manage products, variations, orders and customers reliably using a fast and familiar interface.
 
 == Description ==
 
-Smart Manager is a unique, revolutionary tool that gives you the **power to efficiently manage products, customers 
-and orders** using the popular WordPress e-Commerce plugin from GetShopped / Instinct.
+Smart Manager is a unique, revolutionary tool that gives you the **power to efficiently manage products, 
+product variations, customers and orders** using the popular WordPress e-Commerce plugin 
+from GetShopped / Instinct.
 
 As a business owner, **your time is better spent on marketing and customer service** than on store administration. 
 Unfortunately store administration with WordPress e-Commerce can take significant time. Day after day.
 
-Smart Manager will **boost your productivity 10x** in managing products, customers and orders. You can browse, 
-search, and manage multiple products, customers or orders using a **familiar, single page, 
+Smart Manager will **boost your productivity 10x** in managing products, customers and orders. 
+You can browse, search, and manage multiple products, customers or orders using a **familiar, single page, 
 spreadsheet like** interface. 
 
-The Pro version also allows inline editing for all fields and adding items. It also provides 
-**Smart Batch Update** to change multiple fields on multiple items - all **at once with zero errors**. 
+The Pro version also allows managing product variations, inline editing for all fields and adding items. 
+It also provides **Smart Batch Update** to change multiple fields on multiple items - all 
+**at once with zero errors**. 
+ 
 You will discover a new way of store administration with this add-on. 
 
 It frees you up from mundane housekeeping tasks. So you can spend that time on anything that makes you more 
@@ -35,6 +38,7 @@ Highlights:
 
 * Convenient Browsing & Searching - Eliminate Extra Clicks And Long Wait Times
 * Inline Product/Order/Customer Management - Get Productive Right Away
+* Product Variations management in Pro version, for WPeC 3.8 and above
 * Quick, In-page detail view for Products/Orders/Customers
 * Fast And Reliable Batch Updates With Intelligent Update Actions
 * Note: Some of these features are only in Pro version
@@ -70,10 +74,10 @@ once, a quick edit link to WP e-Commerce editing screen.
 
 = What does the Pro version give me? =
 
-Pro version allows inline editing on all fields right within the spreadsheet view and a 
-powerful Batch Update screen where you can apply multiple smart update actions 
-to all selected items. For Customers, you can see total sales for each customer and 
-their last order details.
+Pro version allows managing product variations (WPeC 3.8+ required), inline editing 
+on all fields right within the spreadsheet view and a powerful Batch Update screen 
+where you can apply multiple smart update actions to all selected items. For 
+Customers, you can see total sales for each customer and their last order details.
 
 It also gives the fuzzy, warm feeling of supporting further development of the plugin.
 
@@ -89,6 +93,11 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 4. Column selection for display
 
 == Changelog ==
+
+= 1.4 =
+* NEW: Search, view, modify and delete variations of Products (Pro version only, requires WPeC 3.8+).
+* NEW: Batch Update on variations of Products (Pro version only, requires WPeC 3.8+).
+* Fixed: Upgrade problems with previous version
 
 = 1.3 =
 * NEW: Smart Manager now remembers changes you made to grid columns, edit product window dimensions and selected dashboard
@@ -202,6 +211,10 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
+
+= 1.4 =
+Adds management of product variations for Pro version, with WPeC 3.8+. IMPORTANT: Pro users: please rename plugin folder to "smart-manager-for-wp-e-commerce" before upgrading.
+
 = 1.3 =
 Feature update and bug fix release. 
 
