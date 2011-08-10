@@ -22,7 +22,7 @@ Smart Manager will **boost your productivity 10x** in managing products, custome
 You can browse, search, and manage multiple products, customers or orders using a **familiar, single page, 
 spreadsheet like** interface. 
 
-The Pro version also allows managing product variations, inline editing for all fields and adding items. 
+Paid versions also allow managing product variations, inline editing for all fields and adding items. 
 It also provides **Smart Batch Update** to change multiple fields on multiple items - all 
 **at once with zero errors**. 
  
@@ -72,12 +72,13 @@ Spreadsheet like view of products, customers and orders. Search and navigation,
 limited inline editing for products and orders, ability to delete multiple items at 
 once, a quick edit link to WP e-Commerce editing screen.
 
-= What does the Pro version give me? =
+= What do the paid versions give me? =
 
-Pro version allows managing product variations (WPeC 3.8+ required), inline editing 
-on all fields right within the spreadsheet view and a powerful Batch Update screen 
-where you can apply multiple smart update actions to all selected items. For 
-Customers, you can see total sales for each customer and their last order details.
+Paid versions (Pro, Multisite and Developer) allow managing product variations 
+(WPeC 3.8+ required), inline editing on all fields right within the spreadsheet 
+view and a powerful Batch Update screen where you can apply multiple smart update 
+actions to all selected items. For Customers, you can see total sales for each 
+customer and their last order details.
 
 It also gives the fuzzy, warm feeling of supporting further development of the plugin.
 
@@ -95,9 +96,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 == Changelog ==
 
 = 1.4 =
-* NEW: Search, view, modify and delete variations of Products (Pro version only, requires WPeC 3.8+).
-* NEW: Batch Update on variations of Products (Pro version only, requires WPeC 3.8+).
-* Fixed: Upgrade problems with previous version
+* NEW: Search, view, modify and delete variations of Products (paid versions only, requires WPeC 3.8+).
+* NEW: Batch Update on variations of Products (paid versions only, requires WPeC 3.8+).
+* Fixed: Upgrade problems with previous version 
 
 = 1.3 =
 * NEW: Smart Manager now remembers changes you made to grid columns, edit product window dimensions and selected dashboard
@@ -213,7 +214,7 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 == Upgrade Notice ==
 
 = 1.4 =
-Adds management of product variations for Pro version, with WPeC 3.8+. IMPORTANT: Pro users: please rename plugin folder to "smart-manager-for-wp-e-commerce" before upgrading.
+Adds management of product variations for paid versions, with WPeC 3.8+. IMPORTANT: Paid users: please rename plugin folder to "smart-manager-for-wp-e-commerce" before upgrading.
 
 = 1.3 =
 Feature update and bug fix release. 
@@ -253,3 +254,4 @@ Must have upgrade. Now you can manage orders too, and in a much better way than 
 
 = 0.5.7 =
 Fixes a problem that caused blank screen. 
+
