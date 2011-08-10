@@ -18,23 +18,26 @@ else
 if (isset ( $_POST ['limit'] ))
 	$limit = $_POST ['limit'];
 
-	// For pro version check if the required file exists
+// For pro version check if the required file exists
 if (file_exists ( '../pro/sm38.php' )) {
 	define ( 'SMPRO', true );
+	include_once ('../pro/sm38.php');
 } else {
 	define ( 'SMPRO', false );
 }
-if (SMPRO == true)
-	include_once ('../pro/sm38.php');
 
-	// getting the active module
+// getting the active module
 $active_module = $_POST ['active_module'];
 
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	global $wpdb;
-	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
+	$show_variation = true;
 	
+	if(SMPRO == true && function_exists('variation_query_params'))
+	variation_query_params();
+	
+	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
 	if ($active_module == 'Products') { // <-products
 		$select = "SELECT products.*,
 			       prod_meta_key,
@@ -43,25 +46,38 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			       prod_meta_data,			       
 			       GROUP_CONCAT( wt.name ) AS category";
 		
+		if(isset($_POST ['incVariation']) && $_POST ['incVariation'] == 'true'){
+			if (SMPRO == false)
+				$show_variation = false;
+		}else{
+			$show_variation = false;
+		}
+		
+		if($show_variation === false){ // query params for non-variation products
+				$post_status =  "('publish', 'draft')";
+				$parent_sort_id = '';
+				$order_by = " ORDER BY products.id desc";
+		}
+
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 			$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
 			
-			$sub_query = "AND p.id in (
+			$sub_query = "AND products.id in (
 						   select {$wpdb->prefix}posts.id
 			               FROM {$wpdb->prefix}posts
-						   WHERE post_status IN ('publish', 'draft')
+						   WHERE post_status IN  $post_status
 						   AND post_type    = 'wpsc-product'
 						   AND (concat(' ',post_title) LIKE '% $search_on%'
 			               OR post_content LIKE '%$search_on%'
 			               OR post_excerpt LIKE '%$search_on%'
-			               OR if(post_status = 'publish','Published','Draft') LIKE '%$search_on%')
+			               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%')
 						
 			               UNION 
 			
 			    		   SELECT pm.post_id
 				     	   FROM `{$wpdb->prefix}postmeta` pm
-						   WHERE meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock', '_wpsc_product_metadata')
-						   AND meta_value LIKE '%$search_on%'
+						   WHERE meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock')
+						   AND meta_value LIKE '$search_on%'
 						
 						   UNION
 		                   
@@ -73,18 +89,28 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 				           )";
 		}
 		
-		$from = "FROM ( select p.`id`,
+		$from = "FROM ( select `id`,
 				       post_title,
 				       post_content,
 				       post_excerpt,
-				       post_status				       
-						FROM {$wpdb->prefix}posts p 
-						WHERE post_status IN ('publish', 'draft')
+				       post_status,
+				       post_parent
+				       $parent_sort_id
+				       	       
+						FROM {$wpdb->prefix}posts as products
+						WHERE post_status IN  $post_status
 						AND post_type    = 'wpsc-product'
 						" . $sub_query . "
-						ORDER BY p.id desc  
+						$order_by  
 						LIMIT $offset,$limit) AS products
 					
+						JOIN
+						(SELECT id
+						FROM {$wpdb->prefix}posts
+						WHERE post_status in ('publish','draft')) as products_parents 
+						
+						on (if(products.post_parent != 0,products.post_parent,products.id) = products_parents.id ) 
+						
 						LEFT JOIN
 						(SELECT pm.post_id,
 						GROUP_CONCAT(meta_key order by meta_id SEPARATOR '#') as prod_meta_key,
@@ -104,17 +130,26 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 				        LEFT JOIN {$wpdb->prefix}term_taxonomy AS wtt ON (wtr.term_taxonomy_id = wtt.term_taxonomy_id and taxonomy = 'wpsc_product_category')
 				        LEFT JOIN {$wpdb->prefix}terms AS wt ON (wtt.term_id = wt.term_id)";
 		
-		$order_by = " ORDER BY products.id desc ";
-		$group_by = "GROUP BY products.id";
+		$order_by = $order_by ;
+		$group_by = " GROUP BY products.id";
 		
 		$query    = "$select $from $group_by $order_by";
 		$records  = $wpdb->get_results ( $query );
 		$num_rows = $wpdb->num_rows;
 		
-		$recordcount_query = "SELECT count(id) as count
-							  FROM {$wpdb->prefix}posts p 
-							  WHERE post_status IN ('publish', 'draft')
-							  AND post_type    = 'wpsc-product'
+		$recordcount_query = "SELECT count(products.id) as count
+		
+							  FROM {$wpdb->prefix}posts as products 
+							  
+							  JOIN
+						      (SELECT id
+							   FROM {$wpdb->prefix}posts
+						 	   WHERE post_status in ('publish','draft')) as products_parents
+						 	   
+						 	   on (if(products.post_parent != 0,products.post_parent,products.id) = products_parents.id )
+						
+							  WHERE products.post_status IN  $post_status
+							  AND products.post_type    = 'wpsc-product'
 							  $sub_query ";
 		$recordcount_result = $wpdb->get_results ( $recordcount_query, 'ARRAY_A' );
 		$num_records = $recordcount_result [0] ['count'];
@@ -650,8 +685,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 				else
 					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> New Records Inserted Successfully";
 			}
+			
 		}
-	}
+	}	
 	echo json_encode ( $encoded );
 }
 ?>

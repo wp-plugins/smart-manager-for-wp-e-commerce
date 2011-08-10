@@ -137,7 +137,8 @@ Ext.onReady(function () {
 	SM.colModelTimeoutId = '';		
 	SM.activeModule      = 'Products'; //default module selected.
 	SM.activeRecord      = '';
-	SM.curDataIndex      = '';	
+	SM.curDataIndex      = '';
+	SM.incVariation      = false;
 	
 	var fm = Ext.form;
 	var toolbarCount = 1;
@@ -231,6 +232,22 @@ Ext.onReady(function () {
 	
 	var productStatusCombo = new Ext.form.ComboBox({
 		typeAhead: true,
+		id: 'productStatusCombo',
+		triggerAction: 'all',
+		lazyRender:true,
+		mode: 'local',		
+		store: new Ext.data.ArrayStore({
+			id: 0,
+			fields: ['value','name'],
+			data: [['publish', 'Published'], ['draft', 'Draft'],['inherit', 'Inherit']]
+		}),
+		valueField: 'value',
+		displayField: 'name'
+	});
+	
+	var newProductStatusCombo = new Ext.form.ComboBox({
+		typeAhead: true,
+		id: 'newProductStatusCombo',
 		triggerAction: 'all',
 		lazyRender:true,
 		mode: 'local',
@@ -241,7 +258,8 @@ Ext.onReady(function () {
 		}),
 		valueField: 'value',
 		displayField: 'name'
-	});	
+	});
+	
 	
 //START: Products ColumnModel.
 	var storeColState = function(){
@@ -256,6 +274,18 @@ Ext.onReady(function () {
 	
 	var productsColumnModel = new Ext.grid.ColumnModel({
 		columns: [mySelectionModel,
+		 {
+			header: '',
+			id: 'type',
+			width: 50,
+			dataIndex: SM.productsCols.post_parent.colName,
+			tooltip: 'Type',
+			width: 20,
+			hidden: true,
+			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
+				return (value == 0 ? '<img id=editUrl src="' + imgURL + 'fav.gif"/>' : '');
+			}
+		},
 		{
 			header: SM.productsCols.name.name,
 			id: 'name',
@@ -266,7 +296,8 @@ Ext.onReady(function () {
 			editor: new fm.TextField({
 				allowBlank: false
 			})
-		},{
+		},
+		{
 			header: SM.productsCols.price.name,
 			id: 'price',
 			type: 'float',
@@ -298,8 +329,9 @@ Ext.onReady(function () {
 			align: 'right',
 			dataIndex: SM.productsCols.inventory.colName,
 			tooltip: 'Inventory',
-			editor: new fm.TextField({
-				allowBlank: true
+			editor: new fm.NumberField({
+				allowBlank: false,
+				allowNegative: false
 			})
 		},{
 			header: SM.productsCols.sku.name,
@@ -342,19 +374,7 @@ Ext.onReady(function () {
 			sortable: true,
 			dataIndex: SM.productsCols.publish.colName,
 			tooltip: 'Product Status',
-			editor: productStatusCombo,
 			renderer: Ext.util.Format.comboRenderer(productStatusCombo)
-		},{
-			header: 'Edit',
-			id: 'edit',
-			sortable: true,
-			tooltip: 'Product Info',
-			dataIndex: 'edit_url',
-			width: 50,
-			id: 'editLink',
-			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-				return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
-			}
 		},{
 			header: SM.productsCols.disregardShipping.name,
 			id: 'disregardShipping',
@@ -484,6 +504,17 @@ Ext.onReady(function () {
 			tooltip: 'Length Unit',
 			editor: dimensionCombo,
 			renderer: Ext.util.Format.comboRenderer(dimensionCombo)
+		},{
+			header: 'Edit',
+			id: 'edit',
+			sortable: true,
+			tooltip: 'Product Info',
+			dataIndex: 'edit_url',
+			width: 50,
+			id: 'editLink',
+			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
+				return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
+			}
 		}],
 		listeners: {
 			hiddenchange: function( ColumnModel,columnIndex, hidden ){
@@ -519,7 +550,8 @@ Ext.onReady(function () {
 				 {name: SM.productsCols.width.colName,             type: 'float'},
 				 {name: SM.productsCols.widthUnit.colName,         type: 'string'},
 				 {name: SM.productsCols.lengthCol.colName,         type: 'float'},
-				 {name: SM.productsCols.lengthUnit.colName,        type: 'string'}
+				 {name: SM.productsCols.lengthUnit.colName,        type: 'string'},
+				 {name: SM.productsCols.post_parent.colName,	   type: 'int'}
 				 ]
 	});
 	//END: Products JsonReader.
@@ -533,7 +565,8 @@ Ext.onReady(function () {
 			active_module: SM.activeModule,
 			start: 0,
 			limit: limit,
-			viewCols: Ext.encode(productsViewCols)
+			viewCols: Ext.encode(productsViewCols),
+			incVariation: SM.incVariation
 		},
 		dirty: false,
 		pruneModifiedRecords: true
@@ -541,7 +574,6 @@ Ext.onReady(function () {
 	//END: Products Store.
 	
 	var showProductsView = function(){
-		console.debug('showProductsView');
 		productsStore.baseParams.searchText = ''; //clear the baseParams for productsStore
 		SM.searchTextField.reset(); //to reset the searchTextField
 
@@ -551,6 +583,7 @@ Ext.onReady(function () {
 
 		for(var i=2;i<=8;i++)
 		editorGrid.getTopToolbar().get(i).hide();
+		editorGrid.getTopToolbar().get('incVariation').show();
 
 		pagingToolbar.addProductButton.enable();
 		pagingToolbar.addProductButton.show();
@@ -583,7 +616,12 @@ Ext.onReady(function () {
 			hidden: false,
 			id : 'addProductButton',
 			ref : 'addProductButton',
-			listeners: {click: function () { addProduct(productsStore,cnt_array,cnt,newCatName); }}
+			listeners : {
+				click : function() {
+					productsColumnModel.getColumnById('publish').editor = newProductStatusCombo;
+					addProduct(productsStore, cnt_array, cnt, newCatName);
+				}
+			}
 		},'-',{
 			text: 'Batch Update',
 			tooltip: 'Update selected items',
@@ -628,11 +666,53 @@ Ext.onReady(function () {
 		hideBorders: true,
 		align: 'center',
 		displayMsg: 'Displaying {0} - {1} of {2}',
-		emptyMsg: 'Product list is empty'
+		emptyMsg: SM.activeModule+' list is empty'
+		/*stateEvents : ['change'],
+		stateful: true,
+		getState: function(){ 
+//			var result = 
+			console.debug('before this: ',this);
+			return {emptyMsg: SM.activeModule+' list is empty',
+			                           cursor: this.cursor}
+		},
+		applyState: function(state) { 
+//			this.emptyMsg = state.emptyMsg;
+			this.cursor   = state.cursor;
+			console.debug('after this: ',this);
+		}*/
 	});
 	var pagingActivePage = pagingToolbar.getPageData().activePage;
 
 //START: Functions.
+	// send requests
+	var sendRequest = function(type,params){
+		var o = {
+				url:jsonURL
+				,method:'post'
+				,callback: function(options, success, response)	{
+					var myJsonObj = Ext.decode(response.responseText);
+					if(true !== success){
+						Ext.notification.msg('Failed',response.responseText);
+						return;
+					}try{
+						store.commitChanges();					
+						pagingToolbar.saveButton.disable();
+						Ext.notification.msg('Success', myJsonObj.msg);
+						store.load();
+						return;
+					}catch(e){
+						var err = e.toString();
+						Ext.notification.msg('Error', err);					
+						return;
+					}
+				}
+				,scope:this
+				,params: params
+				};
+				Ext.Ajax.request(o);
+		};
+	//EOF 
+	
 	// Function to save modified records
 	var saveRecords = function(store,pagingToolbar,jsonURL,mySelectionModel){
 		// Gets all records modified since the last commit.
@@ -772,7 +852,10 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 	stateEvents : ['added','beforerender','enable','select','change','show','beforeshow'],
 	stateful: true,
 	getState: function(){ return { value: this.getValue()}; },
-	applyState: function(state) { this.setValue(state.value);},
+	applyState: function(state) { 
+		this.setValue(state.value);
+		pagingToolbar.emptyMsg =  state.value+' list is empty';
+		},
 	store: new Ext.data.ArrayStore({
 		autoDestroy: true,
 		forceSelection: true,
@@ -797,7 +880,7 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 	width: 135,
 	listeners: {
 		select: function () {
-			
+			pagingToolbar.emptyMsg = this.getValue()+' list is empty';
 			editorGrid.stateId = this.value.toLowerCase()+'EditorGridPanel';
 			
 			cellClicked = false;
@@ -1120,9 +1203,10 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 			pagingToolbar.get(15).show();
 			pagingToolbar.get(18).show();
 			pagingToolbar.get(19).show();			
-
+			
 			for(var i=2;i<=8;i++)
-			editorGrid.getTopToolbar().get(i).hide();
+			editorGrid.getTopToolbar().get(i).hide();			
+			editorGrid.getTopToolbar().get('incVariation').hide();
 						
 			if(customersFields != 0)
 			productFieldStore.loadData(customersFields); //@todo: use a common name fieldStore and load respective fields in it.
@@ -1421,6 +1505,7 @@ if(isWPSC38 == '1'){
 
 			for(var i=2;i<=8;i++)
 			editorGrid.getTopToolbar().get(i).show();
+			editorGrid.getTopToolbar().get('incVariation').hide();
 
 			pagingToolbar.addProductButton.disable();
 			pagingToolbar.addProductButton.hide();
@@ -1543,6 +1628,7 @@ var searchLogic = function () {
 			searchText: SM.searchTextField.getValue(),
 			fromDate: fromDateTxt.getValue(),
 			toDate: toDateTxt.getValue(),
+			incVariation:SM.incVariation,
 			start: 0,
 			limit: limit,
 			viewCols: Ext.encode(productsViewCols)
@@ -2039,8 +2125,22 @@ batchUpdateWindow = new Ext.Window({
 });
 batchUpdateWindow.on('hide', afterClose, this);
 
+
+var storeDetailsWindowState = function(obj,stateId){
+	var q            = new Ext.state.CookieProvider();
+	var thisObjState =  q.get(stateId);
+
+	if(thisObjState != undefined){
+		obj.setSize(thisObjState.width, thisObjState.height);
+		obj.setPagePosition(thisObjState.x,thisObjState.y);
+	}
+};
+
 var billingDetailsIframe = function(recordId){
 	var billingDetailsWindow = new Ext.Window({
+		stateId : 'billingDetailsWindow',
+		stateEvents : ['show','bodyresize','maximize'],
+		stateful: true,
 		title: 'Order Details',
 		width:500,
 		height: 500,
@@ -2048,6 +2148,7 @@ var billingDetailsIframe = function(recordId){
 		maximizable: true,
 		maximized: false,
 		resizeable: true,
+		listeners: { show: function(t){ storeDetailsWindowState(t,t.stateId); }	},
 		html: '<iframe src='+ ordersDetailsLink + '' + recordId +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'
 	});
 	billingDetailsWindow.show();
@@ -2129,7 +2230,28 @@ var showCustomerDetails = function(record,rowIndex){
 			{text:'From:'},fromDateTxt,{icon: imgURL + 'calendar.gif', menu: fromDateMenu},
 			{text:'To:'},toDateTxt,{icon: imgURL + 'calendar.gif', menu: toDateMenu},
 			{xtype: 'tbspacer',width: 15},
-			SM.searchTextField,{ icon: imgURL + 'search.png' }
+			SM.searchTextField,{ icon: imgURL + 'search.png' },
+			{xtype: 'tbspacer',width: 50},
+			{ 
+				xtype: 'checkbox',
+				id:'incVariation',
+				name: 'incVariation',
+				stateEvents : ['added','check'],
+				stateful: true,
+				getState: function(){ return { value: this.getValue()}; },
+				applyState: function(state) { this.setValue(state.value);},
+			 	boxLabel: 'Show Variations',
+			 	listeners: {
+					check : function(checkbox, bool) {
+						
+						if(fileExists == 1){
+							showVariations(checkbox, bool, pagingToolbar, productsColumnModel, productsStore);
+						}else{
+							Ext.notification.msg('Smart Manager', 'Show Variations feature is available only in Pro version');							
+						}
+					}
+			 	}
+			}
 			],
 	scrollOffset: 50,
 	listeners: {
@@ -2137,11 +2259,13 @@ var showCustomerDetails = function(record,rowIndex){
 			try{
 				var record  = editorGrid.getStore().getAt(rowIndex);
 				cellClicked = true;
-				var editLinkColumnIndex       = productsColumnModel.findColumnIndex('edit_url');
-				var totalPurchasedColumnIndex = customersColumnModel.findColumnIndex('Total_Purchased');
-				var lastOrderColumnIndex      = customersColumnModel.findColumnIndex('Last_Order');
-				var nameLinkColumnIndex       = ordersColumnModel.findColumnIndex('name');
-				var orderDetailsColumnIndex   = ordersColumnModel.findColumnIndex('details');
+				var editLinkColumnIndex   	  = productsColumnModel.findColumnIndex('edit_url'),
+					prodTypeColumnIndex       = productsColumnModel.findColumnIndex('type'),
+					totalPurchasedColumnIndex = customersColumnModel.findColumnIndex('Total_Purchased'),
+					lastOrderColumnIndex      = customersColumnModel.findColumnIndex('Last_Order'),
+					nameLinkColumnIndex       = ordersColumnModel.findColumnIndex('name'),
+					orderDetailsColumnIndex   = ordersColumnModel.findColumnIndex('details');					
+					publishColumnIndex        = productsColumnModel.findColumnIndex(SM.productsCols.publish.colName);
 
 				if(SM.activeModule == 'Orders'){
 					if(columnIndex == orderDetailsColumnIndex){
@@ -2149,35 +2273,39 @@ var showCustomerDetails = function(record,rowIndex){
 					}else if(columnIndex == nameLinkColumnIndex){
 						checkModifiedAndshowDetails(record,rowIndex);
 					}
-				}else if(columnIndex == editLinkColumnIndex && SM.activeModule == 'Products'){
-					var productsDetailsWindow = new Ext.Window({						
-						stateId : 'productsDetailsWindow',
-						stateEvents : ['show','bodyresize','maximize'],
-						stateful: true,
-						title: 'Products Details',
-						width:500,
-						height: 600,						
-						minimizable: false,
-						maximizable: true,
-						maximized: false,
-						resizeable: true,
-						shadow : true,
-						shadowOffset : 10,
-						animateTarget:'editLink',
-						listeners: {
-							show: function(t){
-								var q = new Ext.state.CookieProvider();
-								var thisObj =  q.get('productsDetailsWindow');
-
-								if(thisObj != undefined){
-									this.setSize(thisObj.width, thisObj.height);
-									this.setPagePosition(thisObj.x,thisObj.y);
-								}
-							}
-						},
-						html: '<iframe src='+ productsDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'
-					});
+				}else if(SM.activeModule == 'Products'){
+					if(columnIndex == editLinkColumnIndex) {
+						var productsDetailsWindow = new Ext.Window({
+							stateId : 'productsDetailsWindow',
+							stateEvents : ['show','bodyresize','maximize'],
+							stateful: true,
+							title: 'Products Details',
+							width:500,
+							height: 600,						
+							minimizable: false,
+							maximizable: true,
+							maximized: false,
+							resizeable: true,
+							shadow : true,
+							shadowOffset : 10,
+							animateTarget:'editLink',
+							listeners: { show: function(t){ storeDetailsWindowState(t,t.stateId); }	},
+							html: '<iframe src='+ productsDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'
+						});
+				
 					productsDetailsWindow.show('editLink');
+						
+					}else if(columnIndex == publishColumnIndex){						
+						if(fileExists == 1){
+							if(record.get('post_parent') == 0){
+								productsColumnModel.setEditable(columnIndex,true);
+								productsColumnModel.getColumnById('publish').editor = newProductStatusCombo;
+							}else{
+								productsColumnModel.getColumnById('publish').editor = productStatusCombo;
+								productsColumnModel.setEditable(columnIndex,false);
+							}
+						}
+					}
 				}
 				else if(SM.activeModule == 'Customers'){
 					if(fileExists == 1){
@@ -2220,7 +2348,6 @@ var showCustomerDetails = function(record,rowIndex){
 		},
 		viewready: function(grid){
 			showSelectedModule(SM.dashboardComboBox.value);
-			console.debug('pagingToolbar.addProductButton',pagingToolbar.addProductButton);
 		},
 		reconfigure : function(grid,store,colModel ){
 			var editorGridStateId = grid.getStateId();
@@ -2247,6 +2374,7 @@ productsStore.on('load', function () {
 	cnt_array = [];
 	mySelectionModel.clearSelections();
 	pagingToolbar.saveButton.disable();
+	productsColumnModel.getColumnById('publish').editor = productStatusCombo;
 });
 
 //For pro version check if the required file exists
@@ -2267,8 +2395,7 @@ if(fileExists == 1){
 	//disable inline editing for customers
 	var customersColumnCount = customersColumnModel.getColumnCount();
 	for(var i=1; i<customersColumnCount; i++)
-		customersColumnModel.setEditable(i,false);
-	
+		customersColumnModel.setEditable(i,false);	
 }
 
 }catch(e){
