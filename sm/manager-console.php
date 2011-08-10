@@ -249,7 +249,6 @@ $products_cols['height']['colName']='height';
 $products_cols['height']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['height']['colFilter']='meta_key:_wpsc_product_metadata';
 
-//$products_cols['heightUnit']['id']=16;
 $products_cols['heightUnit']['name']='Unit';
 $products_cols['heightUnit']['actionType']='';
 $products_cols['heightUnit']['colName']='height_unit';
@@ -292,6 +291,9 @@ $products_cols['oos']['actionType']='YesNoActions';
 $products_cols['oos']['colName']='unpublish_when_none_left';
 $products_cols['oos']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['oos']['colFilter']='meta_key:_wpsc_product_metadata';
+
+$products_cols['post_parent']['colName']='post_parent';
+$products_cols['post_parent']['actionType']='';
 
 // BOF Product category
 if (IS_WPSC37) {
@@ -352,13 +354,13 @@ echo "<script type='text/javascript'>
 var isWPSC37            = '" . IS_WPSC37 . "';
 var isWPSC38            = '" . IS_WPSC38 . "';
 
-var ordersFields        = " . $encodedOrdersFields . ";
-var customersFields     = " . $encodedCustomersFields . ";
-categories = " . $categories . ";
-var countries           = " . $encodedCountries . ";
-var regions             = " . $encodedRegions . ";
-var weightUnits         = " . $encodedWeightUnits . ";
-var ordersStatus        = " . $encodedOrderStatus . ";
+var ordersFields        =  " . $encodedOrdersFields . ";
+var customersFields     =  " . $encodedCustomersFields . ";
+var categories 			=  " . $categories . ";
+var countries           =  " . $encodedCountries . ";
+var regions             =  " . $encodedRegions . ";
+var weightUnits         =  " . $encodedWeightUnits . ";
+var ordersStatus        =  " . $encodedOrderStatus . ";
 var newCatName          = '" . $cat_name . "';
 var fileExists          = '" . $fileExists . "';
 var newCatId            = '" . $cat_id . "';
