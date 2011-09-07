@@ -94,8 +94,9 @@ actions['YesNoActions']   = [[0,'Yes','YES'],
                              [1,'No','NO']];
 
 actions['category_actions'] = [[0, 'set to','SET_TO'],
-							    [1,'add to','ADD_TO'],
-							    [2,'remove from','REMOVE_FROM']];
+							   [1,'add to','ADD_TO'],
+							   [2,'remove from','REMOVE_FROM']];
+							   
 // BOF global components & function
 var editorGrid         = '';
 var showOrdersView     = '';
@@ -104,6 +105,7 @@ var weightUnitStore    = '';
 var countriesStore     = '';
 var regionsStore       = '';
 var reloadRegionCombo  = '';
+var getVariations 	   = function(){};
 // EOF
 
 Ext.onReady(function () {
@@ -113,11 +115,6 @@ Ext.onReady(function () {
 		//Stateful
 		Ext.state.Manager.setProvider(new Ext.state.CookieProvider({
 			expires: new Date(new Date().getTime()+(1000*60*60*24*30)), //30 days from now
-			listeners: { 
-					statechange : function( Provider, key, value ){
-						
-					}
-			}
 		}));
 		//Stateful
 		
@@ -139,9 +136,10 @@ Ext.onReady(function () {
 	SM.activeRecord      = '';
 	SM.curDataIndex      = '';
 	SM.incVariation      = false;
+	SM.typeColIndex 	 = '';
 	
 	var fm = Ext.form;
-	var toolbarCount = 1;
+	var toolbarCount = 1;	
 	
 	//for checkboxSelectionModel.
 	var cnt = -1;
@@ -260,8 +258,6 @@ Ext.onReady(function () {
 		displayField: 'name'
 	});
 	
-	
-//START: Products ColumnModel.
 	var storeColState = function(){
 		var editorGridStateId = editorGrid.getStateId();
 		var state = Ext.state.Manager.get(editorGridStateId);
@@ -412,7 +408,6 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.pnp.colName,
-//			width: 50,
 			tooltip: 'Local Shipping Fee',			
 			editor: new fm.NumberField({
 				allowBlank: false,
@@ -425,7 +420,6 @@ Ext.onReady(function () {
 			colSpan: 2,
 			sortable: true,
 			align: 'right',
-//			width: 50,
 			dataIndex: SM.productsCols.intPnp.colName,
 			tooltip: 'International Shipping Fee',
 			editor: new fm.NumberField({
@@ -439,7 +433,6 @@ Ext.onReady(function () {
 			colSpan: 2,
 			sortable: true,
 			align: 'right',
-//			width: 50,
 			dataIndex: SM.productsCols.height.colName,
 			tooltip: 'Height',			
 			editor: new fm.NumberField({
@@ -453,7 +446,6 @@ Ext.onReady(function () {
 			sortable: true,
 			dataIndex: SM.productsCols.heightUnit.colName,
 			tooltip: 'Height Unit',
-//			width: 50,
 			editor: dimensionCombo,
 			renderer: Ext.util.Format.comboRenderer(dimensionCombo)
 		},{
@@ -465,7 +457,6 @@ Ext.onReady(function () {
 			align: 'right',
 			dataIndex: SM.productsCols.width.colName,
 			tooltip: 'Width',
-//			width: 50,
 			editor: new fm.NumberField({
 				allowBlank: false,
 				allowNegative: false
@@ -475,7 +466,6 @@ Ext.onReady(function () {
 			id: 'widthUnit',
 			hidden: true,
 			sortable: true,
-//			width: 50,
 			dataIndex: SM.productsCols.widthUnit.colName,
 			tooltip: 'Width Unit',
 			editor: dimensionCombo,
@@ -486,7 +476,6 @@ Ext.onReady(function () {
 			hidden: true,
 			colSpan: 2,
 			sortable: true,
-//			width: 50,
 			align: 'right',
 			dataIndex: SM.productsCols.lengthCol.colName,
 			tooltip: 'Length',			
@@ -499,7 +488,6 @@ Ext.onReady(function () {
 			sortable: true,
 			hidden: true,
 			id: 'lengthUnit',
-//			width: 50,
 			dataIndex: SM.productsCols.lengthUnit.colName,
 			tooltip: 'Length Unit',
 			editor: dimensionCombo,
@@ -522,44 +510,68 @@ Ext.onReady(function () {
 			}
 		},
 		defaultSortable: true
-	});		
-	//END: Products ColumnModel.
-		
-	//START: Products JsonReader.
-	var productsJsonReader = new Ext.data.JsonReader({
+	});	
+
+	//Function to escape white space characters.
+	var escapeCharacters = function(result){
+		// The "g" at the end of the regex statement signifies that the replacement should take place more than once (g).
+		patternF = /\f/g;
+		patternN = /\n/g;
+		patternR = /\r/g;
+		patternT = /\t/g;
+		return result = result.replace(patternF,'\\f').replace(patternN,'\\n').replace(patternR,'\\r').replace(patternT,'\\t');
+	};
+	
+	// START: Products JsonReader.
+	// created a custom jsonreader by extending JsonReader and overridding read function 
+	// to escape invisible/white space characters from the responseText
+	Ext.data.customJsonReader = Ext.extend(Ext.data.JsonReader,{
+		read : function(response){
+			var json = escapeCharacters(response.responseText);
+			var o = Ext.decode(json);
+			if(!o) {
+				throw {message: 'JsonReader.read: Json object not found'};
+			}
+			return this.readRecords(o);
+		}
+	});
+	
+	var productsJsonReader = new Ext.data.customJsonReader({
 		totalProperty: 'totalCount',
 		root: 'items',
-		fields: [{name: SM.productsCols.id.colName,                type: 'int'},
-				 {name: SM.productsCols.name.colName,              type: 'string'},
-				 {name: SM.productsCols.price.colName,             type: 'float'},
-				 {name: SM.productsCols.salePrice.colName,         type: 'int'},
-				 {name: SM.productsCols.inventory.colName,         type: 'string'},
-				 {name: SM.productsCols.publish.colName,           type: 'string'},
-				 {name: SM.productsCols.salePrice.colName,         type: 'float'},
-				 {name: SM.productsCols.sku.colName,               type: 'string'},
-				 {name: SM.productsCols.group.colName,             type: 'string'},
-				 {name: SM.productsCols.disregardShipping.colName, type: 'string'},
-				 {name: SM.productsCols.desc.colName,              type: 'string'},
-				 {name: SM.productsCols.addDesc.colName,           type: 'string'},
-				 {name: SM.productsCols.pnp.colName,               type: 'float'},
-				 {name: SM.productsCols.intPnp.colName,            type: 'float'},
-				 {name: SM.productsCols.weight.colName,            type: 'float'},
-				 {name: SM.productsCols.weightUnit.colName,        type: 'string'},
-				 {name: SM.productsCols.height.colName,            type: 'float'},
-				 {name: SM.productsCols.heightUnit.colName,        type: 'string'},
-				 {name: SM.productsCols.width.colName,             type: 'float'},
-				 {name: SM.productsCols.widthUnit.colName,         type: 'string'},
-				 {name: SM.productsCols.lengthCol.colName,         type: 'float'},
-				 {name: SM.productsCols.lengthUnit.colName,        type: 'string'},
-				 {name: SM.productsCols.post_parent.colName,	   type: 'int'}
-				 ]
-	});
-	//END: Products JsonReader.
+		fields: [{name: SM.productsCols.id.colName,               type: 'int'},
+				{name: SM.productsCols.name.colName,              type: 'string'},
+				{name: SM.productsCols.price.colName,             type: 'float'},
+				{name: SM.productsCols.salePrice.colName,         type: 'int'},
+				{name: SM.productsCols.inventory.colName,         type: 'string'},
+				{name: SM.productsCols.publish.colName,           type: 'string'},
+				{name: SM.productsCols.salePrice.colName,         type: 'float'},
+				{name: SM.productsCols.sku.colName,               type: 'string'},
+				{name: SM.productsCols.group.colName,             type: 'string'},
+				{name: SM.productsCols.disregardShipping.colName, type: 'string'},
+				{name: SM.productsCols.desc.colName,              type: 'string'},
+				{name: SM.productsCols.addDesc.colName,           type: 'string'},
+				{name: SM.productsCols.pnp.colName,               type: 'float'},
+				{name: SM.productsCols.intPnp.colName,            type: 'float'},
+				{name: SM.productsCols.weight.colName,            type: 'float'},
+				{name: SM.productsCols.weightUnit.colName,        type: 'string'},
+				{name: SM.productsCols.height.colName,            type: 'float'},
+				{name: SM.productsCols.heightUnit.colName,        type: 'string'},
+				{name: SM.productsCols.width.colName,             type: 'float'},
+				{name: SM.productsCols.widthUnit.colName,         type: 'string'},
+				{name: SM.productsCols.lengthCol.colName,         type: 'float'},
+				{name: SM.productsCols.lengthUnit.colName,        type: 'string'},
+				{name: SM.productsCols.post_parent.colName,	      type: 'int'}
+		]
+	});	
+	// END: Products JsonReader.
 	
-	//START: Products Store.
+	// START: Products Store.
 	var productsStore = new Ext.data.Store({
 		reader: productsJsonReader,
-		proxy: new Ext.data.HttpProxy({	url: jsonURL }),
+		proxy: new Ext.data.HttpProxy({
+			url: jsonURL
+		}),
 		baseParams: {
 			cmd: 'getData',
 			active_module: SM.activeModule,
@@ -605,6 +617,7 @@ Ext.onReady(function () {
 		textfield.show();
 	};	
 //END: Products.
+
 	var pagingToolbar = new Ext.PagingToolbar({
 		id: 'pagingToolbar',
 		items: ['->', '-',
@@ -667,52 +680,9 @@ Ext.onReady(function () {
 		align: 'center',
 		displayMsg: 'Displaying {0} - {1} of {2}',
 		emptyMsg: SM.activeModule+' list is empty'
-		/*stateEvents : ['change'],
-		stateful: true,
-		getState: function(){ 
-//			var result = 
-			console.debug('before this: ',this);
-			return {emptyMsg: SM.activeModule+' list is empty',
-			                           cursor: this.cursor}
-		},
-		applyState: function(state) { 
-//			this.emptyMsg = state.emptyMsg;
-			this.cursor   = state.cursor;
-			console.debug('after this: ',this);
-		}*/
 	});
 	var pagingActivePage = pagingToolbar.getPageData().activePage;
 
-//START: Functions.
-	// send requests
-	var sendRequest = function(type,params){
-		var o = {
-				url:jsonURL
-				,method:'post'
-				,callback: function(options, success, response)	{
-					var myJsonObj = Ext.decode(response.responseText);
-					if(true !== success){
-						Ext.notification.msg('Failed',response.responseText);
-						return;
-					}try{
-						store.commitChanges();					
-						pagingToolbar.saveButton.disable();
-						Ext.notification.msg('Success', myJsonObj.msg);
-						store.load();
-						return;
-					}catch(e){
-						var err = e.toString();
-						Ext.notification.msg('Error', err);					
-						return;
-					}
-				}
-				,scope:this
-				,params: params
-				};
-				Ext.Ajax.request(o);
-		};
-	//EOF 
-	
 	// Function to save modified records
 	var saveRecords = function(store,pagingToolbar,jsonURL,mySelectionModel){
 		// Gets all records modified since the last commit.
@@ -1089,22 +1059,25 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 				allowNegative: false
 			}),
 			width: 150
-		},{
+		},
+		{
 			header: 'Region',
 			id: 'billingstate',
 			dataIndex: 'billingstate',
 			tooltip: 'Billing Region',
 			align: 'center',
-			editor: regionEditor,
+//			editor: regionEditor,
 			width: 100
-		},{
+		},
+		{
 			header: 'Country',
 			id: 'billingcountry',
 			dataIndex: 'billingcountry',
 			tooltip: 'Billing Country',
-			editor:countriesCombo,
+//			editor:countriesCombo,
 			width: 120
-		},{
+		},
+		{
 			header: 'Total Purchased',
 			id: 'total_purchased', //@todo: change the id to Total_Purchased
 			dataIndex: 'Total_Purchased',
@@ -1139,15 +1112,15 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 	var totPurDataType = '';	
 	if (fileExists != 1) { 
 		totPurDataType = 'string';
-		customersColumnModel.columns[9].align = 'center';
-		customersColumnModel.columns[10].align = 'center';
+		customersColumnModel.columns[customersColumnModel.findColumnIndex('Total_Purchased')].align = 'center';
+		customersColumnModel.columns[customersColumnModel.findColumnIndex('Last_Order')].align = 'center';
 	}else{
 		totPurDataType = 'float';
-		customersColumnModel.setRenderer(9,amountRenderer);		
+//		customersColumnModel.setRenderer(7,amountRenderer);		
 	}
 	
 	// Data reader class to create an Array of Records objects from a JSON packet.
-	var customersJsonReader = new Ext.data.JsonReader ({
+	var customersJsonReader = new Ext.data.customJsonReader({
 		totalProperty: 'totalCount',
 		root: 'items',
 		fields:
@@ -1172,9 +1145,12 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 	var customersStore = new Ext.data.Store({
 		reader: customersJsonReader,
 		proxy:new Ext.data.HttpProxy({url:jsonURL}),
-		baseParams:{cmd:'getData',
-					active_module: 'Customers',
-					start: 0, limit: limit},
+		baseParams:{
+			cmd: 'getData',
+			active_module: 'Customers',
+			start: 0,
+			limit: limit			
+		},
 		dirty:false,
 		pruneModifiedRecords: true
 	});
@@ -1246,7 +1222,6 @@ SM.dashboardComboBox = new Ext.form.ComboBox({
 	});
 //END: Customers	
 
-//START: Orders settings
 if(isWPSC38 == '1'){
 	var orderStatusCombo = new Ext.form.ComboBox({
 		typeAhead: true,
@@ -1257,12 +1232,12 @@ if(isWPSC38 == '1'){
 			id: 0,
 			fields: ['internalname','label','value'],
 			data: [
-					['incomplete_sale',  'Incomplete Sale',  1],
-					['order_received',   'Order Received',   2],
-					['accepted_payment', 'Accepted Payment', 3],
-					['job_dispatched',   'Job Dispatched',   4],
-					['closed_order',     'Closed Order',     5],
-					['declined_payment', 'Payment Declined', 6]
+			['incomplete_sale',  'Incomplete Sale',  1],
+			['order_received',   'Order Received',   2],
+			['accepted_payment', 'Accepted Payment', 3],
+			['job_dispatched',   'Job Dispatched',   4],
+			['closed_order',     'Closed Order',     5],
+			['declined_payment', 'Payment Declined', 6]
 			]
 		}),
 		valueField: 'value',
@@ -1277,17 +1252,18 @@ if(isWPSC38 == '1'){
 		store: new Ext.data.ArrayStore({
 			id: 0,
 			fields: ['label','value'],
-			data: [	
-					['Order Received',   1],
-					['Accepted Payment', 2],
-					['Job Dispatched',   3],
-					['Closed Order',     4]
-				 ]
+			data: [
+			['Order Received',   1],
+			['Accepted Payment', 2],
+			['Job Dispatched',   3],
+			['Closed Order',     4]
+			]
 		}),
 		valueField: 'value',
 		displayField: 'label'
 	});
 }
+
 	var ordersColumnModel = new Ext.grid.ColumnModel({	
 		columns:[mySelectionModel, //checkbox for
 		{
@@ -1403,25 +1379,28 @@ if(isWPSC38 == '1'){
 				allowBlank: false,
 				allowNegative: false
 			}),
-			width: 200		
-		},{   
+			width: 200
+		},
+		{   
 			header: 'Shipping Region',
 			id: 'shippingstate',
 			dataIndex: 'shippingstate',
 			tooltip: 'Shipping Region',
 			align: 'center',
 			hidden: true,
-			editor: regionEditor,
+//			editor: regionEditor,
 			width: 100		
-		},{
+		},
+		{
 			header: 'Shipping Country',
 			id: 'shippingcountry',
 			dataIndex: 'shippingcountry',
 			tooltip: 'Shipping Country',
-			editor:countriesCombo,
+//			editor:countriesCombo,
 			hidden: true,
 			width: 120
-		}],
+		}
+		],
 		listeners: {
 			hiddenchange: function( ColumnModel,columnIndex, hidden ){
 				storeColState();
@@ -1431,7 +1410,7 @@ if(isWPSC38 == '1'){
 	});
 
 	// Data reader class to create an Array of Records objects from a JSON packet.
-	var ordersJsonReader = new Ext.data.JsonReader({
+	var ordersJsonReader = new Ext.data.customJsonReader({
 		totalProperty: 'totalCount',
 		root: 'items',
 		fields:
@@ -1449,7 +1428,7 @@ if(isWPSC38 == '1'){
 		{name:'shippingaddress', type:'string'},
 		{name:'shippingcity', type:'string'},
 		{name:'shippingcountry', type:'string'},
-		{name:'shippingstate', type:'string'},
+		{name:'shippingstate', type:'string'},  
 		{name:'shippingpostcode', type:'string'}
 		]
 	});
@@ -1458,11 +1437,12 @@ if(isWPSC38 == '1'){
 	var ordersStore = new Ext.data.Store({
 		reader: ordersJsonReader,
 		proxy:new Ext.data.HttpProxy({url:jsonURL}),
-		baseParams:{cmd:'getData',
-					active_module: 'Orders',
-					fromDate: fromDateTxt.getValue(),
-					toDate: toDateTxt.getValue(),
-					start: 0, limit: limit},
+		baseParams:{
+			cmd: 'getData',
+			active_module: 'Orders',
+			start: 0,
+			limit: limit
+		},
 		dirty:false,
 		pruneModifiedRecords: true
 	});
@@ -1526,9 +1506,8 @@ if(isWPSC38 == '1'){
 			Ext.notification.msg('Error', err);			
 		}
 	};
-//END: Orders.
 
-	 //START: Component
+//START: Component
  SM.searchTextField = new Ext.form.TextField({
 	id: 'tf',
 	width: 400,
@@ -1582,7 +1561,6 @@ if(isWPSC38 == '1'){
 });
 //END: Component
 
-//START: Functions.
 var searchLogic = function () {
 	//START setting the params to store if search fields are with values (refresh event)
 	switch(SM.activeModule) {
@@ -1603,7 +1581,10 @@ var searchLogic = function () {
 		url: jsonURL,
 		method: 'post',
 		callback: function (options, success, response) {
-			var myJsonObj = Ext.decode(response.responseText);
+			
+			var result = escapeCharacters(response.responseText);
+			var myJsonObj = Ext.decode(result);
+			
 			if (true !== success) {
 				Ext.notification.msg('Failed',response.responseText);
 				return;
@@ -1636,7 +1617,6 @@ var searchLogic = function () {
 	};
 	Ext.Ajax.request(o);
 };
-//END: Functions.
 	
 //START: BatchUpdate
 //store for first combobox(field combobox) of BatchUpdate window.
@@ -2242,17 +2222,17 @@ var showCustomerDetails = function(record,rowIndex){
 				applyState: function(state) { this.setValue(state.value);},
 			 	boxLabel: 'Show Variations',
 			 	listeners: {
-					check : function(checkbox, bool) {
-						
-						if(fileExists == 1){
-							showVariations(checkbox, bool, pagingToolbar, productsColumnModel, productsStore);
-						}else{
-							Ext.notification.msg('Smart Manager', 'Show Variations feature is available only in Pro version');							
-						}
-					}
+			 		check : function(checkbox, bool) {
+			 			if(fileExists == 1){
+			 				SM.incVariation  = bool;
+			 				productsStore.setBaseParam('incVariation', SM.incVariation);
+			 				getVariations(productsStore.baseParams,productsColumnModel);
+			 			}else{
+			 				Ext.notification.msg('Smart Manager', 'Show Variations feature is available only in Pro version');
+			 			}
+			 		}
 			 	}
-			}
-			],
+			}],
 	scrollOffset: 50,
 	listeners: {
 		cellclick: function(editorGrid,rowIndex, columnIndex, e) {
@@ -2366,10 +2346,53 @@ function afterEdit(e) {
 	pagingToolbar.saveButton.enable();
 };
 editorGrid.on('afteredit', afterEdit, this);
+
+SM.typeColIndex  = productsColumnModel.findColumnIndex(SM.productsCols.post_parent.colName);
+getVariations = function (params,columnModel){
+	var o = {
+		url: jsonURL,
+		method: 'post',
+		callback: function (options, success, response) {			
+			if (true !== success) {
+				Ext.notification.msg('Failed',response.responseText);
+				return;
+			}try{
+
+				if(typeof(response.responseText) != 'undefined')
+				var result = escapeCharacters(response.responseText);
+				var myJsonObj = Ext.decode(result);
+				
+				var records_cnt = myJsonObj.totalCount;
+				if (records_cnt == 0){
+					myJsonObj.items = '';
+				}
+
+				if(SM.activeModule == 'Products'){
+					productsStore.loadData(myJsonObj);
+					if(SM.incVariation == false){
+						columnModel.setHidden(SM.typeColIndex,true);
+					}else{
+						columnModel.setHidden(SM.typeColIndex,false);
+					}
+				}else if(SM.activeModule == 'Customers'){
+					customersStore.loadData(myJsonObj)
+				}else{
+					ordersStore.loadData(myJsonObj)
+				}
+
+			} catch (e) {
+				return;
+			}
+		},
+		scope: this,
+		params: params
+	};
+	Ext.Ajax.request(o);
+}
 eval(SM.dashboardComboBox.value.toLowerCase()+'Store.load()');
 
 //Products Store onload function.
-productsStore.on('load', function () {
+productsStore.on('load', function (store,records,obj) {
 	cnt = -1;
 	cnt_array = [];
 	mySelectionModel.clearSelections();
@@ -2377,11 +2400,14 @@ productsStore.on('load', function () {
 	productsColumnModel.getColumnById('publish').editor = productStatusCombo;
 });
 
+productsStore.on('exception',function(misc){ 
+	Ext.notification.msg('Smart Manager', 'Response is not in a required format!');
+});
+
 //For pro version check if the required file exists
 if(fileExists == 1){
 	batchUpdateWindow.title = 'Batch Update';
 	pagingToolbar.addProductButton.enable();
-
 }else{
 	batchUpdateRecords = function () {
 		Ext.notification.msg('Smart Manager', 'Batch Update feature is available only in Pro version');
@@ -2397,7 +2423,6 @@ if(fileExists == 1){
 	for(var i=1; i<customersColumnCount; i++)
 		customersColumnModel.setEditable(i,false);	
 }
-
 }catch(e){
 		var err = e.toString();
 		Ext.notification.msg('Error', err);
