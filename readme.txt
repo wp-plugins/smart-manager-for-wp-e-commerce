@@ -3,8 +3,8 @@ Contributors: niravmehta, rohankamble, angelin.nadar
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
-Tested up to: 3.1
-Stable tag: 1.4
+Tested up to: 3.2
+Stable tag: 1.5
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -94,6 +94,12 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 4. Column selection for display
 
 == Changelog ==
+
+= 1.5 =
+* NEW: Performance optimization for large number of records.
+* Change: State / Region from Customers / Orders are no longer editable.
+* Fixed: Issues in updating customers and orders.
+* Fixed: Product weight units did not match with WPeC product edit window.
 
 = 1.4 =
 * NEW: Search, view, modify and delete variations of Products (paid versions only, requires WPeC 3.8+).
@@ -213,6 +219,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 
 == Upgrade Notice ==
 
+= 1.5 =
+Performance and stability improvements. Recommended upgrade.
+
 = 1.4 =
 Adds management of product variations for paid versions, with WPeC 3.8+. IMPORTANT: Paid users: please rename plugin folder to "smart-manager-for-wp-e-commerce" before upgrading.
 
@@ -254,4 +263,3 @@ Must have upgrade. Now you can manage orders too, and in a much better way than 
 
 = 0.5.7 =
 Fixes a problem that caused blank screen. 
-
