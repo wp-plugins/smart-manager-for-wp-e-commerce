@@ -181,10 +181,10 @@ elseif ($active_module == 'Orders') {
                                wprt.name AS shippingstate
                             
 						       FROM " . WPSC_TABLE_PURCHASE_LOGS . " AS wtpl
-						       INNER JOIN " . WPSC_TABLE_SUBMITED_FORM_DATA . " as wtsfd 
+						       LEFT JOIN " . WPSC_TABLE_SUBMITED_FORM_DATA . " as wtsfd 
 						       ON (wtpl.id = wtsfd.log_id) 
 						       
-						       INNER JOIN " . WPSC_TABLE_CHECKOUT_FORMS . " as wtcf   
+						       RIGHT JOIN " . WPSC_TABLE_CHECKOUT_FORMS . " as wtcf   
 						       ON (wtsfd.form_id = wtcf.id AND wtcf.active = 1 
 						       AND unique_name IN ('billingfirstname' , 'billinglastname' , 'billingemail',
 						       			 		   'shippingfirstname', 'shippinglastname', 'shippingaddress',
@@ -304,7 +304,7 @@ elseif ($active_module == 'Orders') {
 					             value as email
 					             
 					             FROM ". WPSC_TABLE_PURCHASE_LOGS ." AS wwpl
-					             INNER JOIN ". WPSC_TABLE_SUBMITED_FORM_DATA ."  AS emails 
+					             LEFT JOIN ". WPSC_TABLE_SUBMITED_FORM_DATA ."  AS emails 
 					             on (wwpl.id = emails.log_id) 
 					             
 					             INNER JOIN ". WPSC_TABLE_CHECKOUT_FORMS ." AS email_name 
@@ -347,7 +347,7 @@ elseif ($active_module == 'Orders') {
 		//To get Total count
 		$customers_count_result = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
 		$num_records = $customers_count_result[0]['count'];
-		
+
 		if ($num_records == 0) {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
@@ -361,9 +361,9 @@ elseif ($active_module == 'Orders') {
 				//note: while merging the array, $data as to be the second arg
 				if (count ( $unique_names ) == count ( $user_details )) {
 					$billing_user_details = array_combine ( $unique_names, $user_details );
-
+					
 					if($data['billingstate'] == ''){
-						$bill_state = $shipping_order_details['billingstate'];
+						$bill_state = $billing_user_details['billingstate'];
 						$data['billingstate'] = (is_numeric($bill_state)) ? $regions_ids[$bill_state] : $bill_state;
 					}
 					
@@ -450,7 +450,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 function data_for_update_orders($_POST) {
 	global $wpdb; // to use as global
 	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
-	$_POST = array ();
 	
 	$query = "SELECT id,unique_name
   	 		  FROM " . WPSC_TABLE_CHECKOUT_FORMS . " 
@@ -464,18 +463,18 @@ function data_for_update_orders($_POST) {
 		foreach ( $result as $key => $arr_value )
 			$id_uniquename [$arr_value ['unique_name']] = $arr_value ['id'];
 	}
-		
+	
 	$ordersCnt = 1;
 	foreach ( $edited_object as $obj ) {
-		foreach ( $id_uniquename as $uniquename => $form_id ) {
-			$update_value = $obj->$uniquename;			
-			
-			$query = "UPDATE `". WPSC_TABLE_PURCHASE_LOGS . "` 
-						SET 	processed ='$obj->order_status',
+		$query = "UPDATE `". WPSC_TABLE_PURCHASE_LOGS . "`
+						   SET 	processed ='$obj->order_status',
 								    notes ='$obj->notes',
 								 track_id ='$obj->track_id'
 				   				 WHERE id ='$obj->id'";
-			$update_result = $wpdb->query ( $query );
+		$update_result = $wpdb->query ( $query );
+
+		foreach ( $id_uniquename as $uniquename => $form_id ) {
+			$update_value = $obj->$uniquename;
 
 			//$key contains unique name
 			$update_value = mysql_escape_string($update_value);

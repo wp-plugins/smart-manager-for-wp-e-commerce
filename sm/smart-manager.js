@@ -511,8 +511,18 @@ Ext.onReady(function () {
 		},
 		defaultSortable: true
 	});	
-
-	//Function to escape white space characters.
+	
+	//Function to escape white space characters	
+	String.prototype.trim = function() {
+		return this.replace(/^\s+|\s+$/g,"");
+	}
+	String.prototype.ltrim = function() {
+		return this.replace(/^\s+/g,"");
+	}
+	String.prototype.rtrim = function() {
+		return this.replace(/\s+$/g,"");
+	}
+	
 	var escapeCharacters = function(result){
 		// The "g" at the end of the regex statement signifies that the replacement should take place more than once (g).
 		patternF = /\f/g;
@@ -527,7 +537,9 @@ Ext.onReady(function () {
 	// to escape invisible/white space characters from the responseText
 	Ext.data.customJsonReader = Ext.extend(Ext.data.JsonReader,{
 		read : function(response){
-			var json = escapeCharacters(response.responseText);
+			var responseData = response.responseText;
+				responseData = responseData.trim();
+			var json = escapeCharacters(responseData);
 			var o = Ext.decode(json);
 			if(!o) {
 				throw {message: 'JsonReader.read: Json object not found'};
@@ -597,8 +609,10 @@ Ext.onReady(function () {
 		editorGrid.getTopToolbar().get(i).hide();
 		editorGrid.getTopToolbar().get('incVariation').show();
 
-		pagingToolbar.addProductButton.enable();
-		pagingToolbar.addProductButton.show();
+		if(fileExists == 1){
+			pagingToolbar.addProductButton.enable();
+			pagingToolbar.addProductButton.show();
+		}
 		pagingToolbar.batchButton.show();
 		pagingToolbar.get(14).show();
 
@@ -632,7 +646,11 @@ Ext.onReady(function () {
 			listeners : {
 				click : function() {
 					productsColumnModel.getColumnById('publish').editor = newProductStatusCombo;
-					addProduct(productsStore, cnt_array, cnt, newCatName);
+					if(fileExists == 1){
+						addProduct(productsStore, cnt_array, cnt, newCatName);
+					}else{
+						Ext.notification.msg('Smart Manager', 'Add product feature is available only in Pro version');			
+					}
 				}
 			}
 		},'-',{
@@ -2389,7 +2407,7 @@ getVariations = function (params,columnModel){
 	};
 	Ext.Ajax.request(o);
 }
-eval(SM.dashboardComboBox.value.toLowerCase()+'Store.load()');
+//eval(SM.dashboardComboBox.value.toLowerCase()+'Store.load()');
 
 //Products Store onload function.
 productsStore.on('load', function (store,records,obj) {
@@ -2400,15 +2418,21 @@ productsStore.on('load', function (store,records,obj) {
 	productsColumnModel.getColumnById('publish').editor = productStatusCombo;
 });
 
-productsStore.on('exception',function(misc){ 
-	Ext.notification.msg('Smart Manager', 'Response is not in a required format!');
-});
+
+// Listen to "exception" event fired by all proxies
+//Ext.data.DataProxy.on('exception', function(proxy, type, action, option, res) {
+//	console.info('type: ',type);
+//	console.info('action: ',action);
+//	console.info('option: ',option);
+//	console.info('res: ',res);
+//	Ext.notification.msg('Smart Manager', res.status+': '+ res.statusText);
+//});
 
 //For pro version check if the required file exists
 if(fileExists == 1){
 	batchUpdateWindow.title = 'Batch Update';
 	pagingToolbar.addProductButton.enable();
-}else{
+}else{	
 	batchUpdateRecords = function () {
 		Ext.notification.msg('Smart Manager', 'Batch Update feature is available only in Pro version');
 	};
@@ -2426,6 +2450,7 @@ if(fileExists == 1){
 }catch(e){
 		var err = e.toString();
 		Ext.notification.msg('Error', err);
+//		throw new Ext.Error('foo-error', err);
 		return;
 	}
 });

@@ -87,7 +87,14 @@ if (IS_WPSC37) {
 		$order_status ['totalCount'] = $orderstatus_id ++;
 	}
 } elseif (IS_WPSC38) {
-	$order_status = array ('items' => array (0 => array ('id' => 1, 'name' => 'Incomplete Sale', 'value' => '1' ), 1 => array ('id' => 2, 'name' => 'Order Received', 'value' => '2' ), 2 => array ('id' => 3, 'name' => 'Accepted Payment', 'value' => '3' ), 3 => array ('id' => 4, 'name' => 'Job Dispatched', 'value' => '4' ), 4 => array ('id' => 5, 'name' => 'Closed Order', 'value' => '5' ), 5 => array ('id' => 6, 'name' => 'Payment Declined', 'value' => '6' ) ) );
+	$order_status = array ('items' => array (0 => array ('id' => 1, 'name' => 'Incomplete Sale',  'value' => '1' ),
+										     1 => array ('id' => 2, 'name' => 'Order Received',   'value' => '2' ),
+										     2 => array ('id' => 3, 'name' => 'Accepted Payment', 'value' => '3' ),
+										     3 => array ('id' => 4, 'name' => 'Job Dispatched',   'value' => '4' ),
+										     4 => array ('id' => 5, 'name' => 'Closed Order',     'value' => '5' ),
+										     5 => array ('id' => 6, 'name' => 'Payment Declined', 'value' => '6' )
+										     ) 
+							);
 	$order_status ['totalCount'] = count ( $order_status ['items'] );
 }
 $encodedOrderStatus = json_encode ( $order_status );
