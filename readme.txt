@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.2
-Stable tag: 1.5
+Stable tag: 1.6
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -95,9 +95,15 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 
 == Changelog ==
 
+= 1.6 =
+* Fixed: Customer's Dashboard not showing correct Billing States.
+* Fixed: "Response is not in a proper format" error.
+* Fixed: Add Product button remained enabled in Lite Version.
+* Fixed: Whenever the grid page is loaded everytime store loading occurred twice.
+
 = 1.5 =
 * NEW: Performance optimization for large number of records.
-* Change: State / Region from Customers / Orders are no longer editable.
+* Change: State / Region from Customers / Orders can be updated only via Batch Update now.
 * Fixed: Issues in updating customers and orders.
 * Fixed: Product weight units did not match with WPeC product edit window.
 
@@ -218,6 +224,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
+
+= 1.6 =
+Bug fixes. Recommended upgrade.
 
 = 1.5 =
 Performance and stability improvements. Recommended upgrade.
