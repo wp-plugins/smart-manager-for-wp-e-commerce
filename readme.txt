@@ -1,10 +1,10 @@
 === Smart Manager for WP e-Commerce ===
-Contributors: niravmehta, rohankamble, angelin.nadar
+Contributors: niravmehta, rohankamble, angelin.deboral
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.2
-Stable tag: 1.6
+Stable tag: 1.7
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -94,6 +94,12 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 4. Column selection for display
 
 == Changelog ==
+
+= 1.7 =
+* New: Batch Packing Slips Printing
+* New: All popup windows are now collapsible and have better shadow effect ;-)
+* Fixed: Grid jumped to first page on saving records
+* Fixed: Product search not showing any results in certain cases
 
 = 1.6 =
 * Fixed: Customer's Dashboard not showing correct Billing States.
@@ -224,6 +230,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
+
+= 1.7 =
+Adds Batch Packing Slips printing. Recommended upgrade.
 
 = 1.6 =
 Bug fixes. Recommended upgrade.
