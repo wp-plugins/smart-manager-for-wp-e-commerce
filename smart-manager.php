@@ -3,14 +3,13 @@
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce store administration. Quickly find and update products, orders and customers.
-Version: 1.6
+Version: 1.7
 Author: Store Apps
 Author URI: http://www.storeapps.org/about/
 Copyright (c) 2010, 2011 Store Apps All rights reserved.
 */
 
 //Hooks
-
 
 register_activation_hook ( __FILE__, 'smart_activate' );
 register_deactivation_hook ( __FILE__, 'smart_deactivate' );
@@ -48,6 +47,7 @@ function smart_is_pro_updated() {
 /**
  * Throw an error on admin page when WP e-Commerece plugin is not activated.
  */
+
 if (is_admin ()) {
 
 	include ABSPATH . 'wp-includes/pluggable.php';
@@ -75,6 +75,8 @@ if (is_admin ()) {
 	}
 	
 	add_action ( 'admin_notices', 'smart_admin_notices' );
+	//	admin_init is triggered before any other hook when a user access the admin area. 
+	// This hook doesn't provide any parameters, so it can only be used to callback a specified function.
 	add_action ( 'admin_init', 'smart_admin_init' );
 	
 	function smart_admin_init() {
@@ -97,6 +99,9 @@ if (is_admin ()) {
 		
 		if (SMPRO === true) {
 			include ('pro/upgrade.php');
+			// this allows you to add something to the end of the row of information displayed for your plugin - 
+			// like the existing after_plugin_row filter, but specific to your plugin, 
+			// so it only runs once instead of after each row of the plugin display
 			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'smart_plugin_row', '', 1 );
 			add_action ( 'in_plugin_update_message-' . plugin_basename ( __FILE__ ), 'smart_update_notice' );
 		}
@@ -191,11 +196,10 @@ if (is_admin ()) {
 </h6>
 <h6 align="right"> 
 <?php
-if (SMPRO === true) {
-		
+if (SMPRO === true) {		
 		$license_key = smart_get_license_key();
 		if( $license_key == '' ) {
-		  smart_display_notice("Please enter your license key for automatic upgrades and support to get activated.");
+		  smart_display_notice('Please enter your license key for automatic upgrades and support to get activated. <a href="admin.php?page=smart-manager&action=sm-settings">Enter License Key</a>');
 		}
 }
 ?>
