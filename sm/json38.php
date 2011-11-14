@@ -8,7 +8,6 @@ require_once ('../../' . WPSC_FOLDER . '/wpsc-includes/purchaselogs.class.php');
 
 //checking the memory limit allocated
 $mem_limit = ini_get('memory_limit');
-
 if(intval(substr($mem_limit,0,strlen($mem_limit)-1)) < 64 ){
 	ini_set('memory_limit','128M'); 
 }
@@ -27,7 +26,7 @@ if (file_exists ( '../pro/sm38.php' )) {
 	define ( 'SMPRO', false );
 }
 
-function get_regions_ids(){ //getting the region ids
+function get_regions_ids(){ //getting the list of regions
 	global $wpdb;
 	$query   	 = "SELECT id,name FROM " . WPSC_TABLE_REGION_TAX;
 	$reg_results = $wpdb->get_results ( $query,'ARRAY_A');
@@ -51,7 +50,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
 	if ($active_module == 'Products') { // <-products
-		
+	
 		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] == 'true') {
 			if (SMPRO == false)
 			$show_variation = false;
@@ -65,6 +64,10 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			$order_by = " ORDER BY products.id desc";
 		}
 
+		// if max-join-size issue occurs
+		$query = "SET SQL_BIG_SELECTS=1;";
+		$wpdb->query ( $query );
+		
 		$select = "SELECT SQL_CALC_FOUND_ROWS products.id,
 					post_title,
 					post_content,
@@ -110,12 +113,10 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		$group_by = " GROUP BY products.id ";
 		
 		$query = "$select  $from_where $group_by $search_condn $order_by LIMIT $offset,$limit;";
+		$records = $wpdb->get_results ( $query );		
+		$num_rows = $wpdb->num_rows;		
 		
-		$records = $wpdb->get_results ( $query );
-		$num_rows = $wpdb->num_rows;
-		
-		$recordcount_query = "SELECT FOUND_ROWS() AS count;";
-							  
+		$recordcount_query = "SELECT FOUND_ROWS() AS count;";							  
 		$recordcount_result = $wpdb->get_results ( $recordcount_query, 'ARRAY_A' );
 		$num_records = $recordcount_result [0] ['count'];
 		
@@ -155,10 +156,17 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 				unset ( $record->prod_othermeta_key );
 			}
 		}
-		
-	} //products ->
+}//products ->
 elseif ($active_module == 'Orders') {
-		$select_query = "SELECT SQL_CALC_FOUND_ROWS wtpl.id as id,
+
+	if (SMPRO == true && function_exists ( 'get_packing_slip' ) && $_POST['label'] == 'getPurchaseLogs'){
+		$log_ids_arr = json_decode ( stripslashes ( $_POST['log_ids'] ) );
+		if (is_array($log_ids_arr))
+		$log_ids = implode(', ',$log_ids_arr);
+		get_packing_slip( $log_ids, $log_ids_arr );
+	}else{
+	
+	$select_query = "SELECT SQL_CALC_FOUND_ROWS wtpl.id as id,
 						       GROUP_CONCAT( wtsfd.value 
 							   ORDER BY wtsfd.form_id
 							   SEPARATOR '###' ) AS order_details,
@@ -286,6 +294,8 @@ elseif ($active_module == 'Orders') {
 			unset($shipping_order_details);
 			unset($results);
 		}
+	}
+		
 	} else {
 		//BOF Customer's module
 		if (SMPRO == true) {
@@ -384,14 +394,16 @@ elseif ($active_module == 'Orders') {
 			unset($billing_user_details);
 		}
 	}
-	$encoded ['items'] = $records;
-	$encoded ['totalCount'] = $num_records;
-	unset($records);
-	echo json_encode ( $encoded );
-	unset($encoded);
+	
+	if (!isset($_POST['label']) && $_POST['label'] != 'getPurchaseLogs'){
+		$encoded ['items'] = $records;
+		$encoded ['totalCount'] = $num_records;
+		unset($records);
+		echo json_encode ( $encoded );
+		unset($encoded);
+	}
 }
 
-// Delete product.
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 	global $purchlogs;
 	$purchlogs = new wpsc_purchaselogs ();
@@ -447,6 +459,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 	echo json_encode ( $encoded );
 }
 
+// Update order deatils including customer shipping details
 function data_for_update_orders($_POST) {
 	global $wpdb; // to use as global
 	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
@@ -520,7 +533,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 		else
 			$result = update_products ( $_POST );
 	}
-
 	elseif ($active_module == 'Orders')
 		$result = data_for_update_orders ( $_POST );
 	elseif ($active_module == 'Customers')
