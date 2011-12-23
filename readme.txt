@@ -1,15 +1,20 @@
 === Smart Manager for WP e-Commerce ===
 Contributors: niravmehta, rohankamble, angelin.deboral
 Donate link: http://www.storeapps.org/
-Tags: administration, wp e-commerce, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
+Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
-Tested up to: 3.2
-Stable tag: 1.7
+Tested up to: 3.3
+Stable tag: 1.8
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
+(NEW: WooCommerce support now in Beta)
 
 == Description ==
+
+**Woo Commerce Support in Beta**
+We have added support for managing Woo Commerce products in Smart Manager. This is still in beta though - does not contain all features and may have bugs. 
+We will add Customer and Order management features in future versions.
 
 Smart Manager is a unique, revolutionary tool that gives you the **power to efficiently manage products, 
 product variations, customers and orders** using the popular WordPress e-Commerce plugin 
@@ -34,6 +39,7 @@ Use that time to develop a new product, or simply present it to your family.
 
 Smart Manager works with both WP e-Commerce 3.7 and 3.8.
 
+
 Highlights:
 
 * Convenient Browsing & Searching - Eliminate Extra Clicks And Long Wait Times
@@ -55,7 +61,7 @@ Thousands of customers are extremely happy with Smart Manager! Checkout our webs
 
 == Installation ==
 
-1. Ensure you have [WP e-Commerce](http://www.getshopped.org) plugin installed
+1. Ensure you have [WP e-Commerce](http://www.getshopped.org) or [WooCommerce](http://www.woothemes.com/woocommerce/) plugin installed
 2. Unzip and upload contents of the plugin to your `/wp-content/plugins/` directory
 3. Activate the plugin through the 'Plugins' menu in WordPress
 4. Click on 'Smart Manager' option within WP e-Commerce sidebar menu
@@ -64,7 +70,7 @@ Thousands of customers are extremely happy with Smart Manager! Checkout our webs
 
 = Does this work with WP e-Commerce 3.8? =
 
-Yes. Smart Manager is compatible with both WP e-Commerce 3.7 and 3.8.
+Yes. Smart Manager is compatible with both WP e-Commerce 3.7 and 3.8. Some features work only in 3.8 though.
 
 = What do I get in this free version? =
 
@@ -77,10 +83,10 @@ once, a quick edit link to WP e-Commerce editing screen.
 Paid versions (Pro, Multisite and Developer) allow managing product variations 
 (WPeC 3.8+ required), inline editing on all fields right within the spreadsheet 
 view and a powerful Batch Update screen where you can apply multiple smart update 
-actions to all selected items. For Customers, you can see total sales for each 
+actions to selected / all items. For Customers, you can see total sales for each 
 customer and their last order details.
 
-It also gives the fuzzy, warm feeling of supporting further development of the plugin.
+It also gives the warm feeling of supporting further development of the plugin.
 
 
 == Screenshots ==
@@ -94,6 +100,14 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 4. Column selection for display
 
 == Changelog ==
+
+= 1.8 =
+* New: Product batch update can now update the entire store - not just selected items
+* New: (beta) Support for Woo Commerce product management
+* New: Can search on product's SKU too now
+* New: Added "please wait" notification for batch update
+* Fixed: Minor compatibility issues with PHP 5.3
+* Misc improvements and fixes 
 
 = 1.7 =
 * New: Batch Packing Slips Printing
@@ -230,6 +244,9 @@ It also gives the fuzzy, warm feeling of supporting further development of the p
 * Product administration features
 
 == Upgrade Notice ==
+
+= 1.8 =
+WooCommerce support added. Batch update for entire store possible now. 
 
 = 1.7 =
 Adds Batch Packing Slips printing. Recommended upgrade.

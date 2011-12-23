@@ -43,6 +43,7 @@ $active_module = $_POST ['active_module'];
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	global $wpdb;
+	
 	$show_variation = true;	
 	
 	if (SMPRO == true && function_exists ( 'variation_query_params' ))
@@ -50,7 +51,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
 	if ($active_module == 'Products') { // <-products
-	
 		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] == 'true') {
 			if (SMPRO == false)
 			$show_variation = false;
@@ -87,7 +87,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 				               OR post_content LIKE '%$search_on%'
 				               OR post_excerpt LIKE '%$search_on%'
 				               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
-							   OR prod_othermeta_value LIKE '$search_on%'
+							   OR prod_othermeta_value LIKE '%$search_on%'
 							   OR category LIKE '%$search_on%'
 					           ";
 		}
@@ -113,7 +113,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		$group_by = " GROUP BY products.id ";
 		
 		$query = "$select  $from_where $group_by $search_condn $order_by LIMIT $offset,$limit;";
-		$records = $wpdb->get_results ( $query );		
+		$records = $wpdb->get_results ( $query );
 		$num_rows = $wpdb->num_rows;		
 		
 		$recordcount_query = "SELECT FOUND_ROWS() AS count;";							  
@@ -398,7 +398,7 @@ elseif ($active_module == 'Orders') {
 	if (!isset($_POST['label']) && $_POST['label'] != 'getPurchaseLogs'){
 		$encoded ['items'] = $records;
 		$encoded ['totalCount'] = $num_records;
-		unset($records);
+		unset($records);		
 		echo json_encode ( $encoded );
 		unset($encoded);
 	}
@@ -526,7 +526,6 @@ function update_products($_POST) {
 
 // For updating product,orders and customers details.
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
-	
 	if ($active_module == 'Products') {
 		if (SMPRO == true)
 			$result = data_for_insert_update ( $_POST );
@@ -568,4 +567,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 	}	
 	echo json_encode ( $encoded );
 }
+
+
 ?>
