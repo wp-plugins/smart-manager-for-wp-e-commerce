@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce store administration. Quickly find and update products, orders and customers.
-Version: 1.7
+Version: 1.8
 Author: Store Apps
 Author URI: http://www.storeapps.org/about/
 Copyright (c) 2010, 2011 Store Apps All rights reserved.
@@ -17,6 +17,7 @@ register_deactivation_hook ( __FILE__, 'smart_deactivate' );
 /**
  * Registers a plugin function to be run when the plugin is activated.
  */
+
 function smart_activate() {
 }
 
@@ -49,7 +50,6 @@ function smart_is_pro_updated() {
  */
 
 if (is_admin ()) {
-
 	include ABSPATH . 'wp-includes/pluggable.php';
 	$plugin = plugin_basename ( __FILE__ );
 	define ( 'SM_PLUGIN_DIR',dirname($plugin));
@@ -83,10 +83,20 @@ if (is_admin ()) {
 		$plugin_info = get_plugins ();
 		$sm_plugin_info = $plugin_info [SM_PLUGIN_FILE];
 		$ext_version = '3.3.1';
-		
+		if (is_plugin_active ( 'woocommerce/woocommerce.php' ) && is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
+			define('WPEC_WOO_ACTIVATED',true);
+		}
 		wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
 		wp_register_script ( 'sm_ext_all', plugins_url ( '/ext/ext-all.js', __FILE__ ), array ('sm_ext_base' ), $ext_version );
-		wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager.js', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
+		if ($_GET['post_type'] == 'wpsc-product') {
+			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager.js', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
+			define('WPSC_RUNNING', true);
+			define('WOO_RUNNING', false);
+		} else if ($_GET['post_type'] == 'product') {
+			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager-woo.js', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
+			define('WPSC_RUNNING', false);
+			define('WOO_RUNNING', true);
+		}
 		wp_register_style ( 'sm_ext_all', plugins_url ( '/ext/ext-all.css', __FILE__ ), array (), $ext_version );
 		wp_register_style ( 'sm_main', plugins_url ( '/sm/smart-manager.css', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
 		
@@ -106,10 +116,11 @@ if (is_admin ()) {
 			add_action ( 'in_plugin_update_message-' . plugin_basename ( __FILE__ ), 'smart_update_notice' );
 		}
 	}
+	
 	function smart_admin_notices() {
-		if (! is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
+		if (! is_plugin_active ( 'woocommerce/woocommerce.php' ) && ! is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
 			echo '<div id="notice" class="error"><p>';
-			_e ( '<b>Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> plugin. Please install and activate it.' );
+			_e ( '<b>Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> plugin or <a href="http://www.woothemes.com/woocommerce/">WooCommerce</a> plugin. Please install and activate it.' );
 			echo '</p></div>', "\n";
 		}
 	}
@@ -125,8 +136,18 @@ if (is_admin ()) {
 		wp_enqueue_style ( 'sm_main' );
 	}
 	
+	function smart_woo_add_modules_admin_pages() {
+		$page = add_submenu_page ('edit.php?post_type=product', 'Smart Manager', 'Smart Manager', 'manage_woocommerce', 'smart-manager-woo', 'smart_show_console' );
+	    
+		if ($_GET ['action'] != 'sm-settings') { // not be include for settings page
+			add_action ( 'admin_print_scripts-' . $page, 'smart_admin_scripts' );
+		}
+		add_action ( 'admin_print_styles-' . $page, 'smart_admin_styles' );
+	}
+	add_action ('admin_menu', 'smart_woo_add_modules_admin_pages');
+	
 	function smart_wpsc_add_modules_admin_pages($page_hooks, $base_page) {
-		$page = add_submenu_page ( $base_page, 'Smart Manager', 'Smart Manager', 'manage_options', 'smart-manager', 'smart_show_console' );
+		$page = add_submenu_page ( $base_page, 'Smart Manager', 'Smart Manager', 'manage_options', 'smart-manager-wpsc', 'smart_show_console' );
 		
 		if ($_GET ['action'] != 'sm-settings') { // not be include for settings page
 			add_action ( 'admin_print_scripts-' . $page, 'smart_admin_scripts' );
@@ -137,17 +158,21 @@ if (is_admin ()) {
 		return $page_hooks;
 	}
 	add_filter ( 'wpsc_additional_pages', 'smart_wpsc_add_modules_admin_pages', 10, 2 );
-	
 	function smart_show_console() {
-		// checking the version for WPSC plugin
-		define ( 'IS_WPSC37', version_compare ( WPSC_VERSION, '3.8', '<' ) );
-		define ( 'IS_WPSC38', version_compare ( WPSC_VERSION, '3.8', '>=' ) );
 		
+		define ( 'PLUGINS_FILE_PATH', dirname(dirname( __FILE__ )) );
 		define ( 'SM_PLUGIN_DIRNAME', plugins_url ( '', __FILE__ ) );
-		define ( 'IMG_URL', SM_PLUGIN_DIRNAME . '/images/' );
+		define ( 'IMG_URL', SM_PLUGIN_DIRNAME . '/images/' );		
 		
-		$json_filename = (IS_WPSC37) ? 'json37' : 'json38';
-		define ( 'JSON_URL', SM_PLUGIN_DIRNAME . "/sm/$json_filename.php" );
+		if (WPSC_RUNNING === true) {
+			// checking the version for WPSC plugin
+			define ( 'IS_WPSC37', version_compare ( WPSC_VERSION, '3.8', '<' ) );
+			define ( 'IS_WPSC38', version_compare ( WPSC_VERSION, '3.8', '>=' ) );
+			$json_filename = (IS_WPSC37) ? 'json37' : 'json38';
+		} else if (WOO_RUNNING === true) {
+			$json_filename = 'woo-json';
+		}
+		define ( 'JSON_URL', SM_PLUGIN_DIRNAME . "/sm/$json_filename.php" );		
 		define ( 'ADMIN_URL', get_admin_url () ); //defining the admin url
 		define ('ABS_WPSC_URL',WP_PLUGIN_DIR.'/'.basename(WPSC_URL));
 		define ('WPSC_NAME',basename(WPSC_URL));
@@ -173,7 +198,7 @@ if (is_admin ()) {
 				echo _e ( 'Lite' );
 			}
 			?>
-   		<p class="wrap"><span style="float: right"> <?php
+   		<p class="wrap" style="font-size: 12px"><span style="float: right"> <?php
 			if (SMPRO === true) {
 				printf ( __ ( '<a href="admin.php?page=smart-manager&action=sm-settings">Settings</a> |
                            <a href="%1s" target=_storeapps>Need Help?</a>' ), "http://www.storeapps.org/support" );
@@ -240,6 +265,24 @@ if (SMPRO === true) {
 			} else {
 				$error_message = '<b>Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> plugin to do its job. Please install and activate it.';
 			}
+			if (is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' ) || is_plugin_active ( WOOCOMMERCE_TEMPLATE_URL.'woocommerce.php' )) {
+				if (is_plugin_active ( WPSC_FOLDER.'/wp-shopping-cart.php' )) {
+					require_once (WPSC_FILE_PATH . '/wp-shopping-cart.php');
+					if (!(IS_WPSC37 || IS_WPSC38)) {
+						$error_message = 'Smart Manager currently works only with WP e-Commerce 3.7 or above.';
+					}
+				}
+
+				if (file_exists ( $base_path . 'manager-console.php' )) {
+					include_once ($base_path . 'manager-console.php');
+					return;
+				} else {
+					$error_message = 'A required Smart Manager file is missing. Can\'t continue.';
+				}
+			} else {
+				$error_message = 'Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> plugin or <a href="http://www.woothemes.com/woocommerce/">WooCommerce</a> plugin. Please install and activate it.';
+			}
+				
 			if ($error_message != '') {
 				smart_display_err ( $error_message );
 				?>
