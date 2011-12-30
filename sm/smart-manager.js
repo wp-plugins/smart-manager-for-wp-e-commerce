@@ -970,7 +970,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 	// Products, Customers and Orders combo box
 	SM.dashboardComboBox = new Ext.form.ComboBox({
 		id: 'dashboardComboBox',
-		stateId : 'dashboardComboBox',
+		stateId : 'dashboardComboBoxWpsc',
 		stateEvents : ['added','beforerender','enable','select','change','show','beforeshow'],
 		stateful: true,
 		getState: function(){ return { value: this.getValue()}; },
@@ -1176,10 +1176,6 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			id: 'billingemail',
 			dataIndex: 'billingemail',
 			tooltip: 'Email Address',
-			editor: new fm.TextField({
-				allowBlank: false,
-				allowNegative: false
-			}),
 			editor: new fm.TextField({
 				allowBlank: true,
 				allowNegative: false
@@ -1755,8 +1751,8 @@ var searchLogic = function () {
 				var records_cnt = myJsonObj.totalCount;
 				if (records_cnt == 0) myJsonObj.items = '';
 				if(SM.activeModule == 'Products')
-					productsStore.loadData(myJsonObj)
-				if(SM.activeModule == 'Orders')
+					productsStore.loadData(myJsonObj);
+				else if(SM.activeModule == 'Orders')
 					ordersStore.loadData(myJsonObj);
 				else
 					customersStore.loadData(myJsonObj);
@@ -2306,7 +2302,7 @@ var storeDetailsWindowState = function(obj,stateId){
 // Order's billing details window
 var billingDetailsIframe = function(recordId){
 	var billingDetailsWindow = new Ext.Window({
-		stateId : 'billingDetailsWindow',
+		stateId : 'billingDetailsWindowWpsc',
 		stateEvents : ['show','bodyresize','maximize'],
 		stateful: true,
 		title: 'Order Details',
@@ -2457,7 +2453,7 @@ var showCustomerDetails = function(record,rowIndex){
 				}else if(SM.activeModule == 'Products'){
 					if(columnIndex == editLinkColumnIndex) {
 						var productsDetailsWindow = new Ext.Window({
-							stateId : 'productsDetailsWindow',
+							stateId : 'productsDetailsWindowWpsc',
 							collapsible:true,
 							shadow : true,
 							shadowOffset: 10,
