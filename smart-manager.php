@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce store administration. Quickly find and update products, orders and customers.
-Version: 1.8
+Version: 1.9
 Author: Store Apps
 Author URI: http://www.storeapps.org/about/
 Copyright (c) 2010, 2011 Store Apps All rights reserved.
@@ -55,11 +55,11 @@ if (is_admin ()) {
 	define ( 'SM_PLUGIN_DIR',dirname($plugin));
 	define ( 'SM_PLUGIN_FILE', $plugin );
 	define ( 'STORE_APPS_URL', 'http://www.storeapps.org/' );
-
+	
 	include_once ABSPATH . 'wp-admin/includes/plugin.php';
 	include_once (ABSPATH . WPINC . '/functions.php');
 	$old_plugin = 'smart-manager/smart-manager.php';	
-	
+
 	if (is_plugin_active ( $old_plugin )) {
 		deactivate_plugins ( $old_plugin );
 		$action_url = "plugins.php?action=activate&plugin=$plugin&plugin_status=all&paged=1";
@@ -200,7 +200,7 @@ if (is_admin ()) {
 			?>
    		<p class="wrap" style="font-size: 12px"><span style="float: right"> <?php
 			if (SMPRO === true) {
-				printf ( __ ( '<a href="admin.php?page=smart-manager&action=sm-settings">Settings</a> |
+				printf ( __ ( '<a href="admin.php?page=smart-manager-wpsc&action=sm-settings">Settings</a> |
                            <a href="%1s" target=_storeapps>Need Help?</a>' ), "http://www.storeapps.org/support" );
 			} else {
 				printf ( __ ( '<a href="%1s" target=_storeapps>Need Help?</a>' ), "http://www.storeapps.org/support" );
@@ -224,7 +224,7 @@ if (is_admin ()) {
 if (SMPRO === true) {		
 		$license_key = smart_get_license_key();
 		if( $license_key == '' ) {
-		  smart_display_notice('Please enter your license key for automatic upgrades and support to get activated. <a href="admin.php?page=smart-manager&action=sm-settings">Enter License Key</a>');
+		  smart_display_notice('Please enter your license key for automatic upgrades and support to get activated. <a href="admin.php?page=smart-manager-wpsc&action=sm-settings">Enter License Key</a>');
 		}
 }
 ?>

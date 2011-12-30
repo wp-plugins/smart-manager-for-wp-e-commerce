@@ -8,13 +8,9 @@ $wpsc = (WPSC_RUNNING === true) ? 1 :0;
 $woo = (WOO_RUNNING === true) ? 1 :0;
 $wpsc_woo = (WPEC_WOO_ACTIVATED === true) ? 1 : 0;
 
-$weight_unit ['items']  = array (array ('id' => 0, 'name' => 'Pounds', 'value' => 'pound' ), array ('id' => 1, 'name' => 'Ounces', 'value' => 'ounce' ), array ('id' => 2, 'name' => 'Grams', 'value' => 'gram' ), array ('id' => 3, 'name' => 'Kilograms', 'value' => 'kilogram' ) );
-$weight_unit ['totalCount'] = count ( $weight_unit ['items'] );
-$encodedWeightUnits = json_encode ( $weight_unit );
 
 //creating the order links
 $blog_info = get_bloginfo ( 'url' );
-$orders_details_url = ADMIN_URL . "/index.php?page=wpsc-sales-logs&purchaselog_id=";
 
 //creating the products links
 if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
@@ -26,11 +22,18 @@ if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
 	$site_url = get_option('siteurl');
 	$products_details_url = $site_url.'/wp-admin/post.php?action=edit&post='.$product_id;
 }
-// getting orders fieldnames START
-$query = "SELECT processed,track_id,notes FROM " . WPSC_TABLE_PURCHASE_LOGS;
-$result = mysql_query ( $query );
 
 if (WPSC_RUNNING === true) {
+	$orders_details_url = ADMIN_URL . "/index.php?page=wpsc-sales-logs&purchaselog_id=";
+
+	$weight_unit ['items']  = array (array ('id' => 0, 'name' => 'Pounds', 'value' => 'pound' ), array ('id' => 1, 'name' => 'Ounces', 'value' => 'ounce' ), array ('id' => 2, 'name' => 'Grams', 'value' => 'gram' ), array ('id' => 3, 'name' => 'Kilograms', 'value' => 'kilogram' ) );
+	$weight_unit ['totalCount'] = count ( $weight_unit ['items'] );
+	$encodedWeightUnits = json_encode ( $weight_unit );
+	
+	// getting orders fieldnames START
+	$query = "SELECT processed,track_id,notes FROM " . WPSC_TABLE_PURCHASE_LOGS;
+	$result = mysql_query ( $query );
+	
 	//@todo work on mysql_num_fields instead of data
 	if (mysql_num_rows ( $result ) >= 1) {
 		while ( $data = mysql_fetch_assoc ( $result ) )
@@ -106,12 +109,12 @@ if (WPSC_RUNNING === true) {
 								);
 		$order_status ['totalCount'] = count ( $order_status ['items'] );
 	}	
-}	
+	
 
 $encodedOrderStatus = json_encode ( $order_status );
 //getting orders fieldnames END
 
-if (WPSC_RUNNING === true) {
+
 	//getting customers fieldnames START
 	$form_data_query = "SELECT id,name,unique_name FROM " . WPSC_TABLE_CHECKOUT_FORMS . " WHERE unique_name in ('billingfirstname', 'billinglastname', 'billingaddress', 'billingcity', 'billingstate', 'billingcountry', 'billingpostcode', 'billingphone', 'billingemail')";
 	$form_data_result = mysql_query ( $form_data_query );
@@ -319,7 +322,16 @@ if (WPSC_RUNNING === true) {
 	$products_cols['qtyLimited']['colFilter']='meta_key:_wpsc_stock';	
 
 } else if (WOO_RUNNING === true) {
-
+	
+	$orders_details_url = ADMIN_URL . "/post.php?post=";
+	
+	$ordersfield_names ['items'] [0] ['id'] = 0;
+	$ordersfield_names ['items'] [0] ['name'] = 'Orders Status';
+	$ordersfield_names ['items'] [0] ['type'] = 'bigint';
+	$ordersfield_names ['items'] [0] ['value'] = "";
+	
+	$encodedOrdersFields = json_encode ( $ordersfield_names );
+	
 	$products_cols['price']['colName']='regular_price'; // for woo
 	$products_cols['salePrice']['colName']='sale_price'; // for woo
 	$products_cols['inventory']['colName']='stock'; // for woo
@@ -550,6 +562,12 @@ if (WPSC_RUNNING === true) {
 		var SM = new Object;
 			SM.productsCols = ".$products_cols.";
 		
+		var weightUnits         =  '';
+		var ordersStatus        =  '';
+		var countries           =  '';
+		var regions             =  '';
+		var ordersFields        =  " . $encodedOrdersFields . ";
+		var customersFields     =  '';
 		var jsonURL             = '" . JSON_URL . "';
 		var imgURL              = '" . IMG_URL . "';
 		var isWPSC37            = '';
@@ -562,6 +580,7 @@ if (WPSC_RUNNING === true) {
 		var productsDetailsLink = '" . $products_details_url . "';
 		var categories 			=  " . $categories . ";	
 		var wpsc_woo			= '" . $wpsc_woo . "';
+		var ordersDetailsLink   = '" . $orders_details_url . "';
 		var productsFields        = new Array();
 		
 		productsFields.items      = new Array();
