@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.3
-Stable tag: 1.8
+Stable tag: 1.9
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -13,8 +13,8 @@ Manage products, variations, orders and customers reliably using a fast and fami
 == Description ==
 
 **Woo Commerce Support in Beta**
-We have added support for managing Woo Commerce products in Smart Manager. This is still in beta though - does not contain all features and may have bugs. 
-We will add Customer and Order management features in future versions.
+We have added support for managing Woo Commerce products, customers and orders in Smart Manager. 
+This is still in beta though - does not contain all features and may have bugs. 
 
 Smart Manager is a unique, revolutionary tool that gives you the **power to efficiently manage products, 
 product variations, customers and orders** using the popular WordPress e-Commerce plugin 
@@ -100,6 +100,10 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 1.9 =
+* New: View customers and orders for WooCommerce from Smart Manager
+* Fixed: Clicking on Settings / Register gave permission error
 
 = 1.8 =
 * New: Product batch update can now update the entire store - not just selected items
