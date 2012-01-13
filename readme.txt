@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.3
-Stable tag: 1.9
+Stable tag: 1.9.1
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -46,6 +46,7 @@ Highlights:
 * Inline Product/Order/Customer Management - Get Productive Right Away
 * Product Variations management in Pro version, for WPeC 3.8 and above
 * Quick, In-page detail view for Products/Orders/Customers
+* Print multiple packing slips in one go
 * Fast And Reliable Batch Updates With Intelligent Update Actions
 * Note: Some of these features are only in Pro version
 
@@ -100,6 +101,11 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 1.9.1 =
+* New: Access Privileges - give controlled access to non Admin users in WordPress
+* Fixed: Problems accessing Settings page
+* Updated: Improved auto upgrade process
 
 = 1.9 =
 * New: View customers and orders for WooCommerce from Smart Manager
@@ -248,6 +254,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 1.9.1 =
+Access control support added, improved auto upgrade. Recommended upgrade.
 
 = 1.9 =
 WooCommerce customers and orders support added.
