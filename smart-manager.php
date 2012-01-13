@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce store administration. Quickly find and update products, orders and customers.
-Version: 1.9
+Version: 1.9.1
 Author: Store Apps
 Author URI: http://www.storeapps.org/about/
 Copyright (c) 2010, 2011 Store Apps All rights reserved.
@@ -48,8 +48,7 @@ function smart_is_pro_updated() {
 /**
  * Throw an error on admin page when WP e-Commerece plugin is not activated.
  */
-
-if (is_admin ()) {
+//if (is_admin ()) {
 	include ABSPATH . 'wp-includes/pluggable.php';
 	$plugin = plugin_basename ( __FILE__ );
 	define ( 'SM_PLUGIN_DIR',dirname($plugin));
@@ -84,7 +83,11 @@ if (is_admin ()) {
 		$sm_plugin_info = $plugin_info [SM_PLUGIN_FILE];
 		$ext_version = '3.3.1';
 		if (is_plugin_active ( 'woocommerce/woocommerce.php' ) && is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
-			define('WPEC_WOO_ACTIVATED',true);
+			define('WPSC_WOO_ACTIVATED',true);
+		} elseif (is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
+			define('WPSC_ACTIVATED',true);
+		} elseif (is_plugin_active ( 'woocommerce/woocommerce.php' )) {
+			define('WOO_ACTIVATED',true);
 		}
 		wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
 		wp_register_script ( 'sm_ext_all', plugins_url ( '/ext/ext-all.js', __FILE__ ), array ('sm_ext_base' ), $ext_version );
@@ -106,13 +109,15 @@ if (is_admin ()) {
 		} else {
 			define ( 'SMPRO', false );
 		}
-		
+
 		if (SMPRO === true) {
 			include ('pro/upgrade.php');
 			// this allows you to add something to the end of the row of information displayed for your plugin - 
 			// like the existing after_plugin_row filter, but specific to your plugin, 
 			// so it only runs once instead of after each row of the plugin display
 			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'smart_plugin_row', '', 1 );
+			do_action  ('after_plugin_row_' . plugin_basename ( __FILE__ ));
+			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'show_registration_upgrade');
 			add_action ( 'in_plugin_update_message-' . plugin_basename ( __FILE__ ), 'smart_update_notice' );
 		}
 	}
@@ -137,17 +142,21 @@ if (is_admin ()) {
 	}
 	
 	function smart_woo_add_modules_admin_pages() {
-		$page = add_submenu_page ('edit.php?post_type=product', 'Smart Manager', 'Smart Manager', 'manage_woocommerce', 'smart-manager-woo', 'smart_show_console' );
+		global $wpdb, $current_user;
+		$current_user = wp_get_current_user();
+		$page = add_submenu_page ('edit.php?post_type=product', 'Smart Manager', 'Smart Manager', $current_user->roles[0], 'smart-manager-woo', 'smart_show_console' );
 	    
 		if ($_GET ['action'] != 'sm-settings') { // not be include for settings page
 			add_action ( 'admin_print_scripts-' . $page, 'smart_admin_scripts' );
 		}
 		add_action ( 'admin_print_styles-' . $page, 'smart_admin_styles' );
 	}
-	add_action ('admin_menu', 'smart_woo_add_modules_admin_pages');
 	
+
 	function smart_wpsc_add_modules_admin_pages($page_hooks, $base_page) {
-		$page = add_submenu_page ( $base_page, 'Smart Manager', 'Smart Manager', 'manage_options', 'smart-manager-wpsc', 'smart_show_console' );
+		global $wpdb, $current_user;
+		$current_user = wp_get_current_user();
+		$page = add_submenu_page ( $base_page, 'Smart Manager', 'Smart Manager', $current_user->roles[0], 'smart-manager-wpsc', 'smart_show_console' );
 		
 		if ($_GET ['action'] != 'sm-settings') { // not be include for settings page
 			add_action ( 'admin_print_scripts-' . $page, 'smart_admin_scripts' );
@@ -157,7 +166,45 @@ if (is_admin ()) {
 		$page_hooks [] = $page;
 		return $page_hooks;
 	}
-	add_filter ( 'wpsc_additional_pages', 'smart_wpsc_add_modules_admin_pages', 10, 2 );
+	
+	function smart_add_menu_access() {
+		global $wpdb, $current_user;
+		$current_user = wp_get_current_user();
+		$query = "SELECT option_value FROM {$wpdb->prefix}options WHERE option_name = 'sm_".$current_user->roles[0]."_dashboard'";
+		$results = $wpdb->get_results ($query);
+		if (!empty($results[0]->option_value) || $current_user->roles[0] == 'administrator') {
+			add_filter ( 'wpsc_additional_pages', 'smart_wpsc_add_modules_admin_pages', 10, 2 );	
+			add_action ('admin_menu', 'smart_woo_add_modules_admin_pages');
+		}
+	}
+	
+	add_action('admin_menu', 'smart_add_menu_access', 9);
+
+	if (is_admin()) {
+		
+		function smart_show_privilege_page() {
+			$plugin_base = WP_PLUGIN_DIR . '/' . str_replace ( basename ( __FILE__ ), "", plugin_basename ( __FILE__ ) ) . 'pro/';
+			if (file_exists ( $plugin_base . 'sm-privilege.php' )) {
+				include_once ($plugin_base . 'sm-privilege.php');
+				return;
+			} else {
+				$error_message = 'A required Smart Manager file is missing. Can\'t continue.';
+			}
+		}
+		
+		function smart_add_privilege_page() {
+			$page = add_submenu_page ('options-general.php', 'Smart Manager', 'Smart Manager', 10, 'smart-manager-privilege', 'smart_show_privilege_page' );
+		    
+			if ($_GET ['action'] != 'sm-settings') { // not be include for settings page
+				add_action ( 'admin_print_scripts-' . $page, 'smart_admin_scripts' );
+			}
+			add_action ( 'admin_print_styles-' . $page, 'smart_admin_styles' );
+		}
+		if (file_exists ( (dirname ( __FILE__ )) . '/pro/sm.js' ))
+			add_action ('admin_menu', 'smart_add_privilege_page', 11);
+	
+	}
+
 	function smart_show_console() {
 		
 		define ( 'PLUGINS_FILE_PATH', dirname(dirname( __FILE__ )) );
@@ -200,11 +247,19 @@ if (is_admin ()) {
 			?>
    		<p class="wrap" style="font-size: 12px"><span style="float: right"> <?php
 			if (SMPRO === true) {
-				printf ( __ ( '<a href="admin.php?page=smart-manager-wpsc&action=sm-settings">Settings</a> |
-                           <a href="%1s" target=_storeapps>Need Help?</a>' ), "http://www.storeapps.org/support" );
+				$before_plug_page = '<a href="admin.php?page=smart-manager-';
+				$after_plug_page = '&action=sm-settings">Settings</a> | ';
+				if (WPSC_RUNNING == true) {
+					$plug_page = 'wpsc';
+				} elseif (WOO_RUNNING == true) {
+					$plug_page = 'woo';
+				}
 			} else {
-				printf ( __ ( '<a href="%1s" target=_storeapps>Need Help?</a>' ), "http://www.storeapps.org/support" );
+				$before_plug_page = '';
+				$after_plug_page = '';
+				$plug_page = '';
 			}
+			printf ( __ ( '%1s%2s%3s<a href="%4s" target=_storeapps>Need Help?</a>' ), $before_plug_page, $plug_page, $after_plug_page, "http://www.storeapps.org/support" );
 			?>
 			</span><?php
 			echo __ ( '10x productivity gains with store administration. Quickly find and update products, orders and customers' );
@@ -224,7 +279,12 @@ if (is_admin ()) {
 if (SMPRO === true) {		
 		$license_key = smart_get_license_key();
 		if( $license_key == '' ) {
-		  smart_display_notice('Please enter your license key for automatic upgrades and support to get activated. <a href="admin.php?page=smart-manager-wpsc&action=sm-settings">Enter License Key</a>');
+		  	if (WPSC_RUNNING == true) {
+		  		smart_display_notice('Please enter your license key for automatic upgrades and support to get activated. <a href="admin.php?page=smart-manager-wpsc&action=sm-settings">Enter License Key</a>');
+		  	} elseif (WOO_RUNNING == true) {
+		  		smart_display_notice('Please enter your license key for automatic upgrades and support to get activated. <a href="admin.php?page=smart-manager-woo&action=sm-settings">Enter License Key</a>');
+		  	}
+			
 		}
 }
 ?>
@@ -315,5 +375,5 @@ if (SMPRO === true) {
 	}
 	
 // EOF auto upgrade code
-}
+//}
 ?>

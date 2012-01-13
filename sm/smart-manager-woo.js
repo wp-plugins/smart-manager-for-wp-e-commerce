@@ -875,12 +875,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		store: new Ext.data.ArrayStore({
 			autoDestroy: true,
 			forceSelection: true,
-			fields: ['id', 'fullname'],
-			data: [
-				[0, 'Products'],
-				[1, 'Customers'],
-				[2, 'Orders']
-			]
+			fields: ['id', 'fullname']
 		}),
 		displayField: 'fullname',
 		cls: 'searchPanel',
@@ -1941,6 +1936,8 @@ var showCustomerDetails = function(record,rowIndex){
 	// ======= orders =====
 
 	
+	
+	
 	// Grid panel for the records to display
 	editorGrid = new Ext.grid.EditorGridPanel({
 	stateId : 'productsEditorGridPanelWoo',
@@ -1969,6 +1966,50 @@ var showCustomerDetails = function(record,rowIndex){
 	],
 	scrollOffset: 50,
 	listeners: {
+		beforerender: function(grid) {
+			var object = {
+						url:jsonURL
+						,method:'post'
+						,callback: function(options, success, response)	{
+							var myJsonObj = Ext.decode(response.responseText);
+							var dashboardComboStore = new Array();
+							for ( var i = 0; i < myJsonObj.length; i++) {
+								if ( myJsonObj[i].indexOf("_") != -1) {
+									dashboardComboStore.push(new Array(i, myJsonObj[i].slice(0,9)));
+									dashboardComboStore.push(new Array(i+1, myJsonObj[i].slice(10)));
+								} else {
+									dashboardComboStore.push(new Array(i, myJsonObj[i]));
+								}
+								
+							}
+							if ( dashboardComboStore < 1) {
+								Ext.Msg.show({
+									title: 'Access Denied',
+									msg: 'You don\'t have sufficient permission to view this page',
+									buttons: Ext.MessageBox.OK,
+									fn: function() {
+										location.href = 'index.php';
+									},
+									icon: Ext.MessageBox.WARNING
+								});
+							} else {
+								SM.dashboardComboBox.setValue(dashboardComboStore[0][1]);
+								grid.cm = eval(SM.dashboardComboBox.value.toLowerCase()+'ColumnModel');
+								grid.store = eval(SM.dashboardComboBox.value.toLowerCase()+'Store');
+								grid.stateId = SM.dashboardComboBox.value.toLowerCase()+'EditorGridPanelWoo';
+											
+								SM.dashboardComboBox.store.loadData(dashboardComboStore);
+								showSelectedModule(SM.dashboardComboBox.value);	
+							}
+						}
+						,scope: SM.dashboardComboBox
+						,params:
+						{
+							cmd:'getRolesDashboard'
+						}};
+				Ext.Ajax.request(object);
+		},
+
 		cellclick: function(editorGrid,rowIndex, columnIndex, e) {
 			try{
 				var record  = editorGrid.getStore().getAt(rowIndex);
@@ -2071,9 +2112,9 @@ var showCustomerDetails = function(record,rowIndex){
 		// Fires when the grid view is available.
 		// This happens only for the first time when the page is rendered with the editorgrid panel.
 		// From here the flow of the code starts.
-		viewready: function(grid){
-			showSelectedModule(SM.dashboardComboBox.value);
-		},
+//		viewready: function(grid){
+//			showSelectedModule(SM.dashboardComboBox.value);
+//		},
 		// Fires when the grid is reconfigured with a new store and/or column model.
 		// state of the editor grid is captured and applied to back to the grid.
 		reconfigure : function(grid,store,colModel ){

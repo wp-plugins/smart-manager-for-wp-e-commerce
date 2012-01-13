@@ -568,5 +568,15 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 	echo json_encode ( $encoded );
 }
 
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
+	global $wpdb, $current_user;
+	$current_user = wp_get_current_user();
+	if ( SMPRO != true || $current_user->roles[0] == 'administrator') {
+		$results = array( 'Products', 'Customers_Orders' );
+	} else {
+		$results = get_dashboard_combo_store();
+	}
+	echo json_encode ( $results );
+}
 
 ?>

@@ -26,7 +26,6 @@ $active_module = $_POST ['active_module'];
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	global $wpdb, $woocommerce;
-
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
 	if ($active_module == 'Products') { // <-products
 	
@@ -175,6 +174,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 						$data ['last_order'] = 'Pro only';
 					}
 					$data ['_billing_address'] = isset($postmeta ['_billing_address_1']) ? $postmeta ['_billing_address_1'].', '.$postmeta ['_billing_address_2'] : $postmeta ['_billing_address_2'];
+					$postmeta ['_billing_state'] = isset($woocommerce->countries->states[$postmeta ['_billing_country']][$postmeta ['_billing_state']]) ? $woocommerce->countries->states[$postmeta ['_billing_country']][$postmeta ['_billing_state']] : $postmeta ['_billing_state'];
 					$postmeta ['_billing_country'] = isset($woocommerce->countries->countries[$postmeta ['_billing_country']]) ? $woocommerce->countries->countries[$postmeta ['_billing_country']] : $postmeta ['_billing_country'];
 					unset($data ['date']);
 					unset($data ['meta_key']);
@@ -266,13 +266,15 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 					if(count($meta_key) == count($meta_value)){
 						$postmeta = array_combine ( $meta_key, $meta_value);
 						if (is_serialized($postmeta['_order_items'])) {
-							$order_items = unserialize($postmeta['_order_items']);
+							$order_items = unserialize(trim($postmeta['_order_items']));
 							foreach ($order_items as $order_item) {
 								$data['details'] += $order_item['qty'];
 								$data['products_name'] .= $order_item['name'].'('.$order_item['qty'].'), ';
 							}
 							isset($data['details']) ? $data['details'] .= ' items' : $data['details'] = ''; 
 							$data['products_name'] = substr($data['products_name'], 0, -2);	//To remove extra comma ', ' from returned string
+						} else {
+							$data['details'] = 'Details';
 						}
 						$name_emailid [0] = "<font class=blue>". $postmeta['_billing_first_name']."</font>";
 						$name_emailid [1] = "<font class=blue>". $postmeta['_billing_last_name']."</font>";
@@ -283,6 +285,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 						unset($data ['meta_value']);
 						$postmeta ['_shipping_method'] = isset($postmeta ['_shipping_method_title']) ? $postmeta ['_shipping_method_title'] : $postmeta ['_shipping_method'];
 						$postmeta ['_payment_method'] = isset($postmeta ['_payment_method_title']) ? $postmeta ['_payment_method_title'] : $postmeta ['_payment_method'];
+						$postmeta ['_shipping_state'] = isset($woocommerce->countries->states[$postmeta ['_shipping_country']][$postmeta ['_shipping_state']]) ? $woocommerce->countries->states[$postmeta ['_shipping_country']][$postmeta ['_shipping_state']] : $postmeta ['_shipping_state'];
 						$postmeta ['_shipping_country'] = isset($woocommerce->countries->countries[$postmeta ['_shipping_country']]) ? $woocommerce->countries->countries[$postmeta ['_shipping_country']] : $postmeta ['_shipping_country'];
 						if ($postmeta['_payment_method'] != '' || $postmeta['_payment_method'] != null) {
 							$records [] = array_merge ( $postmeta, $data );	
@@ -296,7 +299,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 				unset($results);
 			}
 	}
-	
 	$encoded ['items'] = $records;
 	$encoded ['totalCount'] = $num_records;
 	unset($records);
@@ -392,5 +394,15 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 	echo json_encode ( $encoded );
 }
 
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
+	global $wpdb, $current_user;
+	$current_user = wp_get_current_user();
+	if ( SMPRO != true || $current_user->roles[0] == 'administrator') {
+		$results = array( 'Products', 'Customers_Orders' );
+	} else {
+		$results = get_dashboard_combo_store();
+	}
+	echo json_encode ( $results );
+}
 
 ?>

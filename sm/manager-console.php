@@ -6,7 +6,7 @@ $limit = 2;
 $fileExists = (SMPRO === true) ? 1 : 0;
 $wpsc = (WPSC_RUNNING === true) ? 1 :0;
 $woo = (WOO_RUNNING === true) ? 1 :0;
-$wpsc_woo = (WPEC_WOO_ACTIVATED === true) ? 1 : 0;
+$wpsc_woo = (WPSC_WOO_ACTIVATED === true) ? 1 : 0;
 
 
 //creating the order links
