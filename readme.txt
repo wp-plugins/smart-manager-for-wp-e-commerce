@@ -249,6 +249,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 
 == Upgrade Notice ==
 
+= 1.9 =
+WooCommerce customers and orders support added.
+
 = 1.8 =
 WooCommerce support added. Batch update for entire store possible now. 
 
