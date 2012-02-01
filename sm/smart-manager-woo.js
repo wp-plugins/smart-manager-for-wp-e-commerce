@@ -15,6 +15,7 @@ Ext.notification = function(){
 	                msgCt = Ext.DomHelper.insertFirst(document.body, {id:'msg-div'}, true);
 	            }
 	            msgCt.alignTo(document, 't-t');
+	            Ext.DomHelper.applyStyles(msgCt, 'left: 33%; top: 30px;');
 	            var s = String.format.apply(String, Array.prototype.slice.call(arguments, 1));
 	            var m = Ext.DomHelper.append(msgCt, {html:createBox(title, s)}, true);
 	            m.slideIn('t').pause(2).ghost("t", {remove:true});
@@ -40,8 +41,9 @@ var actions            = new Array(), //an array for actions combobox in batchup
 	colModelTimeoutId  = 0, 		  //timeout to reconfigure the grid.
 	limit 			   = 100,		  //per page records limit.
 	editorGrid         = '',
-	showOrdersView     = '';
-//	countriesStore     = '';
+	weightUnitStore    = '',
+	showOrdersView     = '',
+	countriesStore     = '';
 
 //creating an array of actions to be used in the actions combobox in batch update window.
 actions['blob']   = [{'id': 0,'name': 'set to','value': 'SET_TO'},
@@ -100,12 +102,12 @@ actions['category_actions'] 	  = [[0, 'set to','SET_TO'],
 
 Ext.onReady(function () {
 	try{
-//		if(wpsc_woo != 1){
-//			//Stateful
-//			Ext.state.Manager.setProvider(new Ext.state.CookieProvider({
-//				expires: new Date(new Date().getTime()+(1000*60*60*24*30)), //30 days from now
-//			}));
-//		}
+		if(wpsc_woo != 1){
+			//Stateful
+			Ext.state.Manager.setProvider(new Ext.state.CookieProvider({
+				expires: new Date(new Date().getTime()+(1000*60*60*24*30)), //30 days from now
+			}));
+		}
 		
 	// Tooltips
 	Ext.QuickTips.init();
@@ -154,8 +156,7 @@ Ext.onReady(function () {
 		listeners: {
 			selectionchange: function (sm) {
 				if (sm.getCount()) {					
-					if(SM.activeModule == 'Products' || SM.activeModule == 'Orders')
-						pagingToolbar.batchButton.enable();
+					pagingToolbar.batchButton.enable();
 					
 					if(pagingToolbar.hasOwnProperty('deleteButton'))
 					pagingToolbar.deleteButton.enable();
@@ -712,6 +713,8 @@ var pagingToolbar = new Ext.PagingToolbar({
 			store = ordersStore;
 			else if(SM.activeModule == 'Products')
 			store = productsStore;
+			else if(SM.activeModule == 'Customers')
+			store = customersStore;
 			saveRecords(store,pagingToolbar,jsonURL,editorGridSelectionModel);
 		}}
 	}],
@@ -1075,6 +1078,32 @@ var categoryStore = new Ext.data.ArrayStore({
 	autoDestroy: false
 });
 
+//Store for 'set to' from second combobox(actions combobox).
+var countriesStore = new Ext.data.Store({
+	reader: new Ext.data.JsonReader({
+		idProperty: 'id',
+		totalProperty: 'totalCount',
+		root: 'items',
+		fields: [{ name: 'id'  },
+				{ name: 'name' },
+				{ name: 'value'}]
+	}),
+	autoDestroy: false,
+	dirty: false
+});
+countriesStore.loadData(countries);
+
+var countriesStoreCombo = new Ext.form.ComboBox({
+		store: countriesStore,
+		valueField: 'value',
+		displayField: 'name',
+		mode: 'local',
+		typeAhead: true,
+		triggerAction: 'all',
+		lazyRender: true,
+		editable: false
+});
+
 var mask = new Ext.LoadMask(Ext.getBody(), {
 	msg: "Please wait..."
 });
@@ -1083,6 +1112,8 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 	msg: "Please wait..."
 });
 
+
+
 //batch update window
 var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 	cls: 'batchtoolbar',
@@ -1090,6 +1121,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 		config = Ext.apply({
 			items: [{
 				xtype: 'combo',
+				width: 170,
 				allowBlank: false,
 				align: 'center',				
 				store: fieldsStore,
@@ -1119,10 +1151,12 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var field_name = this.store.reader.jsonData.items[selectedFieldIndex].name;
 						var actionsData = new Array();
 						var toolbarParent = this.findParentByType(batchUpdateToolbarInstance, true);
-						var comboCategoriesActionCmp = toolbarParent.get(4);
-						var setTextfield = toolbarParent.get(5);
+						var comboCategoriesActionCmp = toolbarParent.get(7);
+						var setTextfield = toolbarParent.get(6);
 						var comboActionCmp = toolbarParent.get(2);
+						var comboCountriesCmp = toolbarParent.get(4);						
 						
+						toolbarParent.get(5).hide();			//to hide extra space on batchUpdateToolbar
 						
 						objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;;
 						regexError = 'Only numbers are allowed';
@@ -1134,55 +1168,65 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								setTextfield.hide();
 								comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
-							}else if (field_type == 'string') {
+							} else if (field_type == 'string') {
 								setTextfield.hide();
 								comboCategoriesActionCmp.hide();
 							} else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping') {								
 								setTextfield.hide();
 								comboCategoriesActionCmp.hide();
-							}else if (field_name == 'Weight' || field_name == 'Variations: Weight'||field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
+							} else if (field_name == 'Weight' || field_name == 'Variations: Weight'||field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
 								setTextfield.show();
 								comboCategoriesActionCmp.hide();
-							}
-							else if(field_name == 'Orders Status' || field_name.indexOf('Country') != -1){
-								if(field_name.indexOf('Country') != -1) {
-									actions_index = 'bigint';
-								}else{
-									actions_index = field_type;
-								}
+							} else if(field_name == 'Order Status'){
+								actions_index = field_type;
 								setTextfield.hide();
 								comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
+							} else if (field_name.indexOf('Country') != -1) {
+								actions_index = 'bigint';
+								setTextfield.hide();
+								comboCategoriesActionCmp.hide();
+								comboCountriesCmp.show();
+								comboCountriesCmp.reset();
 							} else {
 								setTextfield.show();
 								if (field_type == 'blob' || field_type == 'modStrActions') {
 									objRegExp = '';
 									regexError = '';
 								}
+								comboCountriesCmp.hide();
 								comboCategoriesActionCmp.hide();
 								actions_index = field_type;
 							}
+						
 						if(SM.activeModule == 'Orders' || SM.activeModule == 'Customers'){
-							actionsData[0] = new Array();
-							actionsData[0][0] = actions[actions_index][0].id;
-							actionsData[0][1] = actions[actions_index][0].name;
-							actionsData[0][2] = actions[actions_index][0].value;
+							for (j = 0; j < actions[actions_index].length; j++) {
+								actionsData[j] = new Array();
+								actionsData[j][0] = actions[actions_index][j].id;
+								actionsData[j][1] = actions[actions_index][j].name;
+								actionsData[j][2] = actions[actions_index][j].value;
+							}
 							actionStore.loadData(actionsData); // @todo: check whether used only for products or is it used for any other module?
+							
+							// @todo apply regex accordign to the req
+							setTextfield.regex = '';
+							setTextfield.regexText = '';	
 						}else if(SM.activeModule == 'Products'){
 							actionStore.loadData(actions[SM['productsCols'][this.value].actionType]);
+							// @todo apply regex accordign to the req
+							setTextfield.regex = objRegExp;
+							setTextfield.regexText = regexError;	
 						}
 						setTextfield.reset();
 						comboActionCmp.reset();
 						
-						// @todo apply regex accordign to the req
-						setTextfield.regex = objRegExp;
-						setTextfield.regexText = regexError;						
+											
 					}
 				}
 			}, '',
 			{
 				xtype: 'combo',
-				width: 180,
+				width: 170,
 				allowBlank: false,
 				store: actionStore,
 				style: {
@@ -1211,13 +1255,14 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								var actions_index;
 
 								actions_index = (field_type == 'category') ? field_type + '_actions' :((field_name.indexOf('Country') != -1) ? 'bigint' : field_type);
-								(field_name.indexOf('Country') != -1) ? weightUnitStore.loadData(countries) : '';
 
-									actionsData[0] = new Array();
-									actionsData[0][0] = actions[actions_index][0].id;
-									actionsData[0][1] = actions[actions_index][0].name;
-									actionsData[0][2] = actions[actions_index][0].value;
-									actionStore.loadData(actionsData);
+								for (j = 0; j < actions[actions_index].length; j++) {
+									actionsData[j] = new Array();
+									actionsData[j][0] = actions[actions_index][j].id;
+									actionsData[j][1] = actions[actions_index][j].name;
+									actionsData[j][2] = actions[actions_index][j].value;
+								}
+								actionStore.loadData(actionsData);
 							}else{
 								// on swapping between the toolbars	
 								actionStore.loadData(actions[SM['productsCols'][selectedValue].actionType]);
@@ -1227,14 +1272,103 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var toolbarParent      = this.findParentByType(batchUpdateToolbarInstance, true);
 						var comboFieldCmp      = toolbarParent.get(0);
 						var comboactionCmp     = toolbarParent.get(2);
+						var comboCountriesCmp  = toolbarParent.get(4);
 						var selectedFieldIndex = comboFieldCmp.selectedIndex;
 						var selectedValue      = comboFieldCmp.value;
-						var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;						
+						var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
 					}
 				}
 			},'',{
 				xtype: 'combo',
-				width: 180,
+				allowBlank: false,
+				typeAhead: true,
+				hidden: false,
+				width: 170,
+				align: 'center',
+				store: countriesStore,
+				style: {
+					fontSize: '12px',
+					paddingLeft: '2px'
+				},
+				hidden: true,
+				valueField: 'value',
+				displayField: 'name',
+				mode: 'local',
+				cls: 'searchPanel',
+				emptyText: 'Select a value...',
+				triggerAction: 'all',
+				editable: false,
+				forceSelection: true,
+				selectOnFocus: true,
+				listeners: {
+					select: function(){
+						var regions			   = new Array();
+						var toolbarParent      = this.findParentByType(batchUpdateToolbarInstance, true);
+						var comboRegionCmp     = toolbarParent.get(7);
+						var comboCountriesCmp  = toolbarParent.get(4);
+						var selectedValue      = comboCountriesCmp.value;
+						
+						var object = {
+							url:jsonURL
+							,method:'post'
+							,callback: function(options, success, response)	{
+								var myJsonObj = Ext.decode(response.responseText);
+								if(true !== success){
+									Ext.notification.msg('Failed',response.responseText);
+									return;
+								}try{
+									if ( myJsonObj != '' ) {	
+										for ( var i = 0; i < myJsonObj.items.length; i++ ) {
+											regions[i] = new Array();
+											regions[i][0] = myJsonObj.items[i].id;
+											regions[i][1] = myJsonObj.items[i].name;
+										}
+										comboRegionCmp.store.loadData(regions);
+										
+										comboRegionCmp.show();
+										toolbarParent.get(6).hide();
+									} else {
+										comboRegionCmp.hide();
+										toolbarParent.get(5).show();
+										toolbarParent.get(6).show();
+									}
+									return;
+								}catch(e){
+									var err = e.toString();
+									Ext.notification.msg('Error', err);					
+									return;
+								}
+							}
+							,scope:this
+							,params:
+							{
+								cmd: 'getRegion',
+								active_module: SM.activeModule,
+								country_id: selectedValue				
+							}
+						};
+						Ext.Ajax.request(object);
+					}
+				}
+			},'',{
+				xtype: 'textfield',
+				width: 170,
+				allowBlank: false,
+				style: {
+					fontSize: '12px',
+					paddingLeft: '2px'
+				},
+				enableKeyEvents: true,
+				regex: objRegExp,
+				regexText: regexError,
+				displayField: 'fullname',
+				emptyText: 'Enter the value...',
+				cls: 'searchPanel',
+				hidden: true,
+				selectOnFocus: true
+			},{
+				xtype: 'combo',
+				width: 170,
 				allowBlank: false,
 				store: categoryStore,
 				style: {
@@ -1258,29 +1392,15 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var comboFieldCmp = toolbarParent.get(0);
 						var selectedFieldIndex = comboFieldCmp.selectedIndex;
 						var selectedValue      = comboFieldCmp.value;
+						var field_name		   = toolbarParent.items.items[0].store.reader.jsonData.items[selectedFieldIndex].name;
 						
-						if(SM.activeModule == 'Products')
+						if (SM.activeModule == 'Products') {
 							categoryStore.loadData(categories["category-"+SM['productsCols'][selectedValue].colFilter]);
-						else if(SM.activeModule == 'Orders')
+						} else if(SM.activeModule == 'Orders' && field_name == 'Order Status') {
 							this.store = orderStatusStore;
+						}
 				    }
 				}
-			},{
-				xtype: 'textfield',
-				width: 180,
-				allowBlank: false,
-				style: {
-					fontSize: '12px',
-					paddingLeft: '2px'
-				},
-				enableKeyEvents: true,
-				regex: objRegExp,
-				regexText: regexError,
-				displayField: 'fullname',
-				emptyText: 'Enter the value...',
-				cls: 'searchPanel',
-				hidden: false,
-				selectOnFocus: true
 			}, '->',
 			{
 				icon: imgURL + 'del_row.png',
@@ -1306,16 +1426,14 @@ var batchUpdateToolbar = new Ext.Toolbar({
 		ref: 'addRowButton',
 		icon: imgURL + 'add_row.png',
 		handler: function () {
-			if(SM.activeModule == 'Products') {
-				var newBatchUpdateToolbar = new batchUpdateToolbarInstance();
-				toolbarCount++;
-				batchUpdatePanel.add(newBatchUpdateToolbar);
-				batchUpdatePanel.doLayout();
-			}
+			var newBatchUpdateToolbar = new batchUpdateToolbarInstance();
+			toolbarCount++;
+			batchUpdatePanel.add(newBatchUpdateToolbar);
+			batchUpdatePanel.doLayout();
 		}
 	}]
 });
-batchUpdateToolbar.get(0).get(7).hide(); //hide delete row icon from first toolbar.
+batchUpdateToolbar.get(0).get(9).hide(); //hide delete row icon from first toolbar.
 
 
 var batchUpdatePanel = new Ext.Panel({
@@ -1404,7 +1522,11 @@ batchUpdateWindow = new Ext.Window({
 			firstToolbar.items.items[4].reset();
 			firstToolbar.items.items[4].hide();
 
-			firstToolbar.items.items[5].reset();
+			firstToolbar.items.items[6].reset();
+			firstToolbar.items.items[6].hide();
+			
+			firstToolbar.items.items[7].reset();
+			firstToolbar.items.items[7].hide();
 
 			values = '';
 			ids = '';
@@ -1511,30 +1633,55 @@ var showCustomerDetails = function(record,rowIndex){
 			id: '_billing_first_name',
 			dataIndex: '_billing_first_name',
 			tooltip: 'Billing First Name',
+			editable: false,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
 			width: 150
 		},{
 			header: 'Last Name',
 			id: '_billing_last_name',
 			dataIndex: '_billing_last_name',
 			tooltip: 'Billing Last Name',
+			editable: false,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
 			width: 150
 		},{
 			header: 'Email',
 			id: '_billing_email',
 			dataIndex: '_billing_email',
 			tooltip: 'Email Address',
+			editable: false,
+			editor: new fm.TextField({
+				allowBlank: true,
+				allowNegative: false
+			}),
 			width: 200
 		},{
 			header: 'Address',
 			id: '_billing_address',
 			dataIndex: '_billing_address',
 			tooltip: 'Billing Address',
+			editable: false,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
 			width: 200
 		},{
 			header: 'Postal Code',
 			id: '_billing_postcode',
 			dataIndex: '_billing_postcode',
 			tooltip: 'Billing Postal Code',
+			editable: false,
+			editor: new fm.TextField({
+				allowBlank: true,
+				allowNegative: false
+			}),
 			width: 150
 		},{
 			header: 'City',
@@ -1542,6 +1689,11 @@ var showCustomerDetails = function(record,rowIndex){
 			dataIndex: '_billing_city',
 			tooltip: 'Billing City',
 			align: 'left',
+			editable: false,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
 			width: 150
 		},
 		{
@@ -1577,6 +1729,11 @@ var showCustomerDetails = function(record,rowIndex){
 			id: '_billing_phone',
 			dataIndex: '_billing_phone',
 			tooltip: 'Phone Number',
+			editable: false,
+			editor: new fm.TextField({
+				allowBlank: true,
+				allowNegative: false
+			}),
 			width: 180		
 		}],
 		listeners: {
@@ -1613,8 +1770,7 @@ var showCustomerDetails = function(record,rowIndex){
 		{name:'_billing_email',type:'string'},
 		{name:'_billing_phone', type:'string'},	
 		{name:'_order_total',type:totPurDataType},		
-		{name:'last_order', type:'string'}/*,		
-		{name:'Old_Email_Id', type: 'string'}*/
+		{name:'last_order', type:'string'}
 		]
 	});
 	
@@ -1642,7 +1798,17 @@ var showCustomerDetails = function(record,rowIndex){
 			//initial steps when store: customers is loaded
 			SM.activeModule = 'Customers';
 			SM.dashboardComboBox.setValue(SM.activeModule);
-
+			
+			if(fileExists == 1)	{
+				customersColumnModel.setEditable(1,true);
+				customersColumnModel.setEditable(2,true);
+				customersColumnModel.setEditable(3,true);
+				customersColumnModel.setEditable(4,true);
+				customersColumnModel.setEditable(5,true);
+				customersColumnModel.setEditable(6,true);
+				customersColumnModel.setEditable(11,true);
+			}
+			
 			if(cellClicked == false){
 				ordersStore.baseParams.searchText = ''; //clear the baseParams for ordersStore
 				SM.searchTextField.reset(); 			//to reset the searchTextField
@@ -1781,6 +1947,11 @@ var showCustomerDetails = function(record,rowIndex){
 			dataIndex: '_shipping_first_name',
 			tooltip: 'Shipping First Name',
 			hidden: true,
+			editable: false,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
 			width: 200
 		},{   
 			header: 'Shipping Last Name',
@@ -1788,6 +1959,11 @@ var showCustomerDetails = function(record,rowIndex){
 			dataIndex: '_shipping_last_name',
 			tooltip: 'Shipping Last Name',
 			hidden: true,
+			editable: false,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
 			width: 200
 		},{   
 			header: 'Shipping Address',
@@ -1795,6 +1971,11 @@ var showCustomerDetails = function(record,rowIndex){
 			dataIndex: '_shipping_address',
 			tooltip: 'Shipping Address',
 			hidden: true,
+			editable: false,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
 			width: 200		
 		},{
 			header: 'Shipping Postal Code',
@@ -1802,6 +1983,11 @@ var showCustomerDetails = function(record,rowIndex){
 			dataIndex: '_shipping_postcode',
 			tooltip: 'Shipping Postal Code',
 			hidden: true,
+			editable: false,
+			editor: new fm.TextField({
+					allowBlank: true,
+					allowNegative: false
+			}),
 			width: 200
 		},{   
 			header: 'Shipping City',
@@ -1809,6 +1995,11 @@ var showCustomerDetails = function(record,rowIndex){
 			dataIndex: '_shipping_city',
 			tooltip: 'Shipping City',
 			hidden: true,
+			editable: false,
+			editor: new fm.TextField({
+				allowBlank: false,
+				allowNegative: false
+			}),
 			width: 200
 		},
 		{   
@@ -1886,9 +2077,15 @@ var showCustomerDetails = function(record,rowIndex){
 			//initial steps when store: orders is loaded
 			SM.activeModule = 'Orders';
 			SM.dashboardComboBox.setValue(SM.activeModule);
-			batchUpdateToolbar.items.items[2].hide();
-			if(fileExists == 1)	
+
+			if(fileExists == 1)	{
 				ordersColumnModel.setEditable(7,true);
+				ordersColumnModel.setEditable(9,true);
+				ordersColumnModel.setEditable(10,true);
+				ordersColumnModel.setEditable(11,true);
+				ordersColumnModel.setEditable(12,true);
+				ordersColumnModel.setEditable(13,true);
+			}
 			if(cellClicked == false){
 				SM.searchTextField.reset(); //to reset the searchTextField
 				fromDateTxt.setValue(lastMonDate.format('M j Y'));

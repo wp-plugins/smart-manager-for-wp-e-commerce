@@ -28,7 +28,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	global $wpdb, $woocommerce;
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
 	if ($active_module == 'Products') { // <-products
-	
 		$post_status = "('publish', 'draft')";
 	
 		// if max-join-size issue occurs
@@ -328,7 +327,7 @@ function update_products_woo($_POST) {
 // For insert updating product in woo.
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 		if (SMPRO == true)
-			$result = woo_insert_update_data($_POST);
+			$result = woo_insert_update_data ( $_POST );
 		else
 			$result = update_products_woo ( $_POST );
 		
@@ -363,7 +362,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 	$delCnt = 0;
-	
+	$activeModule = substr( $_POST ['active_module'], 0, -1 );
+
 		$data = json_decode ( stripslashes ( $_POST ['data'] ) );
 		$delCnt = count ( $data );
 		
@@ -380,16 +380,16 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		
 		if ($result == true) {
 			if ($delCnt == 1) {
-				$encoded ['msg'] = $delCnt . " Product deleted Successfully";
+				$encoded ['msg'] = $delCnt . " $activeModule deleted Successfully";
 				$encoded ['delCnt'] = $delCnt;
 			} else {
-				$encoded ['msg'] = $delCnt . " Products deleted Successfully";
+				$encoded ['msg'] = $delCnt . " " . $activeModule . "s deleted Successfully";
 				$encoded ['delCnt'] = $delCnt;
 			}
 		} elseif ($result == false) {
-			$encoded ['msg'] = "Products were not deleted ";
+			$encoded ['msg'] = $activeModule . "s were not deleted ";
 		} else {
-			$encoded ['msg'] = "Products removed from the grid";
+			$encoded ['msg'] = $activeModule . "s removed from the grid";
 		}
 	echo json_encode ( $encoded );
 }
@@ -404,5 +404,40 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 	}
 	echo json_encode ( $results );
 }
+
+function get_term_taxonomy_id($term_name) {					// for woocommerce orders
+	global $wpdb;
+	$select_query = "SELECT term_taxonomy_id FROM {$wpdb->prefix}term_taxonomy AS term_taxonomy JOIN {$wpdb->prefix}terms AS terms ON terms.term_id = term_taxonomy.term_id WHERE terms.name = '$term_name'";
+	$result = $wpdb->get_results ($select_query, 'ARRAY_A');
+	if (isset($result[0])) {
+		return (int)$result[0]['term_taxonomy_id'];	
+	} else {
+		$insert_term_query = "INSERT INTO {$wpdb->prefix}terms ( name, slug ) VALUES ( '$term_name', '$term_name' )";
+		$result = $wpdb->query ($insert_term_query);
+		if ($result > 0) {
+			$insert_taxonomy_query = "INSERT INTO {$wpdb->prefix}term_taxonomy ( term_id, taxonomy ) VALUES ( $wpdb->insert_id, 'shop_order_status' )";
+			$result = $wpdb->query ($insert_taxonomy_query);
+			return (int)$wpdb->insert_id;
+		} else {
+			return -1;
+		}
+	}
+}
+
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRegion') {
+	global $wpdb, $woocommerce;
+	$cnt = 0;
+	if ( !empty ( $woocommerce->countries->states[$_POST['country_id']] ) ) {
+		foreach ( $woocommerce->countries->states[$_POST['country_id']] as $key => $value) {
+			$regions ['items'] [$cnt] ['id'] = $key;
+			$regions ['items'] [$cnt] ['name'] = $value;
+			$cnt++;
+		}
+	} else {
+		$regions = '';
+	}
+	echo json_encode ( $regions );
+}
+
 
 ?>

@@ -461,69 +461,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 	echo json_encode ( $encoded );
 }
 
-function data_for_update_orders($_POST) {
-	global $purchlogs, $wpsc_purchase_log_statuses;
-	$query = "SELECT id,country_id, name, code FROM ".WPSC_TABLE_REGION_TAX;
-	$res = mysql_query($query);
-
-	if (mysql_num_rows($res) >= 1){
-		while ($data = mysql_fetch_assoc($res))
-		$regions[$data['id']] = $data['name'];
-	}
-
-	$query = "SELECT isocode,country FROM `".WPSC_TABLE_CURRENCY_LIST."` ORDER BY `country` ASC";
-	$res = mysql_query($query);
-
-	if (mysql_num_rows($res) >= 1){
-		while ($data = mysql_fetch_assoc($res))
-		$countries[$data['isocode']] = $data['country'];
-	}
-
-	//getting the id,uniquename
-	$query  = "SELECT id,name,unique_name
-		 		FROM " . WPSC_TABLE_CHECKOUT_FORMS . " 
-				WHERE unique_name IN ('shippingfirstname', 'shippinglastname', 'shippingaddress', 'shippingcity', 'shippingstate','shippingcountry', 'shippingpostcode')";
-	$res    = mysql_query($query);
-	while($data = mysql_fetch_assoc($res))
-	$id_uniquename[$data['unique_name']] = $data['id'];
-
-	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
-	$_POST = array ();
-	$ordersCnt = 1;
-	foreach ( $edited_object as $obj ) {
-		$query = "UPDATE `" . WPSC_TABLE_PURCHASE_LOGS . "`
-				                    SET processed ='{$obj->order_status}',notes='{$obj->notes}',track_id ='{$obj->track_id}'
-				                    WHERE id='{$obj->id}'";
-		$update_result = mysql_query ( $query );
-
-		foreach ($id_uniquename as $uniquename => $form_id) {
-			$update_value = $obj->$uniquename;
-
-			if ($uniquename == 'shippingcountry' || $uniquename == 'shippingstate'){
-				$b_country  = array();
-
-				if (array_search ($obj->shippingcountry, $countries))
-				$b_country [] = array_search ($obj->shippingcountry, $countries);
-
-				if(array_search ( $obj->shippingstate, $regions ))
-				$b_country [] = (string)array_search ( $obj->shippingstate, $regions );
-
-				$update_value = serialize ( $b_country );
-			}
-
-			$query  = "UPDATE `" . WPSC_TABLE_SUBMITED_FORM_DATA . "`
-				              SET value = '".$update_value."'
-				              WHERE form_id = $form_id
-				              AND  log_id   = '".$obj->id."'";
-			$update_result = mysql_query($query);
-		}
-		$result ['updateCnt'] = $ordersCnt ++;
-	}
-	$result ['result'] = true;
-	$result ['updated'] = 1;
-	return $result;
-}
-
 function update_products($_POST) {
 	global $table_prefix, $result;
 	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
@@ -585,4 +522,16 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 	}
 	echo json_encode ( $encoded );	
 }
+
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
+	global $wpdb, $current_user;
+	$current_user = wp_get_current_user();
+	if ( SMPRO != true || $current_user->roles[0] == 'administrator') {
+		$results = array( 'Products', 'Customers_Orders' );
+	} else {
+		$results = get_dashboard_combo_store();
+	}
+	echo json_encode ( $results );
+}
+
 ?>
