@@ -1,6 +1,6 @@
 <div id="editor-grid"></div>
 <?php
-global $wpdb;
+global $wpdb, $woocommerce;
 $limit = 2;
 // to set javascript variable of file exists
 $fileExists = (SMPRO === true) ? 1 : 0;
@@ -128,7 +128,6 @@ $encodedOrderStatus = json_encode ( $order_status );
 	$cnt = 0;
 	foreach ( ( array ) $form_data as $form_data_key => $form_data_value ) {
 		$customerFields ['items'] [$cnt] ['id'] = $cnt;
-		
 		if ($form_data_value == 'Country' || strstr ( $form_data_value, 'Country' )) {
 			$customerFields ['items'] [$cnt] ['type'] = 'bigint';
 		} else {
@@ -138,11 +137,11 @@ $encodedOrderStatus = json_encode ( $order_status );
 		$customerFields ['items'] [$cnt] ['name'] = $form_data_value;
 		$customerFields ['items'] [$cnt] ['value'] = 'value' . ', ' . WPSC_TABLE_SUBMITED_FORM_DATA . ', ' . $form_data_key;
 		$customerFields ['totalCount'] = $cnt ++;
+	}
 		if (count ( $customerFields ) >= 1)
 			$encodedCustomersFields = json_encode ( $customerFields );
 		else
 			$encodedCustomersFields = 0;
-	}
 	
 	$query = "SELECT * FROM `" . WPSC_TABLE_CURRENCY_LIST . "` ORDER BY `country` ASC";
 	$result = mysql_query ( $query );
@@ -325,12 +324,59 @@ if (WPSC_RUNNING === true) {
 	
 	$orders_details_url = ADMIN_URL . "/post.php?post=";
 	
-	$ordersfield_names ['items'] [0] ['id'] = 0;
-	$ordersfield_names ['items'] [0] ['name'] = 'Orders Status';
-	$ordersfield_names ['items'] [0] ['type'] = 'bigint';
-	$ordersfield_names ['items'] [0] ['value'] = "";
+	$orderFieldsQuery = "SELECT DISTINCT meta_key FROM {$wpdb->prefix}postmeta WHERE meta_key IN 
+																					('_shipping_first_name' , '_shipping_last_name' , 
+																					'_shipping_address_1', '_shipping_address_2',
+																					'_shipping_city', '_shipping_state', '_shipping_country','_shipping_postcode')";
+	$orderFieldsResults = $wpdb->get_results ($orderFieldsQuery);
+	$cnt = 0;
+	foreach ($orderFieldsResults as $obj) {
+		$ordersfield_names ['items'] [$cnt] ['id'] = $cnt;
+		$ordersfield_names ['items'] [$cnt] ['name'] = ucwords(str_replace('_', ' ', substr($obj->meta_key, 1)));
+		if ($ordersfield_names ['items'] [$cnt] ['name'] == 'Country') {
+			$ordersfield_names ['items'] [$cnt] ['type'] = 'bigint';
+		} else {
+			$ordersfield_names ['items'] [$cnt] ['type'] = 'blob';
+		}
+		$ordersfield_names ['items'] [$cnt] ['value'] = $obj->meta_key . ",`{$wpdb->prefix}postmeta`";
+		$ordersfield_names ['totalCount'] = $cnt ++;
+	}
+	$ordersfield_names ['items'] [$cnt] ['id'] = $cnt;
+	$ordersfield_names ['items'] [$cnt] ['name'] = 'Order Status';
+	$ordersfield_names ['items'] [$cnt] ['type'] = 'bigint';
+	$ordersfield_names ['items'] [$cnt] ['value'] = " ,`{$wpdb->prefix}term_relationships`";
 	
 	$encodedOrdersFields = json_encode ( $ordersfield_names );
+	
+	$customerFieldsQuery = "SELECT DISTINCT meta_key FROM {$wpdb->prefix}postmeta WHERE meta_key IN 
+																					('_billing_first_name' , '_billing_last_name' , 
+																					'_billing_address_1', '_billing_address_2',
+																					'_billing_city', '_billing_state', '_billing_country','_billing_postcode',
+																					'_billing_email', '_billing_phone')";
+	$customerFieldsResults = $wpdb->get_results ($customerFieldsQuery);
+	$cnt = 0;
+	foreach ($customerFieldsResults as $obj) {
+		$customerFields ['items'] [$cnt] ['id'] = $cnt;
+		$customerFields ['items'] [$cnt] ['name'] = ucwords(str_replace('_', ' ', substr($obj->meta_key, 9)));
+		if ($customerFields ['items'] [$cnt] ['name'] == 'Country') {
+			$customerFields ['items'] [$cnt] ['type'] = 'bigint';
+		} else {
+			$customerFields ['items'] [$cnt] ['type'] = 'blob';
+		}
+		$customerFields ['items'] [$cnt] ['value'] = $obj->meta_key . ",`{$wpdb->prefix}postmeta`";
+		$customerFields ['totalCount'] = $cnt ++;
+	}
+	
+	$encodedCustomersFields = json_encode ( $customerFields );
+	$count = 0;
+	foreach ($woocommerce->countries->countries as $key => $value) {
+		$countries ['items'] [$count] ['id'] = $count;
+		$countries ['items'] [$count] ['name'] = $value;
+		$countries ['items'] [$count] ['value'] = $key;
+		$countries ['totalCount'] = $count++;
+	}
+	
+	$encodedCountries = json_encode ( $countries );
 	
 	$products_cols['price']['colName']='regular_price'; // for woo
 	$products_cols['salePrice']['colName']='sale_price'; // for woo
@@ -423,7 +469,7 @@ $products_cols = json_encode($products_cols);
 // EOF Product category
 // BOF Products Fields
 
-if (WPSC_RUNNING === true) {
+
 	//getting customers fieldnames END
 	echo "<script type='text/javascript'>
 
@@ -433,14 +479,25 @@ if (WPSC_RUNNING === true) {
 	var ordersFields        =  " . $encodedOrdersFields . ";
 	var customersFields     =  " . $encodedCustomersFields . ";
 	var categories 			=  " . $categories . ";
-	var countries           =  " . $encodedCountries . ";
+	var countries           =  " . $encodedCountries . ";";
+	
+if (WPSC_RUNNING === true) {
+	echo "
 	var regions             =  " . $encodedRegions . ";
-	var weightUnits         =  " . $encodedWeightUnits . ";
 	var ordersStatus        =  " . $encodedOrderStatus . ";
+	var weightUnits         =  " . $encodedWeightUnits . ";";
+} else {
+	echo "
+	var regions             =  '" . $encodedRegions . "';
+	var ordersStatus        =  '" . $encodedOrderStatus . "';
+	var weightUnits         =  '" . $encodedWeightUnits . "';";
+}
+	echo "
 	var newCatName          = '" . $cat_name . "';
 	var fileExists          = '" . $fileExists . "';
-	var wpscRunning       = '" . $wpsc . "';
-	var wooRunning        = '" . $woo . "';
+	var wpscRunning         = '" . $wpsc . "';
+	var wooRunning          = '" . $woo . "';
+	var wpsc_woo			= '" . $wpsc_woo . "';
 	var newCatId            = '" . $cat_id . "';
 	var jsonURL             = '" . JSON_URL . "';
 	var imgURL              = '" . IMG_URL . "';
@@ -527,9 +584,11 @@ if (WPSC_RUNNING === true) {
 	
 
 	Ext.iterate(SM.productsCols , function(key,value) { // adding values in the value field
-		SM['productsCols'][key]['value'] = key;
+		SM['productsCols'][key]['value'] = key;";
+	
+if (WPSC_RUNNING === true) {	
 		
-		if(isWPSC37 != '' && value.actionType != ''){
+		echo "if(isWPSC37 != '' && value.actionType != ''){
 			if(value.value != 'height'){
 				if(value.value != 'width'){
 					if(value.value != 'lengthCol'){
@@ -540,8 +599,11 @@ if (WPSC_RUNNING === true) {
 					}
 				}
 			}
-		}else if(isWPSC38 != '' && value.actionType != ''){   // dropdown without unwanted columns for
-		if(value.value != 'group'){
+		}else if(isWPSC38 != '' && value.actionType != ''){";   // dropdown without unwanted columns for
+} elseif (WOO_RUNNING === true) {
+		echo "if(value.actionType != ''){";
+}
+		echo "if(value.value != 'group'){
 				productsFields.items.push(value);
 				productsFields.totalCount = ++j;
 			}
@@ -554,60 +616,6 @@ if (WPSC_RUNNING === true) {
 		productsViewCols.push(SM.productsCols[prodcol]['colName']);
 	
 	</script>";
-	
-} elseif (WOO_RUNNING === true) {
-	
-	echo "<script type='text/javascript'>
-		var productsViewCols    = new Array();
-		var SM = new Object;
-			SM.productsCols = ".$products_cols.";
-		
-		var weightUnits         =  '';
-		var ordersStatus        =  '';
-		var countries           =  '';
-		var regions             =  '';
-		var ordersFields        =  " . $encodedOrdersFields . ";
-		var customersFields     =  '';
-		var jsonURL             = '" . JSON_URL . "';
-		var imgURL              = '" . IMG_URL . "';
-		var isWPSC37            = '';
-		var isWPSC38            = '';
-		var newCatName          = '" . $cat_name . "';
-		var fileExists          = '" . $fileExists . "';
-		var wpscRunning       = '" . $wpsc . "';
-		var wooRunning        = '" . $woo . "';
-		var newCatId            = '" . $cat_id . "';
-		var productsDetailsLink = '" . $products_details_url . "';
-		var categories 			=  " . $categories . ";	
-		var wpsc_woo			= '" . $wpsc_woo . "';
-		var ordersDetailsLink   = '" . $orders_details_url . "';
-		var productsFields        = new Array();
-		
-		productsFields.items      = new Array();
-		var prodFieldsStoreData   = new Array();
-		prodFieldsStoreData.items = new Array();
-		var dontShow 			  = new Array('height', 'width', 'lengthCol');
-		
-		var i = 0 ;
-		var j = 0;
-		
-		Ext.iterate(SM.productsCols , function(key,value) { // adding values in the value field
-			SM['productsCols'][key]['value'] = key;
-	
-			if(value.actionType != ''){
-				if(value.value != 'group'){
-					productsFields.items.push(value);
-					productsFields.totalCount = ++j;
-				}
-			}
-			prodFieldsStoreData.items.push(value);
-			prodFieldsStoreData.totalCount = ++i;
-		},this);
-
-		for(var prodcol in SM.productsCols)
-			productsViewCols.push(SM.productsCols[prodcol]['colName']);
-	</script>";
-}
 
 ?>
 <!-- Smart Manager FB Like Button -->

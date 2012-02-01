@@ -459,52 +459,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 	echo json_encode ( $encoded );
 }
 
-// Update order deatils including customer shipping details
-function data_for_update_orders($_POST) {
-	global $wpdb; // to use as global
-	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
-	
-	$query = "SELECT id,unique_name
-  	 		  FROM " . WPSC_TABLE_CHECKOUT_FORMS . " 
-			  WHERE unique_name IN ('shippingfirstname', 'shippinglastname', 'shippingaddress', 'shippingcity', 'shippingpostcode')
-			  AND active = 1 
-			  GROUP BY unique_name 
-			  ORDER BY id";
-	$result = $wpdb->get_results ( $query, 'ARRAY_A' );
-	
-	if (count ( $result ) >= 1) {
-		foreach ( $result as $key => $arr_value )
-			$id_uniquename [$arr_value ['unique_name']] = $arr_value ['id'];
-	}
-	
-	$ordersCnt = 1;
-	foreach ( $edited_object as $obj ) {
-		$query = "UPDATE `". WPSC_TABLE_PURCHASE_LOGS . "`
-						   SET 	processed ='$obj->order_status',
-								    notes ='$obj->notes',
-								 track_id ='$obj->track_id'
-				   				 WHERE id ='$obj->id'";
-		$update_result = $wpdb->query ( $query );
-
-		foreach ( $id_uniquename as $uniquename => $form_id ) {
-			$update_value = $obj->$uniquename;
-
-			//$key contains unique name
-			$update_value = mysql_escape_string($update_value);
-			$query = "UPDATE `" . WPSC_TABLE_SUBMITED_FORM_DATA . "`
-				         SET value   = '" . $update_value . "'
-				       WHERE form_id = $form_id
-				         AND log_id  = '{$obj->id}'";
-			$update_result = $wpdb->query ( $query );
-		}
-		$result ['updateCnt'] = $ordersCnt ++;
-		unset ( $ship_country_info ); // unsetting the $ship_country_info
-	}
-	$result ['result'] = true;
-	$result ['updated'] = 1;
-	return $result;
-}
-
 //update products for lite version.
 function update_products($_POST) {
 	global $result, $wpdb;

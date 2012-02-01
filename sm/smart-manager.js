@@ -15,6 +15,7 @@ Ext.notification = function(){
 	                msgCt = Ext.DomHelper.insertFirst(document.body, {id:'msg-div'}, true);
 	            }
 	            msgCt.alignTo(document, 't-t');
+	            Ext.DomHelper.applyStyles(msgCt, 'left: 33%; top: 30px;');
 	            var s = String.format.apply(String, Array.prototype.slice.call(arguments, 1));
 	            var m = Ext.DomHelper.append(msgCt, {html:createBox(title, s)}, true);
 	            m.slideIn('t').pause(2).ghost("t", {remove:true});
@@ -1214,7 +1215,6 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			dataIndex: 'billingstate',
 			tooltip: 'Billing Region',
 			align: 'center',
-//			editor: regionEditor,
 			width: 100
 		},
 		{
@@ -1222,7 +1222,6 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			id: 'billingcountry',
 			dataIndex: 'billingcountry',
 			tooltip: 'Billing Country',
-//			editor:countriesCombo,
 			width: 120
 		},
 		{
@@ -1516,7 +1515,7 @@ if(isWPSC38 == '1'){
 					allowBlank: true,
 					allowNegative: false
 			}),
-				width: 200
+			width: 200
 		},{   
 			header: 'Shipping City',
 			id: 'shippingcity',
@@ -1809,10 +1808,9 @@ var categoryStore = new Ext.data.ArrayStore({
 		totalProperty: 'totalCount',
 		root: 'items',
 		fields: [{ name: 'id'  },
-		{ name: 'name' },
-		{ name: 'value'},
-		{ name: 'country_id'}
-		]
+				{ name: 'name' },
+				{ name: 'value'},
+				{ name: 'country_id'}]
 	}),
 	autoDestroy: false,
 	dirty: false
@@ -1915,11 +1913,11 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							}
 						if(SM.activeModule == 'Orders' || SM.activeModule == 'Customers'){
 							for (j = 0; j < actions[actions_index].length; j++) {
-							actionsData[j] = new Array();
-							actionsData[j][0] = actions[actions_index][j].id;
-							actionsData[j][1] = actions[actions_index][j].name;
-							actionsData[j][2] = actions[actions_index][j].value;
-						}
+								actionsData[j] = new Array();
+								actionsData[j][0] = actions[actions_index][j].id;
+								actionsData[j][1] = actions[actions_index][j].name;
+								actionsData[j][2] = actions[actions_index][j].value;
+							}
 						actionStore.loadData(actionsData); // @todo: check whether used only for products or is it used for any other module?
 						}else if(SM.activeModule == 'Products'){
 							actionStore.loadData(actions[SM['productsCols'][this.value].actionType]);
@@ -1937,7 +1935,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 			}, '',
 			{
 				xtype: 'combo',
-				width: 180,
+				width: 170,
 				allowBlank: false,
 				store: actionStore,
 				style: {
@@ -2005,7 +2003,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				}
 			},'',{
 				xtype: 'combo',
-				width: 180,
+				width: 170,
 				allowBlank: false,
 				store: categoryStore,
 				style: {
@@ -2051,7 +2049,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				}
 			},{
 				xtype: 'textfield',
-				width: 180,
+				width: 170,
 				allowBlank: false,
 				style: {
 					fontSize: '12px',
@@ -2071,7 +2069,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				allowBlank: false,
 				typeAhead: true,
 				hidden: false,
-				width: 180,
+				width: 170,
 				align: 'center',
 				store: weightUnitStore,
 				style: {
@@ -2085,7 +2083,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				cls: 'searchPanel',
 				emptyText: 'Select a value...',
 				triggerAction: 'all',
-				editable: true,
+				editable: false,
 				forceSelection: true,
 				selectOnFocus: true,
 				listeners: {
@@ -2118,7 +2116,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				editable: true,
 				allowBlank: false,
 				hidden: false,
-				width: 180,
+				width: 170,
 				align: 'center',
 				store: regionsStore,
 				style: {

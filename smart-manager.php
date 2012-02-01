@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce store administration. Quickly find and update products, orders and customers.
-Version: 1.9.1
+Version: 2.0
 Author: Store Apps
 Author URI: http://www.storeapps.org/about/
 Copyright (c) 2010, 2011 Store Apps All rights reserved.
@@ -91,11 +91,14 @@ function smart_is_pro_updated() {
 		}
 		wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
 		wp_register_script ( 'sm_ext_all', plugins_url ( '/ext/ext-all.js', __FILE__ ), array ('sm_ext_base' ), $ext_version );
-		if ($_GET['post_type'] == 'wpsc-product') {
-			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager.js', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
+		if ($_GET['post_type'] == 'wpsc-product' || $_GET['page'] == 'smart-manager-wpsc') {
+			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager.js', __FILE__ ), array ('sm_ext_all'), $sm_plugin_info ['Version'] );
 			define('WPSC_RUNNING', true);
 			define('WOO_RUNNING', false);
-		} else if ($_GET['post_type'] == 'product') {
+			// checking the version for WPSC plugin
+			define ( 'IS_WPSC37', version_compare ( WPSC_VERSION, '3.8', '<' ) );
+			define ( 'IS_WPSC38', version_compare ( WPSC_VERSION, '3.8', '>=' ) );
+		} else if ($_GET['post_type'] == 'product' || $_GET['page'] == 'smart-manager-woo') {
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager-woo.js', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
 			define('WPSC_RUNNING', false);
 			define('WOO_RUNNING', true);
@@ -212,9 +215,6 @@ function smart_is_pro_updated() {
 		define ( 'IMG_URL', SM_PLUGIN_DIRNAME . '/images/' );		
 		
 		if (WPSC_RUNNING === true) {
-			// checking the version for WPSC plugin
-			define ( 'IS_WPSC37', version_compare ( WPSC_VERSION, '3.8', '<' ) );
-			define ( 'IS_WPSC38', version_compare ( WPSC_VERSION, '3.8', '>=' ) );
 			$json_filename = (IS_WPSC37) ? 'json37' : 'json38';
 		} else if (WOO_RUNNING === true) {
 			$json_filename = 'woo-json';
