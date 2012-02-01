@@ -4,17 +4,17 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.3
-Stable tag: 1.9.1
+Stable tag: 2.0
 
 10x productivity gains with WP e-Commerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
-(NEW: WooCommerce support now in Beta)
+(Update: WooCommerce support progressing well)
 
 == Description ==
 
 **Woo Commerce Support in Beta**
 We have added support for managing Woo Commerce products, customers and orders in Smart Manager. 
-This is still in beta though - does not contain all features and may have bugs. 
+This is still in beta though and may have bugs. 
 
 Smart Manager is a unique, revolutionary tool that gives you the **power to efficiently manage products, 
 product variations, customers and orders** using the popular WordPress e-Commerce plugin 
@@ -76,7 +76,7 @@ Yes. Smart Manager is compatible with both WP e-Commerce 3.7 and 3.8. Some featu
 = What do I get in this free version? =
 
 Spreadsheet like view of products, customers and orders. Search and navigation, 
-limited inline editing for products and orders, ability to delete multiple items at 
+limited inline editing for products, ability to delete multiple items at 
 once, a quick edit link to WP e-Commerce editing screen.
 
 = What do the paid versions give me? =
@@ -101,6 +101,14 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 2.0 =
+* New: All important fields of 'Customers' & 'Orders' for WooCommerce are now editable inline
+* New: 'Batch Update' on 'Customers' & 'Orders' for WooCommerce
+* Fixed: MySQL error in case of WP e-Commerce 3.7
+* New: Smart Manager Access Control for WP e-Commerce 3.7
+* Updated: Any modified value will be saved before 'Batch Update' for WP e-Commerce 3.7 & 3.8 both
+* Updated: Position of Notification that comes after any updation or deletion
 
 = 1.9.1 =
 * New: Access Privileges - give controlled access to non Admin users in WordPress
@@ -254,6 +262,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 2.0 = 
+Important update for WooCommerce - adds customer and order management. Recommended upgrade.
 
 = 1.9.1 =
 Access control support added, improved auto upgrade. Recommended upgrade.
