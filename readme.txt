@@ -1,24 +1,18 @@
 === Smart Manager for WP e-Commerce ===
-Contributors: niravmehta, rohankamble, angelin.deboral
+Contributors: niravmehta, ratnakar.dubey
 Donate link: http://www.storeapps.org/
-Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, wp ecommerce, productivity, products, orders, customers
+Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.3
-Stable tag: 2.0
+Stable tag: 2.1
 
-10x productivity gains with WP e-Commerce store administration. 
-Manage products, variations, orders and customers reliably using a fast and familiar interface.
-(Update: WooCommerce support progressing well)
+10x productivity gains with WP e-Commerce & WooCommerce store administration. 
+Manage products, variations (currently only for WPeC 3.8+), orders and customers reliably using a fast and familiar interface.
 
 == Description ==
-
-**Woo Commerce Support in Beta**
-We have added support for managing Woo Commerce products, customers and orders in Smart Manager. 
-This is still in beta though and may have bugs. 
-
 Smart Manager is a unique, revolutionary tool that gives you the **power to efficiently manage products, 
 product variations, customers and orders** using the popular WordPress e-Commerce plugin 
-from GetShopped / Instinct.
+from GetShopped / Instinct or WooCommerce from WooThemes.
 
 As a business owner, **your time is better spent on marketing and customer service** than on store administration. 
 Unfortunately store administration with WordPress e-Commerce can take significant time. Day after day.
@@ -27,7 +21,7 @@ Smart Manager will **boost your productivity 10x** in managing products, custome
 You can browse, search, and manage multiple products, customers or orders using a **familiar, single page, 
 spreadsheet like** interface. 
 
-Paid versions also allow managing product variations, inline editing for all fields and adding items. 
+Paid versions also allow managing product variations (for WPeC 3.8+), inline editing for all fields and adding items. 
 It also provides **Smart Batch Update** to change multiple fields on multiple items - all 
 **at once with zero errors**. 
  
@@ -37,7 +31,7 @@ It frees you up from mundane housekeeping tasks. So you can spend that time on a
 money. Use that time to leverage social media for higher sales, or develop deeper customer relationships. 
 Use that time to develop a new product, or simply present it to your family.
 
-Smart Manager works with both WP e-Commerce 3.7 and 3.8.
+Smart Manager works with WooCommerce latest versions and both WP e-Commerce 3.7 and 3.8.
 
 
 Highlights:
@@ -62,12 +56,20 @@ Thousands of customers are extremely happy with Smart Manager! Checkout our webs
 
 == Installation ==
 
-1. Ensure you have [WP e-Commerce](http://www.getshopped.org) or [WooCommerce](http://www.woothemes.com/woocommerce/) plugin installed
+1. Ensure you have latest version of [WP e-Commerce](http://www.getshopped.org) or [WooCommerce](http://www.woothemes.com/woocommerce/) plugin installed
 2. Unzip and upload contents of the plugin to your `/wp-content/plugins/` directory
 3. Activate the plugin through the 'Plugins' menu in WordPress
-4. Click on 'Smart Manager' option within WP e-Commerce sidebar menu
+4. Click on 'Smart Manager' option within WordPress admin sidebar menu
 
 == Frequently Asked Questions ==
+
+= Can I import / export data using CSV? =
+
+No. Smart Manager does not support import / export yet. But we are considering this for future.
+
+= What features work with WooCommerce? =
+
+Products, Orders and Customers management works with WooCommerce. Lite version has limited features, but Pro allows full inline editing and smart batch updates. 
 
 = Does this work with WP e-Commerce 3.8? =
 
@@ -101,6 +103,16 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 2.1 =
+* Fixed: Asking to install WooCommerce when WooCommerce is already installed
+* Updated: Smart Manager for WooCommerce 1.4.3
+* New: Manage Image Thumbnail of Products & its Variations for WPeC 3.8
+* New: Manage Image Thumbnail of Products for WooCommerce 1.4.3
+* New: Show Product Image Thumbnail for WPeC 3.7
+* Updated: Automatic upgrade for Wordpress Multisite
+* Updated: License Key setting for Wordpress Multisite
+* Fixed: Incomplete change in Order Status when changing it using Smart Manager in WooCommerce
 
 = 2.0 =
 * New: All important fields of 'Customers' & 'Orders' for WooCommerce are now editable inline
@@ -262,6 +274,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 2.1 =
+Upgrade WPeC / WooCommerce before upgrading Smart Manager. Multi site support added. Updated to work with WooCommerce 1.4.3. Recommended upgrade.
 
 = 2.0 = 
 Important update for WooCommerce - adds customer and order management. Recommended upgrade.
