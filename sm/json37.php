@@ -39,6 +39,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 							   pl.no_shipping as no_shipping,
 	                           pl.pnp,
 	                           pl.international_pnp,
+	                           pi.image as thumbnail,
 	                        if(pl.quantity_limited = 1,pl.quantity,-1 ) as quantity,
 	                           pl.weight as weight,
 	                        if(pl.publish = 1,'publish','draft') as publish,
@@ -52,6 +53,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
                            LEFT OUTER JOIN  ".WPSC_TABLE_PRODUCT_CATEGORIES." AS pc
                      	   ON (ic.category_id = pc.id) 
                      	   AND pc.active = 1)	ON ( pl.id = ic.product_id )
+                     	   LEFT OUTER JOIN ".WPSC_TABLE_PRODUCT_IMAGES." as pi ON (pi.product_id = pl.id
+                     	   AND pi.id = (SELECT MAX(pi_1.id) FROM ".WPSC_TABLE_PRODUCT_IMAGES." as pi_1 WHERE pi.product_id = pi_1.product_id ORDER BY pi_1.id DESC))
+
                      	   LEFT OUTER JOIN 
                      	   (SELECT GROUP_CONCAT(meta_value ORDER BY id) sku_dimension,product_id
                      	    FROM  ".WPSC_TABLE_PRODUCTMETA." 
@@ -97,13 +101,13 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			while ($data = mysql_fetch_assoc($result))
 			$records[] = $data;
 		}
-		
 		$i = 0;
 		// compare $i against $num_rows and not against $num_records
 		// since $num_records gives the overall total count of the records in the database
 		// whereas $num_rows gives the total count of records from current query
 		while ($i < $num_rows ){
 			if (is_array($records[$i])){
+				
 				foreach ($records[$i] as $record_key => $record_value){
 					if ($record_key == 'sku_dimension')
 					$sku_dimension_arr = explode(',',$record_value);
@@ -117,6 +121,14 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 					$records[$i]['length']      = $dimension_arr['length'];
 					$records[$i]['length_unit'] = $dimension_arr['length_unit'];
 					unset($records[$i]['sku_dimension']);
+					if ( $record_key == 'thumbnail' ) {
+						if ( file_exists( "../../../" . substr ( strstr ( WPSC_THUMBNAIL_URL, 'uploads' ), 0 ) . $records[$i]['thumbnail'] ) ) {
+							$records[$i]['thumbnail'] = substr ( strstr ( WPSC_THUMBNAIL_URL, 'uploads' ), 0 ) . $records[$i]['thumbnail'];
+						} else {
+							$records[$i]['thumbnail'] = substr ( UPLOADS, strlen ( 'wp-content/' ) ) . substr ( strstr ( WPSC_THUMBNAIL_URL, 'uploads/' ), strlen ( 'uploads/' ) ) . $records[$i]['thumbnail'];
+							
+						}
+					}
 				}
 			}
 			$i++;
@@ -413,7 +425,6 @@ elseif ($active_module == 'Orders') {
 			}
 		}
 	}
-	
 	$encoded ['items'] = $records;
 	$encoded ['totalCount'] = $num_records;
 	echo json_encode ( $encoded );

@@ -57,7 +57,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		} else {
 			$show_variation = false;
 		}
-		
 		if ($show_variation === false) { // query params for non-variation products
 			$post_status = "('publish', 'draft')";
 			$parent_sort_id = '';
@@ -69,12 +68,14 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		$wpdb->query ( $query );
 		
 		$select = "SELECT SQL_CALC_FOUND_ROWS products.id,
-					post_title,
-					post_content,
-					post_excerpt,
-					post_status,
-					post_parent,
+					products.post_title,
+					products.post_content,
+					products.post_excerpt,
+					products.post_status,
+					products.post_parent,
 					category,
+					products_guid.guid as alt_thumbnail,
+					(SELECT guid FROM {$wpdb->prefix}posts WHERE ID = image_postmeta.meta_value) as thumbnail,
 					GROUP_CONCAT(prod_othermeta.meta_key order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_key,
 					GROUP_CONCAT(prod_othermeta.meta_value order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_value,
 					prod_meta.meta_value as prod_meta
@@ -94,16 +95,22 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 				
 		$from_where = "FROM {$wpdb->prefix}posts as products
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_othermeta ON (prod_othermeta.post_id = products.id and
-						prod_othermeta.meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock') )
+						prod_othermeta.meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock', '_thumbnail_id') )
 						
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_meta ON (prod_meta.post_id = products.id and
 						prod_meta.meta_key = '_wpsc_product_metadata')
+						
+						LEFT JOIN {$wpdb->prefix}posts as products_guid ON (products.ID = products_guid.post_parent 
+						AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment')
+						
+						LEFT JOIN {$wpdb->prefix}postmeta as image_postmeta ON (products.ID = image_postmeta.post_id 
+						AND image_postmeta.meta_key = '_thumbnail_id')
 						
 						LEFT JOIN 
 						(SELECT GROUP_CONCAT(wt.name) as category,wtr.object_id
 						FROM  {$wpdb->prefix}term_relationships AS wtr  	 
 						JOIN {$wpdb->prefix}term_taxonomy AS wtt ON (wtr.term_taxonomy_id = wtt.term_taxonomy_id and taxonomy = 'wpsc_product_category')
-												
+						
 						JOIN {$wpdb->prefix}terms AS wt ON (wtt.term_id = wt.term_id)
 						group by wtr.object_id) as prod_categories on (products.id = prod_categories.object_id)
 						
@@ -112,7 +119,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		
 		$group_by = " GROUP BY products.id ";
 		
-		$query = "$select  $from_where $group_by $search_condn $order_by LIMIT $offset,$limit;";
+		$query = "$select $from_where $group_by $search_condn $order_by LIMIT $offset,$limit;";
 		$records = $wpdb->get_results ( $query );
 		$num_rows = $wpdb->num_rows;		
 		
@@ -126,6 +133,19 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			$encoded ['msg'] = 'No Records Found';
 		} else {
 			foreach ( $records as &$record ) {
+				if ( empty ( $record->thumbnail ) || $record->thumbnail == '' ) {
+					if ( strpos ( $record->alt_thumbnail, 'uploads/' ) < 0 || strpos ( $record->alt_thumbnail, 'uploads/' ) === false ) {
+						$record->thumbnail = strstr($record->alt_thumbnail, 'files/');
+					} else {
+						$record->thumbnail = strstr($record->alt_thumbnail, 'uploads/');
+					}
+				} else {
+					if ( strpos ( $record->thumbnail, 'uploads/' ) < 0 || strpos ( $record->thumbnail, 'uploads/' ) === false ) {
+						$record->thumbnail = strstr($record->thumbnail, 'files/');
+					} else {
+						$record->thumbnail = strstr($record->thumbnail, 'uploads/');
+					}
+				}
 				$prod_meta_values = explode ( '###', $record->prod_othermeta_value );
 				$prod_meta_key    = explode ( '###', $record->prod_othermeta_key);
 				
@@ -531,6 +551,46 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 		$results = get_dashboard_combo_store();
 	}
 	echo json_encode ( $results );
+}
+
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
+	global $wpdb;
+	
+	if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] == 'true') {
+		$post_status = "('publish', 'draft', 'inherit')";
+	} else {
+		$post_status = "('publish', 'draft')";
+	}
+
+	$query = "SELECT products_guid.guid as alt_thumbnail,
+					(SELECT guid FROM {$wpdb->prefix}posts WHERE ID = image_postmeta.meta_value) as thumbnail 
+					
+					FROM {$wpdb->prefix}posts as posts 
+					
+					LEFT JOIN {$wpdb->prefix}posts as products_guid ON (posts.ID = products_guid.post_parent 
+					AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment')
+						
+					LEFT JOIN {$wpdb->prefix}postmeta as image_postmeta ON (posts.ID = image_postmeta.post_id 
+					AND image_postmeta.meta_key = '_thumbnail_id')
+					
+					WHERE posts.post_status IN $post_status
+					AND posts.post_type    = 'wpsc-product'
+					AND posts.ID = $_POST[id]";
+	$result = $wpdb->get_results ( $query );
+	if ( empty ( $result[0]->thumbnail ) || $result[0]->thumbnail == '' ) {
+		if ( strpos ( $result[0]->alt_thumbnail, 'uploads/' ) < 0 || strpos ( $result[0]->alt_thumbnail, 'uploads/' ) === false ) {
+			$result[0]->thumbnail = strstr($result[0]->alt_thumbnail, 'files/');
+		} else {
+			$result[0]->thumbnail = strstr($result[0]->alt_thumbnail, 'uploads/');
+		}
+	} else {
+		if ( strpos ( $result[0]->thumbnail, 'uploads/' ) < 0 || strpos ( $result[0]->thumbnail, 'uploads/' ) === false ) {
+			$result[0]->thumbnail = strstr($result[0]->thumbnail, 'files/');
+		} else {
+			$result[0]->thumbnail = strstr($result[0]->thumbnail, 'uploads/');
+		}
+	}
+	echo json_encode ( $result[0]->thumbnail );
 }
 
 ?>

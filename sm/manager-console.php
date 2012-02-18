@@ -7,7 +7,7 @@ $fileExists = (SMPRO === true) ? 1 : 0;
 $wpsc = (WPSC_RUNNING === true) ? 1 :0;
 $woo = (WOO_RUNNING === true) ? 1 :0;
 $wpsc_woo = (WPSC_WOO_ACTIVATED === true) ? 1 : 0;
-
+$site_url = get_option('siteurl');
 
 //creating the order links
 $blog_info = get_bloginfo ( 'url' );
@@ -19,7 +19,7 @@ if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
 	preg_match_all ( $regex_pattern, $str_products_url, $matches );
 	$products_details_url = "{$matches[2][0]}";
 } else if (WOO_RUNNING === true) {
-	$site_url = get_option('siteurl');
+//	$site_url = get_option('siteurl');
 	$products_details_url = $site_url.'/wp-admin/post.php?action=edit&post='.$product_id;
 }
 
@@ -179,6 +179,11 @@ $products_cols['id']['actionType'] ='';
 $products_cols['id']['colName']    ='id';
 $products_cols['id']['tableName']  ="{$wpdb->prefix}posts";
 
+$products_cols['image']['name']       ='Image';
+$products_cols['image']['actionType'] ='';
+$products_cols['image']['colName']    ='thumbnail';
+$products_cols['image']['tableName']  ="{$wpdb->prefix}posts";
+
 $products_cols['name']['name']      ='Name';
 $products_cols['name']['actionType']='modStrActions';
 $products_cols['name']['colName']   ='post_title';
@@ -244,10 +249,6 @@ $products_cols['lengthCol']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['post_parent']['colName']='post_parent';
 $products_cols['post_parent']['actionType']='';
 
-$products_cols['weight']['colName']='weight';
-$products_cols['height']['colName']='height';
-$products_cols['width']['colName']='width';
-$products_cols['lengthCol']['colName']='length';
 
 if (WPSC_RUNNING === true) {
 	
@@ -270,6 +271,11 @@ if (WPSC_RUNNING === true) {
 	$products_cols['intPnp']['actionType']='modIntPercentActions';
 	$products_cols['intPnp']['colName']='international';
 	$products_cols['intPnp']['tableName']="{$wpdb->prefix}postmeta";
+	
+	$products_cols['weight']['colName']='weight';
+	$products_cols['height']['colName']='height';
+	$products_cols['width']['colName']='width';
+	$products_cols['lengthCol']['colName']='length';
 
 	$products_cols['weightUnit']['name']='Unit';
 	$products_cols['weightUnit']['actionType']='';
@@ -378,22 +384,28 @@ if (WPSC_RUNNING === true) {
 	
 	$encodedCountries = json_encode ( $countries );
 	
-	$products_cols['price']['colName']='regular_price'; // for woo
-	$products_cols['salePrice']['colName']='sale_price'; // for woo
-	$products_cols['inventory']['colName']='stock'; // for woo
-	$products_cols['sku']['colName']='sku'; // for woo
+	$products_cols['price']['colName']='_regular_price'; // for woo
+	$products_cols['salePrice']['colName']='_sale_price'; // for woo
+	$products_cols['inventory']['colName']='_stock'; // for woo
+	$products_cols['sku']['colName']='_sku'; // for woo
 	
 	$products_cols['salePriceFrom']['name']='From';
 	$products_cols['salePriceFrom']['actionType']='';
-	$products_cols['salePriceFrom']['colName']='sale_price_dates_from';
+	$products_cols['salePriceFrom']['colName']='_sale_price_dates_from';
 	$products_cols['salePriceFrom']['tableName']="{$wpdb->prefix}postmeta";
 	$products_cols['salePriceFrom']['updateColName']='meta_value';
 	
 	$products_cols['salePriceTo']['name']='To';
 	$products_cols['salePriceTo']['actionType']='';
-	$products_cols['salePriceTo']['colName']='sale_price_dates_to';
+	$products_cols['salePriceTo']['colName']='_sale_price_dates_to';
 	$products_cols['salePriceTo']['tableName']="{$wpdb->prefix}postmeta";
 	$products_cols['salePriceTo']['updateColName']='meta_value';
+	
+	$products_cols['weight']['colName']='_weight';
+	$products_cols['height']['colName']='_height';
+	$products_cols['width']['colName']='_width';
+	$products_cols['lengthCol']['colName']='_length';
+
 } 
 
 if (WPSC_RUNNING === true) {
@@ -469,7 +481,6 @@ $products_cols = json_encode($products_cols);
 // EOF Product category
 // BOF Products Fields
 
-
 	//getting customers fieldnames END
 	echo "<script type='text/javascript'>
 
@@ -479,13 +490,22 @@ $products_cols = json_encode($products_cols);
 	var ordersFields        =  " . $encodedOrdersFields . ";
 	var customersFields     =  " . $encodedCustomersFields . ";
 	var categories 			=  " . $categories . ";
-	var countries           =  " . $encodedCountries . ";";
+	var countries           =  " . $encodedCountries . ";
+	var site_url            =  '" . $site_url . "';
+	var wpContentUrl        =  '" . WP_CONTENT_URL . "';";
+
+if ( MULTISITE == 1 ) {
+	echo "
+	var uploadBlogsDir      =  '" . UPLOADBLOGSDIR . "';
+	var uploads        		=  '" . UPLOADS . "';";
+}
 	
 if (WPSC_RUNNING === true) {
 	echo "
 	var regions             =  " . $encodedRegions . ";
 	var ordersStatus        =  " . $encodedOrderStatus . ";
-	var weightUnits         =  " . $encodedWeightUnits . ";";
+	var weightUnits         =  " . $encodedWeightUnits . ";
+	var wpscUploadUrl       =  '" . WPSC_UPLOAD_URL . "';";
 } else {
 	echo "
 	var regions             =  '" . $encodedRegions . "';

@@ -435,6 +435,17 @@ Ext.onReady(function () {
 			}
 		},
 		{
+			header: SM.productsCols.image.name,
+			id: 'image',
+			dataIndex: SM.productsCols.image.colName,
+			tooltip: 'Product Image',
+			width: 20,
+			hidden: true,
+			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
+				return (record.data.thumbnail != 'false' ? '<img id=editUrl width=16px height=16px src="' + wpContentUrl + '/' + record.data.thumbnail + '"/>' : '');
+			}
+		},
+		{
 			header: SM.productsCols.name.name,
 			id: 'name',
 			sortable: true,
@@ -712,7 +723,8 @@ Ext.onReady(function () {
 				{name: SM.productsCols.widthUnit.colName,         type: 'string'},
 				{name: SM.productsCols.lengthCol.colName,         type: 'float'},
 				{name: SM.productsCols.lengthUnit.colName,        type: 'string'},
-				{name: SM.productsCols.post_parent.colName,	      type: 'int'}
+				{name: SM.productsCols.post_parent.colName,	      type: 'int'},
+				{name: SM.productsCols.image.colName,	      	  type: 'string'}
 				]
 		
 	});	
@@ -2464,11 +2476,12 @@ var showCustomerDetails = function(record,rowIndex){
 				Ext.Ajax.request(object);
 			
 		},
-		cellclick: function(editorGrid,rowIndex, columnIndex, e) {
+		cellclick: function(editorGrid, rowIndex, columnIndex, e) {
 			try{
 				var record  = editorGrid.getStore().getAt(rowIndex);
 				cellClicked = true;
 				var editLinkColumnIndex   	  = productsColumnModel.findColumnIndex('edit_url'),
+					editImageColumnIndex   	  = productsColumnModel.findColumnIndex(SM.productsCols.image.colName),
 					prodTypeColumnIndex       = productsColumnModel.findColumnIndex('type'),
 					totalPurchasedColumnIndex = customersColumnModel.findColumnIndex('Total_Purchased'),
 					lastOrderColumnIndex      = customersColumnModel.findColumnIndex('Last_Order'),
@@ -2521,6 +2534,50 @@ var showCustomerDetails = function(record,rowIndex){
 								productsColumnModel.getColumnById('publish').editor = productStatusCombo;
 								productsColumnModel.setEditable(columnIndex,false);
 							}
+						}
+					} else if ( columnIndex == editImageColumnIndex ) {
+						if ( isWPSC37 != 1 ) {
+							var productsImageWindow = new Ext.Window({
+								collapsible:true,
+								shadow : true,
+								shadowOffset: 10,
+								title: 'Manage your Product Images',
+								width: 700,
+								height: 400,						
+								minimizable: false,
+								maximizable: true,
+								maximized: false,
+								resizeable: true,
+								animateTarget: 'image',
+								listeners: {
+									beforeshow: function() {
+										if ( fileExists != 1 ) 
+											this.setTitle( 'Manage your Product Images - Available only in Pro version' );
+									},
+									
+									close: function() {
+										var object = {
+											url:jsonURL
+											,method:'post'
+											,callback: function(options, success, response)	{
+												var myJsonObj = Ext.decode(response.responseText);
+												record.set("thumbnail", myJsonObj);
+												record.commit();
+											}
+											,scope:this
+											,params:
+											{
+												cmd:'editImage',
+												id: record.id,
+												incVariation: SM.incVariation
+											}
+										};
+										Ext.Ajax.request(object);
+									}
+								},
+								html: ( fileExists == 1 ) ? '<iframe src="'+ site_url + '/wp-admin/media-upload.php?parent_page=wpsc-edit-products&post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>' : ''
+							});
+							productsImageWindow.show('image');
 						}
 					}
 				}
