@@ -5,7 +5,7 @@
 }
 
 /*	BOF Font color to blue - Append the id given to the header */
-.x-grid3-td-details, .x-grid3-td-total_purchased, .x-grid3-td-last_order, .x-grid3-td-editLink {
+.x-grid3-td-details, .x-grid3-td-total_purchased, .x-grid3-col-image, .x-grid3-td-last_order, .x-grid3-td-editLink {
 	color: #21759B;
 	cursor: pointer;
 }

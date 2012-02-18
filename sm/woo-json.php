@@ -35,12 +35,14 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		$wpdb->query ( $query );
 
 		$select = "SELECT SQL_CALC_FOUND_ROWS products.id,
-					post_title,
-					post_content,
-					post_excerpt,
-					post_status,
-					post_parent,
+					products.post_title,
+					products.post_content,
+					products.post_excerpt,
+					products.post_status,
+					products.post_parent,
 					category,
+					products_guid.guid as alt_thumbnail,
+					(SELECT guid FROM {$wpdb->prefix}posts WHERE ID = image_postmeta.meta_value) as thumbnail,
 					GROUP_CONCAT(prod_othermeta.meta_key order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_key,
 					GROUP_CONCAT(prod_othermeta.meta_value order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_value,
 					prod_meta.meta_value as prod_meta
@@ -60,10 +62,16 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
 		$from_where = "FROM {$wpdb->prefix}posts as products
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_othermeta ON (prod_othermeta.post_id = products.id and
-						prod_othermeta.meta_key IN ('regular_price','sale_price','sale_price_dates_from','sale_price_dates_to','sku','stock','weight','height','length','width') )
+						prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width') )
 						
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_meta ON (prod_meta.post_id = products.id and
-						prod_meta.meta_key = 'product_attributes')
+						prod_meta.meta_key = '_product_attributes')
+						
+						LEFT JOIN {$wpdb->prefix}posts as products_guid ON (products.ID = products_guid.post_parent 
+						AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment')
+						
+						LEFT JOIN {$wpdb->prefix}postmeta as image_postmeta ON (products.ID = image_postmeta.post_id 
+						AND image_postmeta.meta_key = '_thumbnail_id')
 						
 						LEFT JOIN 
 						(SELECT GROUP_CONCAT(wt.name) as category,wtr.object_id
@@ -95,14 +103,17 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		} else {
 			
 			for ($i = 0; $i < $num_rows; $i++){
+				if ( empty ( $records[$i]->thumbnail ) || $records[$i]->thumbnail == '' ) 
+					$records[$i]->thumbnail = $records[$i]->alt_thumbnail;
+				$records[$i]->thumbnail = strstr($records[$i]->thumbnail, 'uploads/'); 
 				$prod_meta_values = explode ( '###', $records[$i]->prod_othermeta_value );
 				$prod_meta_key    = explode ( '###', $records[$i]->prod_othermeta_key);
 				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );
 				
-				if(isset($prod_meta_key_values['sale_price_dates_from']) && !empty($prod_meta_key_values['sale_price_dates_from']))
-					$prod_meta_key_values['sale_price_dates_from'] = date('Y-m-d',(int)$prod_meta_key_values['sale_price_dates_from']);
-				if(isset($prod_meta_key_values['sale_price_dates_to']) && !empty($prod_meta_key_values['sale_price_dates_to']))
-					$prod_meta_key_values['sale_price_dates_to'] = date('Y-m-d',(int)$prod_meta_key_values['sale_price_dates_to']);
+				if(isset($prod_meta_key_values['_sale_price_dates_from']) && !empty($prod_meta_key_values['_sale_price_dates_from']))
+					$prod_meta_key_values['_sale_price_dates_from'] = date('Y-m-d',(int)$prod_meta_key_values['_sale_price_dates_from']);
+				if(isset($prod_meta_key_values['_sale_price_dates_to']) && !empty($prod_meta_key_values['_sale_price_dates_to']))
+					$prod_meta_key_values['_sale_price_dates_to'] = date('Y-m-d',(int)$prod_meta_key_values['_sale_price_dates_to']);
 				
 				if (is_serialized($records[$i]->prod_meta)){
 					$unsez_data[$i] = unserialize($records[$i]->prod_meta);
@@ -314,7 +325,7 @@ function update_products_woo($_POST) {
 	foreach ( $edited_object as $obj ) {
 		
 		$update_name = $wpdb->query ( "UPDATE $wpdb->posts SET `post_title`= '$obj->post_title' WHERE ID = $obj->id" );
-		$update_price = $wpdb->query ( "UPDATE $wpdb->postmeta SET `meta_value`= $obj->regular_price WHERE meta_key = 'regular_price' AND post_id = $obj->id" );
+		$update_price = $wpdb->query ( "UPDATE $wpdb->postmeta SET `meta_value`= $obj->_regular_price WHERE meta_key = '_regular_price' AND post_id = $obj->id" );
 		$result ['updateCnt'] = $updateCnt ++;
 	}
 	
@@ -437,6 +448,29 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRegion') {
 		$regions = '';
 	}
 	echo json_encode ( $regions );
+}
+
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
+	global $wpdb;
+	$query = "SELECT products_guid.guid as alt_thumbnail,
+					(SELECT guid FROM {$wpdb->prefix}posts WHERE ID = image_postmeta.meta_value) as thumbnail 
+					
+					FROM {$wpdb->prefix}posts as posts 
+					
+					LEFT JOIN {$wpdb->prefix}posts as products_guid ON (posts.ID = products_guid.post_parent 
+					AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment')
+						
+					LEFT JOIN {$wpdb->prefix}postmeta as image_postmeta ON (posts.ID = image_postmeta.post_id 
+					AND image_postmeta.meta_key = '_thumbnail_id')
+					
+					WHERE posts.post_status IN ('publish', 'draft')
+					AND posts.post_type    = 'product'
+					AND posts.ID = $_POST[id]";
+	$result = $wpdb->get_results ( $query );
+	if ( empty ( $result[0]->thumbnail ) || $result[0]->thumbnail == '' ) 
+		$result[0]->thumbnail = $result[0]->alt_thumbnail;
+	$result[0]->thumbnail = strstr($result[0]->thumbnail, 'uploads/'); 
+	echo json_encode ( $result[0]->thumbnail );
 }
 
 
