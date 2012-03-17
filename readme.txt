@@ -1,13 +1,13 @@
 === Smart Manager for WP e-Commerce ===
 Contributors: niravmehta, ratnakar.dubey
 Donate link: http://www.storeapps.org/
-Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, wp ecommerce, productivity, products, variations, orders, customers
+Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.3
-Stable tag: 2.1
+Stable tag: 2.2
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
-Manage products, variations (currently only for WPeC 3.8+), orders and customers reliably using a fast and familiar interface.
+Manage products, variations, orders and customers reliably using a fast and familiar interface.
 
 == Description ==
 Smart Manager is a unique, revolutionary tool that gives you the **power to efficiently manage products, 
@@ -21,7 +21,7 @@ Smart Manager will **boost your productivity 10x** in managing products, custome
 You can browse, search, and manage multiple products, customers or orders using a **familiar, single page, 
 spreadsheet like** interface. 
 
-Paid versions also allow managing product variations (for WPeC 3.8+), inline editing for all fields and adding items. 
+Paid versions also allow managing product variations (for WPeC 3.8+ & WooCommerce 1.4+), inline editing for all fields and adding items. 
 It also provides **Smart Batch Update** to change multiple fields on multiple items - all 
 **at once with zero errors**. 
  
@@ -38,7 +38,7 @@ Highlights:
 
 * Convenient Browsing & Searching - Eliminate Extra Clicks And Long Wait Times
 * Inline Product/Order/Customer Management - Get Productive Right Away
-* Product Variations management in Pro version, for WPeC 3.8 and above
+* Product Variations management in Pro version
 * Quick, In-page detail view for Products/Orders/Customers
 * Print multiple packing slips in one go
 * Fast And Reliable Batch Updates With Intelligent Update Actions
@@ -69,7 +69,7 @@ No. Smart Manager does not support import / export yet. But we are considering t
 
 = What features work with WooCommerce? =
 
-Products, Orders and Customers management works with WooCommerce. Lite version has limited features, but Pro allows full inline editing and smart batch updates. 
+Products, Variations, Orders and Customers management works with WooCommerce. Lite version has limited features, but Pro allows full inline editing and smart batch updates. 
 
 = Does this work with WP e-Commerce 3.8? =
 
@@ -79,12 +79,12 @@ Yes. Smart Manager is compatible with both WP e-Commerce 3.7 and 3.8. Some featu
 
 Spreadsheet like view of products, customers and orders. Search and navigation, 
 limited inline editing for products, ability to delete multiple items at 
-once, a quick edit link to WP e-Commerce editing screen.
+once, a quick edit link to WP e-Commerce / WooCommerce editing screen.
 
 = What do the paid versions give me? =
 
 Paid versions (Pro, Multisite and Developer) allow managing product variations 
-(WPeC 3.8+ required), inline editing on all fields right within the spreadsheet 
+(WPeC 3.8+ or WooCommerce 1.4+ required), inline editing on all fields right within the spreadsheet 
 view and a powerful Batch Update screen where you can apply multiple smart update 
 actions to selected / all items. For Customers, you can see total sales for each 
 customer and their last order details.
@@ -103,6 +103,15 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 2.2 =
+* New: Product Variation support for WooCommerce 1.4+
+* Fix: Minor fix for retrieving License Key for WordPress Multisite
+* Fix: Hide variations in Smart Manager, if parent product is deleted
+* Fix: Better security by preventing SQL injection
+* Fix: Minor fix for loading products using page navigation
+* Updated: "Search Text Field" trigger time changed from half second to one second
+* Updated: Show product variations while searching for category
 
 = 2.1 =
 * Fixed: Asking to install WooCommerce when WooCommerce is already installed
@@ -274,6 +283,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 2.2 =
+Recommended upgrade. Variations support for WooCommerce added. Upgrade WPeC / WooCommerce before upgrading Smart Manager. 
 
 = 2.1 =
 Upgrade WPeC / WooCommerce before upgrading Smart Manager. Multi site support added. Updated to work with WooCommerce 1.4.3. Recommended upgrade.
