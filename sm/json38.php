@@ -74,7 +74,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 					products.post_status,
 					products.post_parent,
 					category,
-					products_guid.guid as alt_thumbnail,
+					(SELECT products_guid.guid FROM {$wpdb->prefix}posts AS products_guid WHERE products.ID = products_guid.post_parent 
+						AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment' LIMIT 1) as alt_thumbnail,
 					(SELECT guid FROM {$wpdb->prefix}posts WHERE ID = image_postmeta.meta_value) as thumbnail,
 					GROUP_CONCAT(prod_othermeta.meta_key order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_key,
 					GROUP_CONCAT(prod_othermeta.meta_value order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_value,
@@ -82,26 +83,23 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 					$parent_sort_id";
 		
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
-			$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
+			$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
 			
-			$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '% $search_on%'
+			$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
 				               OR post_content LIKE '%$search_on%'
 				               OR post_excerpt LIKE '%$search_on%'
 				               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
 							   OR prod_othermeta_value LIKE '%$search_on%'
 							   OR category LIKE '%$search_on%'
-					           ";
+							   ";
 		}
-				
+
 		$from_where = "FROM {$wpdb->prefix}posts as products
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_othermeta ON (prod_othermeta.post_id = products.id and
-						prod_othermeta.meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock', '_thumbnail_id') )
+						prod_othermeta.meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock') )
 						
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_meta ON (prod_meta.post_id = products.id and
 						prod_meta.meta_key = '_wpsc_product_metadata')
-						
-						LEFT JOIN {$wpdb->prefix}posts as products_guid ON (products.ID = products_guid.post_parent 
-						AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment')
 						
 						LEFT JOIN {$wpdb->prefix}postmeta as image_postmeta ON (products.ID = image_postmeta.post_id 
 						AND image_postmeta.meta_key = '_thumbnail_id')
@@ -112,7 +110,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 						JOIN {$wpdb->prefix}term_taxonomy AS wtt ON (wtr.term_taxonomy_id = wtt.term_taxonomy_id and taxonomy = 'wpsc_product_category')
 						
 						JOIN {$wpdb->prefix}terms AS wt ON (wtt.term_id = wt.term_id)
-						group by wtr.object_id) as prod_categories on (products.id = prod_categories.object_id)
+						group by wtr.object_id) as prod_categories on (products.id = prod_categories.object_id OR products.post_parent = prod_categories.object_id)
 						
 						WHERE products.post_status IN  $post_status
 						AND products.post_type    = 'wpsc-product'";
@@ -148,9 +146,10 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 				}
 				$prod_meta_values = explode ( '###', $record->prod_othermeta_value );
 				$prod_meta_key    = explode ( '###', $record->prod_othermeta_key);
-				
+
 				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );
 				$prod_meta_key_values ['prod_meta'] = $record->prod_meta;
+				$record->category = ( $record->post_parent == 0 ) ? $record->category : '';			// To hide category name from Product's variations
 				
 				foreach ( $prod_meta_key_values as $key => $value ) {
 					if (is_serialized ( $value )) {
@@ -158,7 +157,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 						$unsez_data = unserialize ( $value );
 						$unsez_data ['weight'] = wpsc_convert_weight ( $unsez_data ['weight'], "pound", $unsez_data ['weight_unit']); // get the weight by converting it to repsective unit
 						
-						foreach ( $unsez_data as $meta_key => $meta_value ) {
+						foreach ( (array)$unsez_data as $meta_key => $meta_value ) {
 							if (is_array ( $meta_value )) {
 								foreach ( $meta_value as $sub_metakey => $sub_metavalue )
 									(in_array ( $sub_metakey, $view_columns )) ? $record->$sub_metakey = $sub_metavalue : '';
@@ -171,6 +170,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 						(in_array ( $key, $view_columns )) ? $record->$key = $value : '';
 					}
 				}
+
 				unset ( $record->prod_othermeta_value );
 				unset ( $record->prod_meta );
 				unset ( $record->prod_othermeta_key );
@@ -234,7 +234,7 @@ elseif ($active_module == 'Orders') {
 		                LIMIT " . $offset . "," . $limit . "";
 
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
-			$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
+			$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
 			$search_condn = " HAVING id like '$search_on%'
 					          or sessionid like '$search_on%'
 							  OR date like '%$search_on%'
@@ -359,7 +359,7 @@ elseif ($active_module == 'Orders') {
 					 GROUP BY purchlog_info.id \n";
 			
 			if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
-				$search_text = mysql_real_escape_string ( $_POST ['searchText'] );
+				$search_text = $wpdb->_real_escape ( $_POST ['searchText'] );
 				$customers_query .= " HAVING id  LIKE '$search_text%'
 				          OR email LIKE '%$search_text%'
 				          OR user_details LIKE '%$search_text%'
@@ -486,8 +486,8 @@ function update_products($_POST) {
 	$updateCnt = 1;
 	foreach ( $edited_object as $obj ) {
 		
-		$update_name = $wpdb->query ( "UPDATE $wpdb->posts SET `post_title`= '$obj->post_title' WHERE ID = $obj->id" );
-		$update_price = $wpdb->query ( "UPDATE $wpdb->postmeta SET `meta_value`= $obj->_wpsc_price WHERE meta_key = '_wpsc_price' AND post_id = $obj->id" );
+		$update_name = $wpdb->query ( "UPDATE $wpdb->posts SET `post_title`= '".$wpdb->_real_escape($obj->post_title)."' WHERE ID = " . $wpdb->_real_escape($obj->id) );
+		$update_price = $wpdb->query ( "UPDATE $wpdb->postmeta SET `meta_value`= ".$wpdb->_real_escape($obj->_wpsc_price)." WHERE meta_key = '_wpsc_price' AND post_id = " . $wpdb->_real_escape($obj->id) );
 		$result ['updateCnt'] = $updateCnt ++;
 	}
 	

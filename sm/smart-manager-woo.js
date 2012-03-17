@@ -125,6 +125,7 @@ Ext.onReady(function () {
 	SM.activeModule      = 'Products'; //default module selected.
 	SM.activeRecord      = '';
 	SM.curDataIndex      = '';
+	SM.incVariation      = false;
 	SM.typeColIndex 	 = '';
 	
 	//fm used as a short form for Ext.form
@@ -386,6 +387,17 @@ Ext.onReady(function () {
 	var productsColumnModel = new Ext.grid.ColumnModel({
 		columns: [editorGridSelectionModel,
 		{
+			header: '',
+			id: 'type',
+			dataIndex: SM.productsCols.post_parent.colName,
+			tooltip: 'Type',
+			width: 20,
+			hidden: true,
+			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
+				return (value == 0 ? '<img id=editUrl src="' + imgURL + 'fav.gif"/>' : '');
+			}
+		},
+		{
 			header: SM.productsCols.image.name,
 			id: 'image',
 			dataIndex: SM.productsCols.image.colName,
@@ -638,7 +650,8 @@ Ext.onReady(function () {
 			active_module: SM.activeModule,
 			start: 0,
 			limit: limit,
-			viewCols: Ext.encode(productsViewCols)
+			viewCols: Ext.encode(productsViewCols),
+			incVariation: SM.incVariation
 		},
 		dirty: false,
 		pruneModifiedRecords: true,
@@ -668,6 +681,7 @@ Ext.onReady(function () {
 		
 		for(var i=2;i<=8;i++)
 		editorGrid.getTopToolbar().get(i).hide();
+		editorGrid.getTopToolbar().get('incVariation').show();
 
 		productsStore.load();
 		pagingToolbar.bind(productsStore);
@@ -784,6 +798,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			{
 				cmd:'saveData',
 				active_module: SM.activeModule,
+				incVariation: SM.incVariation,
 				edited:Ext.encode(edited)				
 			}};
 			Ext.Ajax.request(o);
@@ -998,7 +1013,7 @@ SM.searchTextField = new Ext.form.TextField({
 					icon: Ext.MessageBox.QUESTION
 				})
 			}
-		}, 500);
+		}, 1000);
 	}}
 });
 
@@ -1053,6 +1068,7 @@ var searchLogic = function () {
 			searchText: SM.searchTextField.getValue(),
 			fromDate: fromDateTxt.getValue(),
 			toDate: toDateTxt.getValue(),
+			incVariation:SM.incVariation,
 			start: 0,
 			limit: limit,
 			viewCols: Ext.encode(productsViewCols)
@@ -1496,12 +1512,12 @@ var batchRadioToolbar = new Ext.Toolbar({
 		    text: 'Update...'
 		},new Ext.form.RadioGroup({
 			id: 'updateItemsOrStore' ,
-		    width: 250,
+		    width: 400,
 			height: 20,
 		    items: [
 		    	
 		        {boxLabel: 'Selected items', name: 'rb-batch', inputValue: 1, checked: true},
-		        {boxLabel: 'All items in store', name: 'rb-batch', inputValue: 2}
+		        {boxLabel: 'All items in store (including Variations)', name: 'rb-batch', inputValue: 2}
 		    ]
 		})        
 	]
@@ -1833,6 +1849,7 @@ var showCustomerDetails = function(record,rowIndex){
 
 			for(var i=2;i<=8;i++)
 			editorGrid.getTopToolbar().get(i).hide();
+			editorGrid.getTopToolbar().get('incVariation').hide();
 
 			if(customersFields != 0)
 			fieldsStore.loadData(customersFields);
@@ -2127,6 +2144,7 @@ var showCustomerDetails = function(record,rowIndex){
 						
 			for(var i=2;i<=8;i++)
 			editorGrid.getTopToolbar().get(i).show();
+			editorGrid.getTopToolbar().get('incVariation').hide();
 
 			ordersStore.load();
 			editorGrid.reconfigure(ordersStore,ordersColumnModel);
@@ -2172,7 +2190,28 @@ var showCustomerDetails = function(record,rowIndex){
 			{xtype: 'tbspacer', id:'afterDateMenuTbspacer', width: 15},
 			SM.searchTextField,{ icon: imgURL + 'search.png', id:'searchIconId' },
 			{xtype: 'tbspacer',width: 50, id:'afterSearchId'}
-	],
+			,
+			{ 
+				xtype: 'checkbox',
+				id:'incVariation',
+				name: 'incVariation',
+				stateEvents : ['added','check'],
+				stateful: true,
+				getState: function(){ return { value: this.getValue()}; },
+				applyState: function(state) { this.setValue(state.value);},
+			 	boxLabel: 'Show Variations',
+			 	listeners: {
+			 		check : function(checkbox, bool) {
+			 			if(fileExists == 1){
+			 				SM.incVariation  = bool;
+			 				productsStore.setBaseParam('incVariation', SM.incVariation);
+			 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
+			 			}else{
+			 				Ext.notification.msg('Smart Manager', 'Show Variations feature is available only in Pro version');
+			 			}
+			 		}
+			 	}
+			}],
 	scrollOffset: 50,
 	listeners: {
 		beforerender: function(grid) {
@@ -2310,13 +2349,14 @@ var showCustomerDetails = function(record,rowIndex){
 										,params:
 										{
 											cmd:'editImage',
-											id: record.id
+											id: record.id,
+											incVariation: SM.incVariation
 										}
 									};
 									Ext.Ajax.request(object);
 								}
 							},
-							html: ( fileExists == 1 ) ? '<iframe src="'+ site_url + '/wp-admin/media-upload.php?parent_page=wpsc-edit-products&post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>' : ''
+							html: ( fileExists == 1 ) ? '<iframe src="'+ site_url + '/wp-admin/media-upload.php?post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>' : ''
 						});
 						productsImageWindow.show('image');
 					}
@@ -2383,6 +2423,8 @@ var showCustomerDetails = function(record,rowIndex){
 	}
 });
 
+for(var i=2;i<=8;i++)
+editorGrid.getTopToolbar().get(i).hide();
 SM.typeColIndex   = productsColumnModel.findColumnIndex(SM.productsCols.post_parent.colName);
 
 //For pro version check if the required file exists
@@ -2395,9 +2437,13 @@ if(fileExists == 1){
 	
 	//disable inline editing for products
 	var productsColumnCount = productsColumnModel.getColumnCount();
-	for(var i=3; i<productsColumnCount; i++)
+	for(var i=5; i<productsColumnCount; i++)
 	productsColumnModel.setEditable(i,false);
-
+	
+	//disable inline editing for customers
+	var customersColumnCount = customersColumnModel.getColumnCount();
+	for(var i=1; i<customersColumnCount; i++)
+		customersColumnModel.setEditable(i,false);	
 }
 
 	}catch(e){

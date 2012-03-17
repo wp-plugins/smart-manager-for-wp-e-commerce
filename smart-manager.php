@@ -2,11 +2,11 @@
 /*
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
-Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce store administration. Quickly find and update products, orders and customers.
-Version: 2.1
+Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
+Version: 2.2
 Author: Store Apps
-Author URI: http://www.storeapps.org/about/
-Copyright (c) 2010, 2011 Store Apps All rights reserved.
+Author URI: http://www.storeapps.org/
+Copyright (c) 2010, 2011, 2012 Store Apps All rights reserved.
 */
 
 //Hooks
@@ -57,8 +57,8 @@ function smart_is_pro_updated() {
 	
 	include_once ABSPATH . 'wp-admin/includes/plugin.php';
 	include_once (ABSPATH . WPINC . '/functions.php');
-	$old_plugin = 'smart-manager/smart-manager.php';	
-
+	$old_plugin = 'smart-manager/smart-manager.php';
+	
 	if (is_plugin_active ( $old_plugin )) {
 		deactivate_plugins ( $old_plugin );
 		$action_url = "plugins.php?action=activate&plugin=$plugin&plugin_status=all&paged=1";
@@ -128,7 +128,7 @@ function smart_is_pro_updated() {
 	function smart_admin_notices() {
 		if (! is_plugin_active ( 'woocommerce/woocommerce.php' ) && ! is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
 			echo '<div id="notice" class="error"><p>';
-			_e ( '<b>Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> plugin or <a href="http://www.woothemes.com/woocommerce/">WooCommerce</a> plugin. Please install and activate it.' );
+			_e ( '<b>Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> or <a href="http://www.woothemes.com/woocommerce/">WooCommerce</a> plugin. Please install and activate it.' );
 			echo '</p></div>', "\n";
 		}
 	}

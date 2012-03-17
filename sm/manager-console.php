@@ -19,7 +19,7 @@ if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
 	preg_match_all ( $regex_pattern, $str_products_url, $matches );
 	$products_details_url = "{$matches[2][0]}";
 } else if (WOO_RUNNING === true) {
-//	$site_url = get_option('siteurl');
+
 	$products_details_url = $site_url.'/wp-admin/post.php?action=edit&post='.$product_id;
 }
 
@@ -456,13 +456,13 @@ while ( $data = mysql_fetch_assoc ( $result ) ) {
 	
 	 if($count == 0){//setting the default categories for new product
 	 	$cat_id = $data ['category_id'];
-	 	$cat_name = mysql_escape_string ( $data ['category_name']);
+	 	$cat_name = $wpdb->_real_escape ( $data ['category_name']);
 	 }
 	
-	$categories ["category-" . $data ['group_id']] [$count] [0] = mysql_real_escape_string ( $data ['category_id'] );
-	$categories ["category-" . $data ['group_id']] [$count] [1] = mysql_real_escape_string ( $data ['category_name'] );
+	$categories ["category-" . $data ['group_id']] [$count] [0] = $wpdb->_real_escape ( $data ['category_id'] );
+	$categories ["category-" . $data ['group_id']] [$count] [1] = $wpdb->_real_escape ( $data ['category_name'] );
 	
-	$products_cols ["group" . $data ['group_id']] ['name'] = "Group: " . mysql_real_escape_string ( $data ['group_name'] );
+	$products_cols ["group" . $data ['group_id']] ['name'] = "Group: " . $wpdb->_real_escape ( $data ['group_name'] );
 	$products_cols ["group" . $data ['group_id']] ['actionType'] = "category_actions";
 	if (WPSC_RUNNING === true) {
 		$products_cols ["group" . $data ['group_id']] ['colName'] = (IS_WPSC37) ? "category_id" : "term_taxonomy_id";
@@ -472,7 +472,7 @@ while ( $data = mysql_fetch_assoc ( $result ) ) {
 		$products_cols ["group" . $data ['group_id']] ['tableName'] = "{$wpdb->prefix}term_relationships";		
 	}
 	
-	$products_cols ["group" . $data ['group_id']] ['colFilter'] = mysql_real_escape_string ( $data ['group_id'] );
+	$products_cols ["group" . $data ['group_id']] ['colFilter'] = $wpdb->_real_escape ( $data ['group_id'] );
 	$old_group_id = $data ['group_id']; //string the group_id as old id
 }
 

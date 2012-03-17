@@ -1719,7 +1719,7 @@ SM.searchTextField = new Ext.form.TextField({
 					icon: Ext.MessageBox.QUESTION
 				})
 			}
-		}, 500);
+		}, 1000);
 	}}
 });
 
