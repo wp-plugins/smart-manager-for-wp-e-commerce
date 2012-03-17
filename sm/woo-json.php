@@ -26,10 +26,31 @@ $active_module = $_POST ['active_module'];
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	global $wpdb, $woocommerce;
+
+	$show_variation = true;	
+	
+	if (SMPRO == true && function_exists ( 'variation_query_params' ))
+		variation_query_params ();	
+
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
 	if ($active_module == 'Products') { // <-products
-		$post_status = "('publish', 'draft')";
-	
+		
+		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] == 'true') {
+			if (SMPRO == false)
+			$show_variation = false;
+		} else {
+			$show_variation = false;
+		}
+		if ($show_variation === false) { // query params for non-variation products
+			$from_variation = '';
+			$variation_name = '';
+			$parent_name = '';
+			$post_status = "('publish', 'draft')";
+			$post_type = "('product')";
+			$parent_sort_id = '';
+			$order_by = " ORDER BY products.id desc";
+		}
+
 		// if max-join-size issue occurs
 		$query = "SET SQL_BIG_SELECTS=1;";
 		$wpdb->query ( $query );
@@ -41,7 +62,10 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 					products.post_status,
 					products.post_parent,
 					category,
-					products_guid.guid as alt_thumbnail,
+					$variation_name
+					$parent_name
+					(SELECT products_guid.guid FROM {$wpdb->prefix}posts AS products_guid WHERE products.ID = products_guid.post_parent 
+						AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment' LIMIT 1) as alt_thumbnail,
 					(SELECT guid FROM {$wpdb->prefix}posts WHERE ID = image_postmeta.meta_value) as thumbnail,
 					GROUP_CONCAT(prod_othermeta.meta_key order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_key,
 					GROUP_CONCAT(prod_othermeta.meta_value order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_value,
@@ -49,7 +73,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 					$parent_sort_id";
 
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
-			$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
+			$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
 
 			$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '% $search_on%'
 				               OR post_content LIKE '%$search_on%'
@@ -62,36 +86,33 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
 		$from_where = "FROM {$wpdb->prefix}posts as products
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_othermeta ON (prod_othermeta.post_id = products.id and
-						prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width') )
+						prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price') )
 						
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_meta ON (prod_meta.post_id = products.id and
 						prod_meta.meta_key = '_product_attributes')
 						
-						LEFT JOIN {$wpdb->prefix}posts as products_guid ON (products.ID = products_guid.post_parent 
-						AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment')
-						
 						LEFT JOIN {$wpdb->prefix}postmeta as image_postmeta ON (products.ID = image_postmeta.post_id 
 						AND image_postmeta.meta_key = '_thumbnail_id')
 						
+						$from_variation
+						
 						LEFT JOIN 
-						(SELECT GROUP_CONCAT(wt.name) as category,wtr.object_id
+						(SELECT GROUP_CONCAT(wt.name) as category, wtr.object_id
 						FROM  {$wpdb->prefix}term_relationships AS wtr  	 
 						JOIN {$wpdb->prefix}term_taxonomy AS wtt ON (wtr.term_taxonomy_id = wtt.term_taxonomy_id and taxonomy = 'product_cat')
 												
 						JOIN {$wpdb->prefix}terms AS wt ON (wtt.term_id = wt.term_id)
-						group by wtr.object_id) as prod_categories on (products.id = prod_categories.object_id)
+						group by wtr.object_id) as prod_categories on (products.id = prod_categories.object_id OR products.post_parent = prod_categories.object_id)
 						
-						WHERE products.post_status IN  $post_status
-						AND products.post_type    = 'product'";
+						WHERE products.post_status IN $post_status
+						AND products.post_type IN $post_type";
 
 		$group_by = " GROUP BY products.id ";
 		
-		$order_by = " ORDER BY products.id desc";
-
-		$query = "$select  $from_where $group_by $search_condn $order_by LIMIT $offset,$limit;";
+		$query = "$select $from_where $group_by $search_condn $order_by LIMIT $offset,$limit;";
 		$records = $wpdb->get_results ( $query );
 		$num_rows = $wpdb->num_rows;
-
+		
 		$recordcount_query = "SELECT FOUND_ROWS() AS count;";
 		$recordcount_result = $wpdb->get_results ( $recordcount_query, 'ARRAY_A' );
 		$num_records = $recordcount_result [0] ['count'];
@@ -106,9 +127,11 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 				if ( empty ( $records[$i]->thumbnail ) || $records[$i]->thumbnail == '' ) 
 					$records[$i]->thumbnail = $records[$i]->alt_thumbnail;
 				$records[$i]->thumbnail = strstr($records[$i]->thumbnail, 'uploads/'); 
+				
 				$prod_meta_values = explode ( '###', $records[$i]->prod_othermeta_value );
 				$prod_meta_key    = explode ( '###', $records[$i]->prod_othermeta_key);
 				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );
+				$records[$i]->category = ( $records[$i]->post_parent == 0 ) ? $records[$i]->category : '';			// To hide category name from Product's variations
 				
 				if(isset($prod_meta_key_values['_sale_price_dates_from']) && !empty($prod_meta_key_values['_sale_price_dates_from']))
 					$prod_meta_key_values['_sale_price_dates_from'] = date('Y-m-d',(int)$prod_meta_key_values['_sale_price_dates_from']);
@@ -117,14 +140,18 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 				
 				if (is_serialized($records[$i]->prod_meta)){
 					$unsez_data[$i] = unserialize($records[$i]->prod_meta);
-					$records[$i]    = array_merge((array)$records[$i],$unsez_data[$i]);
+					$records[$i]    = array_merge((array)$records[$i],(array)$unsez_data[$i]);
 				}
 				$records[$i] = array_merge((array)$records[$i],$prod_meta_key_values);
+
+				if ( $show_variation === true && $records[$i]['post_parent'] != 0 ) {
+					$records[$i]['_regular_price'] = $records[$i]['_price'];
+					$records[$i]['post_title'] = $records[$i]['parent_name'] . " - " . $records[$i]['variation_name'];
+				}
 			}
-			
 			unset ( $records[$i]->prod_othermeta_value );
 			unset ( $records[$i]->prod_meta );
-			unset ( $records[$i]->prod_othermeta_key );			
+			unset ( $records[$i]->prod_othermeta_key );
 		}
 	} elseif ($active_module == 'Customers') {
 		//BOF Customer's module
@@ -249,7 +276,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			}
 			
 			if (SMPRO == true && isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
-				$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
+				$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
 				$search_condn = " HAVING id like '$search_on%'
 								  OR date like '%$search_on%'
 								  OR order_status like '%$search_on%'
@@ -324,8 +351,8 @@ function update_products_woo($_POST) {
 	$updateCnt = 1;
 	foreach ( $edited_object as $obj ) {
 		
-		$update_name = $wpdb->query ( "UPDATE $wpdb->posts SET `post_title`= '$obj->post_title' WHERE ID = $obj->id" );
-		$update_price = $wpdb->query ( "UPDATE $wpdb->postmeta SET `meta_value`= $obj->_regular_price WHERE meta_key = '_regular_price' AND post_id = $obj->id" );
+		$update_name = $wpdb->query ( "UPDATE $wpdb->posts SET `post_title`= '".$wpdb->_real_escape($obj->post_title)."' WHERE ID = " . $wpdb->_real_escape($obj->id) );
+		$update_price = $wpdb->query ( "UPDATE $wpdb->postmeta SET `meta_value`= ".$wpdb->_real_escape($obj->_regular_price)." WHERE meta_key = '_regular_price' AND post_id = " . $wpdb->_real_escape($obj->id) );
 		$result ['updateCnt'] = $updateCnt ++;
 	}
 	
@@ -337,6 +364,7 @@ function update_products_woo($_POST) {
 }
 // For insert updating product in woo.
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
+		
 		if (SMPRO == true)
 			$result = woo_insert_update_data ( $_POST );
 		else
@@ -423,10 +451,10 @@ function get_term_taxonomy_id($term_name) {					// for woocommerce orders
 	if (isset($result[0])) {
 		return (int)$result[0]['term_taxonomy_id'];	
 	} else {
-		$insert_term_query = "INSERT INTO {$wpdb->prefix}terms ( name, slug ) VALUES ( '$term_name', '$term_name' )";
+		$insert_term_query = "INSERT INTO {$wpdb->prefix}terms ( name, slug ) VALUES ( '" . $wpdb->_real_escape($term_name) . "', '" . $wpdb->_real_escape($term_name) . "' )";
 		$result = $wpdb->query ($insert_term_query);
 		if ($result > 0) {
-			$insert_taxonomy_query = "INSERT INTO {$wpdb->prefix}term_taxonomy ( term_id, taxonomy ) VALUES ( $wpdb->insert_id, 'shop_order_status' )";
+			$insert_taxonomy_query = "INSERT INTO {$wpdb->prefix}term_taxonomy ( term_id, taxonomy ) VALUES ( " . $wpdb->_real_escape($wpdb->insert_id) . ", 'shop_order_status' )";
 			$result = $wpdb->query ($insert_taxonomy_query);
 			return (int)$wpdb->insert_id;
 		} else {
@@ -452,6 +480,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRegion') {
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 	global $wpdb;
+	
+	$post_type = "'product', 'product_variation'";
+
 	$query = "SELECT products_guid.guid as alt_thumbnail,
 					(SELECT guid FROM {$wpdb->prefix}posts WHERE ID = image_postmeta.meta_value) as thumbnail 
 					
@@ -464,7 +495,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 					AND image_postmeta.meta_key = '_thumbnail_id')
 					
 					WHERE posts.post_status IN ('publish', 'draft')
-					AND posts.post_type    = 'product'
+					AND posts.post_type IN ($post_type)
 					AND posts.ID = $_POST[id]";
 	$result = $wpdb->get_results ( $query );
 	if ( empty ( $result[0]->thumbnail ) || $result[0]->thumbnail == '' ) 

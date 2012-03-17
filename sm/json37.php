@@ -3,18 +3,19 @@ include_once ('../../../../wp-load.php');
 include_once ('../../../../wp-includes/wp-db.php');
 include_once ( ABSPATH . WPINC . '/functions.php');
 
+global $wpdb;
 $limit = 10;
 $del = 3;
 $result = array ();
 $encoded = array ();
 
 if (isset ( $_POST ['start'] ))
-	$offset = $_POST ['start'];
+	$offset = $wpdb->_real_escape($_POST ['start']);
 else
 	$offset = 0;
 
 if (isset ( $_POST ['limit'] ))
-	$limit = $_POST ['limit'];
+	$limit = $wpdb->_real_escape($_POST ['limit']);
 	
 // For pro version check if the required file exists
 if (file_exists ( '../pro/sm37.php' )) {
@@ -69,7 +70,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		$limit_query = " LIMIT " . $offset . "," . $limit . "";
 		
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
-			$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
+			$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
 			$where .= " AND ( concat(' ',pl.name) LIKE '% $search_on%' OR
 										price LIKE '%$search_on%'  OR
                            	       	 quantity LIKE '%$search_on%'  OR
@@ -88,9 +89,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		}
 		$recordcount_query = "SELECT COUNT( DISTINCT pl.id ) as count" . $from . "" . $where;
 		$query = $select_query . "" . $from . "" . $where . "" . $group_by . "" . $limit_query;
-		$result = mysql_query ( $query );		
+		$result = $wpdb->query ( $query );		
 		$num_rows = mysql_num_rows ( $result );
-		$recordcount_result = mysql_query ( $recordcount_query );
+		$recordcount_result = $wpdb->query ( $recordcount_query );
 		$no_of_records = mysql_fetch_assoc ( $recordcount_result );
 		$num_records = $no_of_records ['count'];
 		if ($num_rows == 0) {
@@ -136,7 +137,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	} //products ->
 elseif ($active_module == 'Orders') {
 		$query = "SELECT id,country_id, name, code FROM ".WPSC_TABLE_REGION_TAX;
-			$result = mysql_query($query);
+			$result = $wpdb->query($query);
 
 			if (mysql_num_rows($result) >= 1){
 				while ($data = mysql_fetch_assoc($result))
@@ -144,7 +145,7 @@ elseif ($active_module == 'Orders') {
 			}
 			
 		$query = "SELECT isocode,country FROM `".WPSC_TABLE_CURRENCY_LIST."` ORDER BY `country` ASC";
-		$result = mysql_query($query);
+		$result = $wpdb->query($query);
 
 		if (mysql_num_rows($result) >= 1){
 			while ($data = mysql_fetch_assoc($result))
@@ -222,7 +223,7 @@ elseif ($active_module == 'Orders') {
 		$where = ' WHERE 1 ';
 		
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
-			$search_on = mysql_escape_string ( trim ( $_POST ['searchText'] ) );
+			$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
 			$where .= " AND (purchlog_info.id in ('$search_on')
 						  OR purchlog_info.sessionid like '%$search_on%'
 						  OR purchlog_info.date like '%$search_on%'
@@ -238,8 +239,8 @@ elseif ($active_module == 'Orders') {
 		}
 		
 		if (isset ( $_POST ['fromDate'] )) {
-			$from_date = strtotime ( $_POST ['fromDate'] );
-			$to_date = strtotime ( $_POST ['toDate'] );
+			$from_date = strtotime ( $wpdb->_real_escape($_POST ['fromDate']) );
+			$to_date = strtotime ( $wpdb->_real_escape($_POST ['toDate']) );
 			if ($to_date == 0) {
 				$to_date = strtotime ( 'today' );
 			}
@@ -256,12 +257,12 @@ elseif ($active_module == 'Orders') {
 		}
 		
 		$query = $select_query . " " . $from . "" . $where . " " . $limit_query;
-		$result = mysql_query ( $query );
+		$result = $wpdb->query ( $query );
 		$num_rows = mysql_num_rows ( $result );
 		
 		//To get the total count
 		$orders_count_query = $select_query . " " . $from . " " . $where;
-		$orders_count_result = mysql_query ( $orders_count_query );
+		$orders_count_result = $wpdb->query ( $orders_count_query );
 		$num_records = mysql_num_rows ( $orders_count_result );
 		
 		if ($num_rows == 0) {
@@ -311,7 +312,7 @@ elseif ($active_module == 'Orders') {
 				  	 where `unique_name`in ('billingcountry', 'billingstate'))
 				  	 LIMIT " . $offset . "," . $limit . "";
 		
-		$result   = mysql_query ( $query );
+		$result   = $wpdb->query ( $query );
 		$num_rows = mysql_num_rows ( $result );		
 		
 		if ($num_rows){
@@ -323,7 +324,7 @@ elseif ($active_module == 'Orders') {
 		}
 		
 		if (SMPRO == true) {
-			$customers_query = customers_query ( $_POST ['searchText'], $region_exists, $country_region);
+			$customers_query = customers_query ( $wpdb->_real_escape ( $_POST ['searchText'] ), $region_exists, $country_region);
 		} else {
 				$customers_query = "SELECT log_id AS id,user_details,unique_names $country_region
                             FROM   (SELECT ord_emailid.log_id,
@@ -371,7 +372,7 @@ elseif ($active_module == 'Orders') {
 			$customers_query .=   "GROUP BY email ) AS customers_info \n";
 
 			if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
-				$search_text = mysql_real_escape_string ( $_POST ['searchText'] );
+				$search_text = $wpdb->_real_escape ( $_POST ['searchText'] );
 				$customers_query .= "WHERE user_details LIKE '%$search_text%'
 	    					         OR country   LIKE '$search_text%'
 	    					         OR region   LIKE '$search_text%'";
@@ -380,12 +381,12 @@ elseif ($active_module == 'Orders') {
 		
 		$limit_query = " LIMIT " . $offset . "," . $limit . "";
 		$query 	     = $customers_query . "" . $limit_query;
-		$result 	 = mysql_query ( $query );
+		$result 	 = $wpdb->query ( $query );
 		$num_rows 	 = mysql_num_rows ( $result );
 		
 		//To get Total count
 		$customers_count_query = $customers_query;
-		$customers_count_result = mysql_query ( $customers_count_query );
+		$customers_count_result = $wpdb->query ( $customers_count_query );
 		$num_records = mysql_num_rows ( $customers_count_result );
 		
 		if ($num_rows == 0) {
@@ -438,7 +439,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		$data = json_decode ( stripslashes ( $_POST ['data'] ) );
 		$data = implode ( ',', $data );
 		$query = "UPDATE " . WPSC_TABLE_PRODUCT_LIST . " SET active = 0 WHERE id in ($data)";
-		$result = mysql_query ( $query );
+		$result = $wpdb->query ( $query );
 		$delCnt = mysql_affected_rows ();
 		if ($result) {
 			if ($delCnt == 1) {
@@ -477,10 +478,10 @@ function update_products($_POST) {
 	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
 	$updateCnt = 1;
 	foreach ( $edited_object as $obj ) {
-		$query = "UPDATE " . WPSC_TABLE_PRODUCT_LIST . " SET name = '$obj->name',
-                                         				    price = $obj->price
-                                      	 				 WHERE id = $obj->id";
-		$update_productListTbl = mysql_query ( $query );
+		$query = "UPDATE " . WPSC_TABLE_PRODUCT_LIST . " SET name = '" . $wpdb->_real_escape($obj->name) . "',
+                                         				    price = " . $wpdb->_real_escape($obj->price) . "
+                                      	 				 WHERE id = " . $wpdb->_real_escape($obj->id);
+		$update_productListTbl = $wpdb->query ( $query );
 		$result ['updateCnt'] = $updateCnt ++;
 	}
 	if ($update_productListTbl && $result ['updateCnt'] >= 1) {
