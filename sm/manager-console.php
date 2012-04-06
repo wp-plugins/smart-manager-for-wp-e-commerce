@@ -636,7 +636,7 @@ if (WPSC_RUNNING === true) {
 		productsViewCols.push(SM.productsCols[prodcol]['colName']);
 	
 	</script>";
-
+		
 ?>
 <!-- Smart Manager FB Like Button -->
 <div class="wrap"><br />

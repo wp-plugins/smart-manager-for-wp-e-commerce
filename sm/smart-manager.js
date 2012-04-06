@@ -452,6 +452,7 @@ Ext.onReady(function () {
 			dataIndex: SM.productsCols.name.colName,
 			tooltip: 'Product Name',
 			width: 300,
+			editable: true,
 			editor: new fm.TextField({
 				allowBlank: false
 			})
@@ -464,6 +465,7 @@ Ext.onReady(function () {
 			sortable: true,
 			dataIndex: SM.productsCols.price.colName,
 			tooltip: 'Price',
+			editable: true,
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: false,
@@ -834,6 +836,31 @@ var pagingToolbar = new Ext.PagingToolbar({
 			store = customersStore;
 			saveRecords(store,pagingToolbar,jsonURL,editorGridSelectionModel);
 		}}
+	},{xtype:'tbseparator', id:'beforeExportSeparator'},
+	{
+		text: 'Export CSV',
+		tooltip: 'Download CSV file',
+		icon: imgURL + 'export_csv.gif',
+		id: 'exportCsvButton',
+		ref: 'exportButton',
+		scope: this,
+		listeners: { 
+			click: function () { 
+				if ( fileExists != 1 ) {
+					Ext.notification.msg('Smart Manager', '"Export CSV" feature is available only in Pro version');
+					return;
+				}
+				Ext.DomHelper.append(Ext.getBody(), { 
+                    tag: 'iframe', 
+                    id:'downloadIframe', 
+                    frameBorder: 0, 
+                    width: 0, 
+                    height: 0,
+                    css: 'display:none;visibility:hidden;height:0px;', 
+                    src: jsonURL+'?cmd=exportCsvWpsc&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+''
+                }); 
+			}
+		}
 	}],
 	pageSize: limit,
 	store: productsStore,
@@ -1366,6 +1393,10 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 // ======= orders ======
 	var fromDateMenu = new Ext.menu.DateMenu({
 		handler: function(dp, date){
+			if ( fileExists != 1 ) {
+				Ext.notification.msg('Smart Manager', '"Filter through Date" feature is available only in Pro version');
+				return;
+			}
 			fromDateTxt.setValue(date.format('M j Y'));
 			searchLogic();
 		},
@@ -1374,6 +1405,10 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 
 	var toDateMenu = new Ext.menu.DateMenu({
 		handler: function(dp, date){
+			if ( fileExists != 1 ) {
+				Ext.notification.msg('Smart Manager', '"Filter through Date" feature is available only in Pro version');
+				return;
+			}
 			toDateTxt.setValue(date.format('M j Y'));
 			searchLogic();
 		},
@@ -1462,6 +1497,7 @@ if(isWPSC38 == '1'){
 			dataIndex: 'track_id',
 			tooltip: 'Track Id',
 			align: 'left',
+			editable: false,
 			editor: new fm.TextField({
 				allowBlank: true,
 				allowNegative: false
@@ -1473,6 +1509,7 @@ if(isWPSC38 == '1'){
 			dataIndex: 'order_status',
 			tooltip: 'Order Status',
 			width: 150,
+			editable: true,
 			editor: orderStatusCombo,
 			renderer: Ext.util.Format.comboRenderer(orderStatusCombo)
 		},{
@@ -1481,6 +1518,7 @@ if(isWPSC38 == '1'){
 			dataIndex: 'notes',
 			tooltip: 'Orders Notes',
 			width: 180,
+			editable: false,
 			editor: new fm.TextArea({				
 				autoHeight: true
 			})
@@ -1490,6 +1528,7 @@ if(isWPSC38 == '1'){
 			dataIndex: 'shippingfirstname',
 			tooltip: 'Shipping First Name',
 			hidden: true,
+			editable: false,
 			editor: new fm.TextField({
 				allowBlank: false,
 				allowNegative: false
@@ -1501,6 +1540,7 @@ if(isWPSC38 == '1'){
 			dataIndex: 'shippinglastname',
 			tooltip: 'Shipping Last Name',
 			hidden: true,
+			editable: false,
 			editor: new fm.TextField({
 				allowBlank: false,
 				allowNegative: false
@@ -1512,6 +1552,7 @@ if(isWPSC38 == '1'){
 			dataIndex: 'shippingaddress',
 			tooltip: 'Shipping Address',
 			hidden: true,
+			editable: false,
 			editor: new fm.TextField({
 				allowBlank: false,
 				allowNegative: false
@@ -1523,6 +1564,7 @@ if(isWPSC38 == '1'){
 			dataIndex: 'shippingpostcode',
 			tooltip: 'Shipping Postal Code',
 			hidden: true,
+			editable: false,
 			editor: new fm.TextField({
 					allowBlank: true,
 					allowNegative: false
@@ -1534,6 +1576,7 @@ if(isWPSC38 == '1'){
 			dataIndex: 'shippingcity',
 			tooltip: 'Shipping City',
 			hidden: true,
+			editable: false,
 			editor: new fm.TextField({
 				allowBlank: false,
 				allowNegative: false
@@ -1617,7 +1660,17 @@ if(isWPSC38 == '1'){
 			//initial steps when store: orders is loaded
 			SM.activeModule = 'Orders';
 			SM.dashboardComboBox.setValue(SM.activeModule);
-
+			
+			if(fileExists == 1)	{
+				ordersColumnModel.setEditable(6,true);
+				ordersColumnModel.setEditable(8,true);
+				ordersColumnModel.setEditable(9,true);
+				ordersColumnModel.setEditable(10,true);
+				ordersColumnModel.setEditable(11,true);
+				ordersColumnModel.setEditable(12,true);
+				ordersColumnModel.setEditable(13,true);
+			}
+			
 			if(cellClicked == false){
 				SM.searchTextField.reset(); //to reset the searchTextField
 				fromDateTxt.setValue(lastMonDate.format('M j Y'));
@@ -1687,7 +1740,10 @@ SM.searchTextField = new Ext.form.TextField({
 	enableKeyEvents: true,
 	listeners: {
 		keyup: function () {
-						
+			if ( fileExists != 1 ) {
+				Ext.notification.msg('Smart Manager', 'Search feature is available only in Pro version');
+				return;
+			}			
 			//set a store depending on the active Module
 			if(SM.activeModule == 'Orders')
 			store = ordersStore;
@@ -2420,7 +2476,9 @@ var showCustomerDetails = function(record,rowIndex){
 			 	boxLabel: 'Show Variations',
 			 	listeners: {
 			 		check : function(checkbox, bool) {
-			 			if(fileExists == 1){
+			 			if ( isWPSC37 == true ) {
+			 				Ext.notification.msg('Smart Manager', 'Show Variations feature is available only for WPeC 3.8+');
+			 			}else if(fileExists == 1){
 			 				SM.incVariation  = bool;
 			 				productsStore.setBaseParam('incVariation', SM.incVariation);
 			 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
@@ -2488,6 +2546,7 @@ var showCustomerDetails = function(record,rowIndex){
 					nameLinkColumnIndex       = ordersColumnModel.findColumnIndex('name'),
 					orderDetailsColumnIndex   = ordersColumnModel.findColumnIndex('details');					
 					publishColumnIndex        = productsColumnModel.findColumnIndex(SM.productsCols.publish.colName);
+					nameColumnIndex        	  = productsColumnModel.findColumnIndex(SM.productsCols.name.colName);
 
 				if(SM.activeModule == 'Orders'){
 					if(columnIndex == orderDetailsColumnIndex){
@@ -2535,6 +2594,14 @@ var showCustomerDetails = function(record,rowIndex){
 								productsColumnModel.setEditable(columnIndex,false);
 							}
 						}
+					} else if(columnIndex == nameColumnIndex){					// To disable Inline editing for Parent product of variation	
+						if(fileExists == 1){
+							if(record.get('post_parent') == 0){
+								productsColumnModel.setEditable(columnIndex,false);
+							}else{
+								productsColumnModel.setEditable(columnIndex,true);
+							}
+						}columnIndex == nameColumnIndex
 					} else if ( columnIndex == editImageColumnIndex ) {
 						if ( isWPSC37 != 1 ) {
 							var productsImageWindow = new Ext.Window({
@@ -2664,7 +2731,7 @@ if(fileExists == 1){
 	
 	//disable inline editing for products
 	var productsColumnCount = productsColumnModel.getColumnCount();
-	for(var i=3; i<productsColumnCount; i++)
+	for(var i=5; i<productsColumnCount; i++)
 	productsColumnModel.setEditable(i,false);
 
 	//disable inline editing for customers

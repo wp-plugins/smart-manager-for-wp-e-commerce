@@ -743,6 +743,31 @@ var pagingToolbar = new Ext.PagingToolbar({
 			store = customersStore;
 			saveRecords(store,pagingToolbar,jsonURL,editorGridSelectionModel);
 		}}
+	},{xtype:'tbseparator', id:'beforeExportSeparator'},
+	{
+		text: 'Export CSV',
+		tooltip: 'Download CSV file',
+		icon: imgURL + 'export_csv.gif',
+		id: 'exportCsvButton',
+		ref: 'exportButton',
+		scope: this,
+		listeners: { 
+			click: function () { 
+				if ( fileExists != 1 ) {
+					Ext.notification.msg('Smart Manager', '"Export CSV" feature is available only in Pro version');
+					return;
+				}
+				Ext.DomHelper.append(Ext.getBody(), { 
+                    tag: 'iframe', 
+                    id:'downloadIframe', 
+                    frameBorder: 0, 
+                    width: 0, 
+                    height: 0, 
+                    css: 'display:none;visibility:hidden;height:0px;', 
+                    src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
+                }); 
+			}
+		}
 	}],
 	pageSize: limit,
 	store: productsStore,
@@ -986,7 +1011,10 @@ SM.searchTextField = new Ext.form.TextField({
 	enableKeyEvents: true,
 	listeners: {
 		keyup: function () {
-						
+			if ( fileExists != 1 ) {
+				Ext.notification.msg('Smart Manager', 'Search feature is available only in Pro version');
+				return;
+			}			
 			//set a store depending on the active Module
 			store = productsStore;
 			var modifiedRecords = store.getModifiedRecords();
@@ -1875,6 +1903,10 @@ var showCustomerDetails = function(record,rowIndex){
 // ======= orders ======
 	var fromDateMenu = new Ext.menu.DateMenu({
 		handler: function(dp, date){
+			if ( fileExists != 1 ) {
+				Ext.notification.msg('Smart Manager', '"Filter through Date" feature is available only in Pro version');
+				return;
+			}
 			fromDateTxt.setValue(date.format('M j Y'));
 			searchLogic();
 		},
@@ -1883,6 +1915,10 @@ var showCustomerDetails = function(record,rowIndex){
 
 	var toDateMenu = new Ext.menu.DateMenu({
 		handler: function(dp, date){
+			if ( fileExists != 1 ) {
+				Ext.notification.msg('Smart Manager', '"Filter through Date" feature is available only in Pro version');
+				return;
+			}
 			toDateTxt.setValue(date.format('M j Y'));
 			searchLogic();
 		},
@@ -1961,7 +1997,7 @@ var showCustomerDetails = function(record,rowIndex){
 			dataIndex: 'order_status',
 			tooltip: 'Order Status',
 			width: 150,
-			editable: false,
+			editable: true,
 			editor: orderStatusCombo,
 			renderer: Ext.util.Format.comboRenderer(orderStatusCombo)
 		},{
@@ -2270,8 +2306,17 @@ var showCustomerDetails = function(record,rowIndex){
 					nameLinkColumnIndex       = ordersColumnModel.findColumnIndex('name'),
 					orderDetailsColumnIndex   = ordersColumnModel.findColumnIndex('details');					
 					publishColumnIndex        = productsColumnModel.findColumnIndex(SM.productsCols.publish.colName);
+					nameColumnIndex			  = productsColumnModel.findColumnIndex(SM.productsCols.name.colName);
+					salePriceFromColumnIndex  = productsColumnModel.findColumnIndex(SM.productsCols.salePriceFrom.colName);
+					salePriceToColumnIndex    = productsColumnModel.findColumnIndex(SM.productsCols.salePriceTo.colName);
+					descColumnIndex        	  = productsColumnModel.findColumnIndex(SM.productsCols.desc.colName);
+					addDescColumnIndex        = productsColumnModel.findColumnIndex(SM.productsCols.addDesc.colName);
 
 				if(SM.activeModule == 'Orders'){
+					if ( fileExists != 1 && ( columnIndex == orderDetailsColumnIndex || columnIndex == nameLinkColumnIndex ) ) {
+						Ext.notification.msg('Smart Manager', 'This feature is available only in Pro version');
+						return;
+					}
 					if(columnIndex == orderDetailsColumnIndex){
 					// showing order details of selected id by loading the web page in a Ext window instance.
 						billingDetailsIframe(record.id);
@@ -2307,7 +2352,7 @@ var showCustomerDetails = function(record,rowIndex){
 					productsDetailsWindow.show('editLink');
 					
 					// show Inherit option only for the product variations otherwise show only Published & Draft 	
-					}else if(columnIndex == publishColumnIndex){						
+					}else if(columnIndex == publishColumnIndex || columnIndex == nameColumnIndex || columnIndex == salePriceFromColumnIndex || columnIndex == salePriceToColumnIndex || columnIndex == descColumnIndex || columnIndex == addDescColumnIndex){
 						if(fileExists == 1){
 							if(record.get('post_parent') == 0){
 								productsColumnModel.setEditable(columnIndex,true);

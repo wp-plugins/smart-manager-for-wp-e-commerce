@@ -23,25 +23,27 @@ if (file_exists ( '../pro/woo.php' )) {
 // getting the active module
 $active_module = $_POST ['active_module'];
 
-// Searching a product in the grid
-if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
-	global $wpdb, $woocommerce;
-
-	$show_variation = true;	
+function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
+	global $wpdb, $woocommerce, $post_status, $parent_sort_id, $order_by, $post_type, $variation_name, $from_variation, $parent_name;
 	
-	if (SMPRO == true && function_exists ( 'variation_query_params' ))
-		variation_query_params ();	
-
+	// getting the active module
+	$active_module = $_POST ['active_module'];
+	
+	if ( SMPRO == true ) variation_query_params ();
+	
+	// Restricting LIMIT for export CSV
+	if ( $is_export === true ) {
+		$limit_string = "";
+	} else {
+		$limit_string = "LIMIT $offset,$limit";
+	}
+	
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
 	if ($active_module == 'Products') { // <-products
 		
-		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] == 'true') {
-			if (SMPRO == false)
-			$show_variation = false;
+		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] === 'true' && SMPRO == true) {
+			$show_variation = true;
 		} else {
-			$show_variation = false;
-		}
-		if ($show_variation === false) { // query params for non-variation products
 			$from_variation = '';
 			$variation_name = '';
 			$parent_name = '';
@@ -49,8 +51,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			$post_type = "('product')";
 			$parent_sort_id = '';
 			$order_by = " ORDER BY products.id desc";
+			$show_variation = false;
 		}
-
+		
 		// if max-join-size issue occurs
 		$query = "SET SQL_BIG_SELECTS=1;";
 		$wpdb->query ( $query );
@@ -109,7 +112,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
 		$group_by = " GROUP BY products.id ";
 		
-		$query = "$select $from_where $group_by $search_condn $order_by LIMIT $offset,$limit;";
+		$query = "$select $from_where $group_by $search_condn $order_by $limit_string;";
 		$records = $wpdb->get_results ( $query );
 		$num_rows = $wpdb->num_rows;
 		
@@ -180,8 +183,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			
 			$group_by    = " GROUP BY posts.ID";
 					
-			$limit_query = " ORDER BY posts.ID DESC 
-			                LIMIT " . $offset . "," . $limit . "";
+			$limit_query = " ORDER BY posts.ID DESC $limit_string ;";
 			
 		$query    	 = "$customers_query $where $group_by $search_condn $limit_query;";
 		$result   	 =  $wpdb->get_results ( $query, 'ARRAY_A' );
@@ -260,8 +262,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 			
 	
 			$group_by    = " GROUP BY posts.ID";		
-			$limit_query = " ORDER BY posts.ID DESC 
-			                LIMIT " . $offset . "," . $limit . "";
+			$limit_query = " ORDER BY posts.ID DESC $limit_string ;";
 			
 			$where = " WHERE posts.post_type LIKE 'shop_order' 
 							AND posts.post_status IN ('publish','draft','auto-draft')";
@@ -339,10 +340,84 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	$encoded ['items'] = $records;
 	$encoded ['totalCount'] = $num_records;
 	unset($records);
+	return $encoded;
+}
+
+// Searching a product in the grid
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
+	$encoded = get_data_woo ( $_POST, $offset, $limit );
 	echo json_encode ( $encoded );
 	unset($encoded);
 }
 
+
+if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
+
+	$encoded = get_data_woo ( $_GET, $offset, $limit, true );
+	$data = $encoded ['items'];
+	unset($encoded);
+	$columns_header = array();
+	$active_module = $_GET ['active_module'];
+	switch ( $active_module ) {
+		
+		case 'Products':
+				$columns_header['id'] 						= 'Post ID';
+				$columns_header['thumbnail'] 				= 'Product Image';
+				$columns_header['post_title'] 				= 'Product Name';
+				$columns_header['_regular_price'] 			= 'Price';
+				$columns_header['_sale_price'] 				= 'Sale Price';
+				$columns_header['_sale_price_dates_from'] 	= 'Sale Price Dates (From)';
+				$columns_header['_sale_price_dates_to'] 	= 'Sale Price Dates (To)';
+				$columns_header['_stock'] 					= 'Inventory / Stock';
+				$columns_header['_sku'] 					= 'SKU';
+				$columns_header['category'] 				= 'Category / Group';
+				$columns_header['post_content'] 			= 'Product Description';
+				$columns_header['post_excerpt'] 			= 'Additional Description';
+				$columns_header['_weight'] 					= 'Weight';
+				$columns_header['_height'] 					= 'Height';
+				$columns_header['_width'] 					= 'Width';
+				$columns_header['_length'] 					= 'Length';
+			break;
+			
+		case 'Customers':
+				$columns_header['id'] 					= 'User ID';
+				$columns_header['_billing_first_name'] 	= 'First Name';
+				$columns_header['_billing_last_name'] 	= 'Last Name';
+				$columns_header['_billing_email'] 		= 'E-mail ID';
+				$columns_header['_billing_address'] 	= 'Address';
+				$columns_header['_billing_postcode'] 	= 'Postcode';
+				$columns_header['_billing_city'] 		= 'City';
+				$columns_header['_billing_state'] 		= 'State / Region';
+				$columns_header['_billing_country'] 	= 'Country';
+				$columns_header['last_order'] 			= 'Last Order Date';
+				$columns_header['_order_total'] 		= 'Order Total';
+				$columns_header['_billing_phone'] 		= 'Phone / Mobile';
+			break;
+			
+		case 'Orders':
+				$columns_header['id'] 						= 'Order ID';
+				$columns_header['date'] 					= 'Order Date';
+				$columns_header['_billing_first_name'] 		= 'Billing First Name';
+				$columns_header['_billing_last_name'] 		= 'Billing Last Name';
+				$columns_header['_billing_email'] 			= 'Billing E-mail ID';
+				$columns_header['_order_total'] 			= 'Order Total';
+				$columns_header['products_name'] 			= 'Order Items (Product Name(Qty))';
+				$columns_header['_payment_method_title'] 	= 'Payment Method';
+				$columns_header['order_status'] 			= 'Order Status';
+				$columns_header['_shipping_method_title'] 	= 'Shipping Method';
+				$columns_header['_shipping_first_name'] 	= 'Shipping First Name';
+				$columns_header['_shipping_last_name'] 		= 'Shipping Last Name';
+				$columns_header['_shipping_address'] 		= 'Shipping Address';
+				$columns_header['_shipping_postcode'] 		= 'Shipping Postcode';
+				$columns_header['_shipping_city'] 			= 'Shipping City';
+				$columns_header['_shipping_state'] 			= 'Shipping State / Region';
+				$columns_header['_shipping_country'] 		= 'Shippping Country';
+			break;
+	}
+	
+	echo export_csv_woo ( $active_module, $columns_header, $data );
+	exit;
+}
 
 //update products for lite version.
 function update_products_woo($_POST) {
@@ -408,7 +483,12 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		
 		for($i = 0; $i < $delCnt; $i ++) {
 			$post_id = $data [$i];
-			$post_data [] = wp_trash_post ( $post_id );
+			$post = get_post ( $post_id );		// Required to get post_type for deleting variation from Smart Manager
+			if ( $post->post_type == 'product_variation' ) {
+				$post_data [] = wp_delete_post( $post_id );
+			} else {
+				$post_data [] = wp_trash_post ( $post_id );
+			}
 		}
 		
 		$deleted_count = count ( $post_data );
