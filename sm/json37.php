@@ -30,7 +30,18 @@ if (SMPRO == true)
 $active_module = $_POST ['active_module'];
 
 // Searching a product in the grid
-if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
+function get_data_wpsc_37 ( $_POST, $offset, $limit, $is_export = false ) {
+	global $wpdb;
+	
+	// getting the active module
+	$active_module = $_POST ['active_module'];
+	
+	if ( $is_export === true ) {
+		$limit_string = "";
+	} else {
+		$limit_string = "LIMIT $offset,$limit";
+	}
+
 	if ($active_module == 'Products') { // <-products
 	   $select_query = "SELECT pl.id,
 	   						   pl.name,
@@ -67,7 +78,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		
 		$where = " WHERE pl.active = 1 ";
 		$group_by = " GROUP BY pl.id ";
-		$limit_query = " LIMIT " . $offset . "," . $limit . "";
+		$limit_query = " $limit_string ;";
 		
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 			$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
@@ -89,18 +100,17 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 		}
 		$recordcount_query = "SELECT COUNT( DISTINCT pl.id ) as count" . $from . "" . $where;
 		$query = $select_query . "" . $from . "" . $where . "" . $group_by . "" . $limit_query;
-		$result = $wpdb->query ( $query );		
-		$num_rows = mysql_num_rows ( $result );
-		$recordcount_result = $wpdb->query ( $recordcount_query );
-		$no_of_records = mysql_fetch_assoc ( $recordcount_result );
-		$num_records = $no_of_records ['count'];
+		$record = $wpdb->get_results ( $query );		
+		$num_rows = count( $record );
+		$recordcount_result = $wpdb->get_results ( $recordcount_query );
+		$num_records = $recordcount_result[0]->count;
 		if ($num_rows == 0) {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
 			$encoded ['msg'] = 'No Records Found';
 		} else {
-			while ($data = mysql_fetch_assoc($result))
-			$records[] = $data;
+			foreach ( (array)$record as $data )
+				$records[] = (array)$data;
 		}
 		$i = 0;
 		// compare $i against $num_rows and not against $num_records
@@ -137,19 +147,25 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	} //products ->
 elseif ($active_module == 'Orders') {
 		$query = "SELECT id,country_id, name, code FROM ".WPSC_TABLE_REGION_TAX;
-			$result = $wpdb->query($query);
+			$result = $wpdb->get_results ( $query );
 
-			if (mysql_num_rows($result) >= 1){
-				while ($data = mysql_fetch_assoc($result))
+			if (count($result) >= 1){
+//				while ($data = mysql_fetch_assoc($result))
+				foreach ( (array) $result as $obj ) {
+					$data = (array) $obj;
 					$regions[$data['id']] = $data['name'];
+				}
 			}
 			
 		$query = "SELECT isocode,country FROM `".WPSC_TABLE_CURRENCY_LIST."` ORDER BY `country` ASC";
-		$result = $wpdb->query($query);
+		$result = $wpdb->get_results ( $query );
 
-		if (mysql_num_rows($result) >= 1){
-			while ($data = mysql_fetch_assoc($result))
+		if (count($result) >= 1){
+//			while ($data = mysql_fetch_assoc($result))
+			foreach ( (array) $result as $obj ) {
+				$data = (array) $obj;	
 				$countries[$data['isocode']] = $data['country'];
+			}
 		}
 		
 	$select_query = "SELECT id,date,order_details,shipping_ids,shipping_unique_names,amount,track_id,order_status,details,notes";
@@ -219,7 +235,7 @@ elseif ($active_module == 'Orders') {
 											ON (country_info.region_id = ".WPSC_TABLE_REGION_TAX.".id)) as countries_regions 
 						                    ON (purchlog_info.id = countries_regions.log_id) ";
 		
-		$limit_query = " LIMIT " . $offset . "," . $limit . "";
+		$limit_query = " $limit_string ;";
 		$where = ' WHERE 1 ';
 		
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
@@ -257,13 +273,13 @@ elseif ($active_module == 'Orders') {
 		}
 		
 		$query = $select_query . " " . $from . "" . $where . " " . $limit_query;
-		$result = $wpdb->query ( $query );
-		$num_rows = mysql_num_rows ( $result );
+		$result = $wpdb->get_results ( $query );
+		$num_rows = count ( $result );
 		
 		//To get the total count
 		$orders_count_query = $select_query . " " . $from . " " . $where;
-		$orders_count_result = $wpdb->query ( $orders_count_query );
-		$num_records = mysql_num_rows ( $orders_count_result );
+		$orders_count_result = $wpdb->get_results ( $orders_count_query );
+		$num_records = count ( $orders_count_result );
 		
 		if ($num_rows == 0) {
 			$encoded ['totalCount'] = '';
@@ -271,7 +287,8 @@ elseif ($active_module == 'Orders') {
 			$encoded ['msg'] = 'No Records Found';
 		} else {
 			$count = 0;
-			while ( $data = mysql_fetch_assoc ( $result ) ) {
+			foreach ( $result as $obj ) {
+				$data = (array) $obj;
 				foreach ( $data as $key => $value ) {
 					if ($key == 'order_details' || $key == 'shipping_ids' || $key == 'shipping_unique_names') {
 						$order_details = explode ( '#', $data ['order_details'] );
@@ -310,10 +327,10 @@ elseif ($active_module == 'Orders') {
 		$query 	  = "SELECT " . WPSC_TABLE_SUBMITED_FORM_DATA . ".id from " . WPSC_TABLE_SUBMITED_FORM_DATA . "
 				  	 where form_id in (SELECT id FROM ". WPSC_TABLE_CHECKOUT_FORMS ." 
 				  	 where `unique_name`in ('billingcountry', 'billingstate'))
-				  	 LIMIT " . $offset . "," . $limit . "";
+				  	 $limit_string ;";
 		
-		$result   = $wpdb->query ( $query );
-		$num_rows = mysql_num_rows ( $result );		
+		$result   = $wpdb->get_results ( $query );
+		$num_rows = count ( $result );		
 		
 		if ($num_rows){
 			$region_exists  = true;
@@ -379,22 +396,23 @@ elseif ($active_module == 'Orders') {
 			}
 		}	
 		
-		$limit_query = " LIMIT " . $offset . "," . $limit . "";
+		$limit_query = " $limit_string ;";
 		$query 	     = $customers_query . "" . $limit_query;
-		$result 	 = $wpdb->query ( $query );
-		$num_rows 	 = mysql_num_rows ( $result );
+		$result 	 = $wpdb->get_results ( $query );
+		$num_rows 	 = count ( $result );
 		
 		//To get Total count
 		$customers_count_query = $customers_query;
-		$customers_count_result = $wpdb->query ( $customers_count_query );
-		$num_records = mysql_num_rows ( $customers_count_result );
+		$customers_count_result = $wpdb->get_results ( $customers_count_query );
+		$num_records = count ( $customers_count_result );
 		
 		if ($num_rows == 0) {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
 			$encoded ['msg'] = 'No Records Found';
 		} else {
-			while ( $data = mysql_fetch_assoc ( $result ) ) {
+			foreach ( $result as $obj ) {
+				$data = (array) $obj;
 				$user_details = explode ( '#', $data ['user_details'] );
 				$unique_names = explode ( '#', $data ['unique_names'] );
 				
@@ -428,7 +446,88 @@ elseif ($active_module == 'Orders') {
 	}
 	$encoded ['items'] = $records;
 	$encoded ['totalCount'] = $num_records;
+	return $encoded;
+}
+
+// Searching a product in the grid
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
+	$encoded = get_data_wpsc_37 ( $_POST, $offset, $limit );
 	echo json_encode ( $encoded );
+	unset($encoded);
+}
+
+
+if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
+
+	$encoded = get_data_wpsc_37 ( $_GET, $offset, $limit, true );
+	$data = $encoded ['items'];
+	unset($encoded);
+	$columns_header = array();
+	$active_module = $_GET ['active_module'];
+	switch ( $active_module ) {
+		
+		case 'Products':
+				$columns_header['id'] 						= 'Post ID';
+				$columns_header['thumbnail'] 				= 'Product Image';
+				$columns_header['name'] 					= 'Product Name';
+				$columns_header['price'] 					= 'Price';
+				$columns_header['sale_price'] 				= 'Sale Price';
+				$columns_header['quantity'] 				= 'Inventory / Stock';
+				$columns_header['sku'] 						= 'SKU';
+				$columns_header['category'] 				= 'Category / Group';
+				$columns_header['description'] 				= 'Product Description';
+				$columns_header['additional_description'] 	= 'Additional Description';
+				$columns_header['weight'] 					= 'Weight';
+				$columns_header['weight_unit'] 				= 'Weight Unit';
+				$columns_header['height'] 					= 'Height';
+				$columns_header['height_unit'] 				= 'Height Unit';
+				$columns_header['width'] 					= 'Width';
+				$columns_header['width_unit'] 				= 'Width Unit';
+				$columns_header['length'] 					= 'Length';
+				$columns_header['length_unit'] 				= 'Length Unit';
+				$columns_header['pnp'] 						= 'Local Shipping Fee';
+				$columns_header['international_pnp'] 		= 'International Shipping Fee';
+			break;
+			
+		case 'Customers':
+				$columns_header['id'] 					= 'User ID';
+				$columns_header['billingfirstname'] 	= 'First Name';
+				$columns_header['billinglastname'] 		= 'Last Name';
+				$columns_header['billingemail'] 		= 'E-mail ID';
+				$columns_header['billingaddress'] 		= 'Address';
+				$columns_header['billingpostcode'] 		= 'Postcode';
+				$columns_header['billingcity'] 			= 'City';
+				$columns_header['billingstate'] 		= 'State / Region';
+				$columns_header['billingcountry'] 		= 'Country';
+				$columns_header['Last_Order_Amt'] 		= 'Last Order Total';
+				$columns_header['Last_Order_Date'] 		= 'Last Order Date';
+				$columns_header['Total_Purchased'] 		= 'Total Purchased Till Date (By Customer)';
+				$columns_header['billingphone'] 		= 'Phone / Mobile';
+			break;
+			
+		case 'Orders':
+				$columns_header['id'] 						= 'Order ID';
+				$columns_header['date'] 					= 'Order Date';
+				$columns_header['billingfirstname'] 		= 'Billing First Name';
+				$columns_header['billinglastname'] 			= 'Billing Last Name';
+				$columns_header['billingemail'] 			= 'Billing E-mail ID';
+				$columns_header['amount'] 					= 'Order Total';
+				$columns_header['details'] 					= 'Total No. of Items';
+				$columns_header['order_status'] 			= 'Order Status';
+				$columns_header['track_id'] 				= 'Track ID';
+				$columns_header['notes'] 					= 'Order Notes';
+				$columns_header['shippingfirstname'] 		= 'Shipping First Name';
+				$columns_header['shippinglastname'] 		= 'Shipping Last Name';
+				$columns_header['shippingaddress'] 			= 'Shipping Address';
+				$columns_header['shippingpostcode'] 		= 'Shipping Postcode';
+				$columns_header['shippingcity'] 			= 'Shipping City';
+				$columns_header['shippingstate'] 			= 'Shipping State / Region';
+				$columns_header['shippingcountry'] 			= 'Shippping Country';
+			break;
+	}
+	
+	echo export_csv_wpsc_37 ( $active_module, $columns_header, $data );
+	exit;
 }
 
 // Delete product.
