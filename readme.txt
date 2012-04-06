@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.3
-Stable tag: 2.2
+Stable tag: 2.3
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -65,15 +65,7 @@ Thousands of customers are extremely happy with Smart Manager! Checkout our webs
 
 = Can I import / export data using CSV? =
 
-No. Smart Manager does not support import / export yet. But we are considering this for future.
-
-= What features work with WooCommerce? =
-
-Products, Variations, Orders and Customers management works with WooCommerce. Lite version has limited features, but Pro allows full inline editing and smart batch updates. 
-
-= Does this work with WP e-Commerce 3.8? =
-
-Yes. Smart Manager is compatible with both WP e-Commerce 3.7 and 3.8. Some features work only in 3.8 though.
+You can export most important fields from Product / Customer / Order as CSV in paid versions. Smart Manager does not currently support importing data.
 
 = What do I get in this free version? =
 
@@ -87,7 +79,7 @@ Paid versions (Pro, Multisite and Developer) allow managing product variations
 (WPeC 3.8+ or WooCommerce 1.4+ required), inline editing on all fields right within the spreadsheet 
 view and a powerful Batch Update screen where you can apply multiple smart update 
 actions to selected / all items. For Customers, you can see total sales for each 
-customer and their last order details.
+customer and their last order details. You can also export data into CSV.
 
 It also gives the warm feeling of supporting further development of the plugin.
 
@@ -103,6 +95,15 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 2.3 =
+* New: "Export CSV" support for WooCommerce 1.4+ and WP e-Commerce 3.7+
+* Fix: Update & Batch Update of Price & Sale Price
+* Fix: Products not displaying for WP e-Commerce 3.7
+* Fix: Deletion of product variation from WooCommerce
+* Updated: Disabled fields not required for product variation for WooCommerce
+* Updated: Hide product variation whose parent product is not a variable product
+* Updated: Changed inline editable field in LITE version
 
 = 2.2 =
 * New: Product Variation support for WooCommerce 1.4+
@@ -283,6 +284,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 2.3 =
+Recommended upgrade. Export CSV support for WooCommerce added. Fixed issue related to Sale Price for WooCommerce. Upgrade WPeC / WooCommerce before upgrading Smart Manager. 
 
 = 2.2 =
 Recommended upgrade. Variations support for WooCommerce added. Upgrade WPeC / WooCommerce before upgrading Smart Manager. 
