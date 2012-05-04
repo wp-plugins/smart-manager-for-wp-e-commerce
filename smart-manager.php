@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 2.3
+Version: 2.4
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012 Store Apps All rights reserved.
@@ -72,7 +72,6 @@ function smart_is_pro_updated() {
 			exit ();
 		}
 	}
-	
 
 	add_action ( 'admin_notices', 'smart_admin_notices' );
 	//	admin_init is triggered before any other hook when a user access the admin area. 
@@ -88,7 +87,7 @@ function smart_is_pro_updated() {
 		} elseif (is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
 			define('WPSC_ACTIVATED',true);
 		} elseif (is_plugin_active ( 'woocommerce/woocommerce.php' )) {
-			define('WOO_ACTIVATED',true);
+			define('WOO_ACTIVATED', true);
 		}
 		wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
 		wp_register_script ( 'sm_ext_all', plugins_url ( '/ext/ext-all.js', __FILE__ ), array ('sm_ext_base' ), $ext_version );
@@ -99,10 +98,16 @@ function smart_is_pro_updated() {
 			// checking the version for WPSC plugin
 			define ( 'IS_WPSC37', version_compare ( WPSC_VERSION, '3.8', '<' ) );
 			define ( 'IS_WPSC38', version_compare ( WPSC_VERSION, '3.8', '>=' ) );
+			if ( IS_WPSC38 ) {		// WPEC 3.8.7 OR 3.8.8
+				define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.8', '<' ));
+				define('IS_WPSC388', version_compare ( WPSC_VERSION, '3.8.8', '>=' ));
+			}
 		} else if ($_GET['post_type'] == 'product' || $_GET['page'] == 'smart-manager-woo') {
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager-woo.js', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
 			define('WPSC_RUNNING', false);
 			define('WOO_RUNNING', true);
+			// checking the version for WooCommerce plugin
+			define ( 'IS_WOO13', version_compare ( WOOCOMMERCE_VERSION, '1.4', '<' ) );
 		}
 		wp_register_style ( 'sm_ext_all', plugins_url ( '/ext/ext-all.css', __FILE__ ), array (), $ext_version );
 		wp_register_style ( 'sm_main', plugins_url ( '/sm/smart-manager.css', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
@@ -119,7 +124,7 @@ function smart_is_pro_updated() {
 			// like the existing after_plugin_row filter, but specific to your plugin, 
 			// so it only runs once instead of after each row of the plugin display
 			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'smart_plugin_row', '', 1 );
-			do_action  ('after_plugin_row_' . plugin_basename ( __FILE__ ));
+			do_action  ( 'after_plugin_row_' . plugin_basename ( __FILE__ ));
 			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'show_registration_upgrade');
 			add_action ( 'in_plugin_update_message-' . plugin_basename ( __FILE__ ), 'smart_update_notice' );
 		}
@@ -128,7 +133,7 @@ function smart_is_pro_updated() {
 	function smart_admin_notices() {
 		if (! is_plugin_active ( 'woocommerce/woocommerce.php' ) && ! is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
 			echo '<div id="notice" class="error"><p>';
-			_e ( '<b>Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> or <a href="http://www.woothemes.com/woocommerce/">WooCommerce</a> plugin. Please install and activate it.' );
+			_e ( '<b>Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> plugin or <a href="http://www.woothemes.com/woocommerce/">WooCommerce</a> plugin. Please install and activate it.' );
 			echo '</p></div>', "\n";
 		}
 	}
@@ -289,12 +294,14 @@ function smart_is_pro_updated() {
 if (SMPRO === true) {		
 		$license_key = smart_get_license_key();
 		if( $license_key == '' ) {
-		  	if (WPSC_RUNNING == true) {
-		  		smart_display_notice('Please enter your license key for automatic upgrades and support to get activated. <a href="admin.php?page=smart-manager-wpsc&action=sm-settings">Enter License Key</a>');
-		  	} elseif (WOO_RUNNING == true) {
-		  		smart_display_notice('Please enter your license key for automatic upgrades and support to get activated. <a href="admin.php?page=smart-manager-woo&action=sm-settings">Enter License Key</a>');
-		  	}
-			
+		  	if ( ! is_multisite() ) {
+				if (WPSC_RUNNING == true) {
+					$plug_page = 'wpsc';
+				} elseif (WOO_RUNNING == true) {
+					$plug_page = 'woo';
+				}
+				smart_display_notice( 'Please enter your license key for automatic upgrades and support to get activated. <a href="admin.php?page=smart-manager-' . $plug_page . '&action=sm-settings">Enter License Key</a>' );
+			}
 		}
 }
 ?>
@@ -315,44 +322,43 @@ if (SMPRO === true) {
 		
 		<?php
 			$error_message = '';
-			if (file_exists ( WPSC_FILE_PATH . '/wp-shopping-cart.php' )) {
-				if (is_plugin_active ( WPSC_FOLDER.'/wp-shopping-cart.php' )) {
-					require_once (WPSC_FILE_PATH . '/wp-shopping-cart.php');
-					if (IS_WPSC37 || IS_WPSC38) {
-						if (file_exists ( $base_path . 'manager-console.php' )) {
-							include_once ($base_path . 'manager-console.php');
-							return;
+			if ( ( file_exists ( WPSC_FILE_PATH . '/wp-shopping-cart.php' ) ) || ( file_exists ( WP_PLUGIN_DIR . '/woocommerce/woocommerce.php' ) ) ) {
+				if ( file_exists ( WPSC_FILE_PATH . '/wp-shopping-cart.php' ) ) {
+					if ( is_plugin_active ( WPSC_FOLDER.'/wp-shopping-cart.php' ) ) {
+						require_once (WPSC_FILE_PATH . '/wp-shopping-cart.php');
+						if (IS_WPSC37 || IS_WPSC38) {
+							if (file_exists ( $base_path . 'manager-console.php' )) {
+								include_once ($base_path . 'manager-console.php');
+								return;
+							} else {
+								$error_message = 'A required Smart Manager file is missing. Can\'t continue.';
+							}
 						} else {
-							$error_message = 'A required Smart Manager file is missing. Can\'t continue.';
+							$error_message = 'Smart Manager currently works only with WP e-Commerce 3.7 or above.';
 						}
-					
 					} else {
-						$error_message = 'Smart Manager currently works only with WP e-Commerce 3.7 or above.';
+						$error_message = 'WP e-Commerce plugin is not activated. <br/><b>Smart Manager</b> add-on requires WP e-Commerce plugin, please activate it.';
 					}
-				} else {
-					$error_message = 'WP e-Commerce plugin is not activated. <br /><br />Smart Manager add-on requires WP e-Commerce plugin.';
+				} else if ( file_exists ( WP_PLUGIN_DIR . '/woocommerce/woocommerce.php' ) ) {
+					if ( is_plugin_active ( 'woocommerce/woocommerce.php' ) ) {
+						if ( IS_WOO13 ) {
+							$error_message = 'Smart Manager currently works only with WooCommerce 1.4 or above.';
+						} else {
+							if ( file_exists ( $base_path . 'manager-console.php' ) ) {
+								include_once ( $base_path . 'manager-console.php' );
+								return;
+							} else {
+								$error_message = 'A required Smart Manager file is missing. Can\'t continue.';
+							}
+						}
+					} else {
+						$error_message = 'WooCommerce plugin is not activated. <br/><b>Smart Manager</b> add-on requires WooCommerce plugin, please activate it.';
+					}
 				}
 			} else {
-				$error_message = '<b>Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> plugin to do its job. Please install and activate it.';
+				$error_message = '<b>Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> plugin or <a href="http://www.woothemes.com/woocommerce/">WooCommerce</a> plugin. Please install and activate it.';
 			}
-			if (is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' ) || is_plugin_active ( 'woocommerce/woocommerce.php' )) {
-				if (is_plugin_active ( WPSC_FOLDER.'/wp-shopping-cart.php' )) {
-					require_once (WPSC_FILE_PATH . '/wp-shopping-cart.php');
-					if (!(IS_WPSC37 || IS_WPSC38)) {
-						$error_message = 'Smart Manager currently works only with WP e-Commerce 3.7 or above.';
-					}
-				}
 
-				if (file_exists ( $base_path . 'manager-console.php' )) {
-					include_once ($base_path . 'manager-console.php');
-					return;
-				} else {
-					$error_message = 'A required Smart Manager file is missing. Can\'t continue.';
-				}
-			} else {
-				$error_message = 'Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> plugin or <a href="http://www.woothemes.com/woocommerce/">WooCommerce</a> plugin. Please install and activate it.';
-			}
-				
 			if ($error_message != '') {
 				smart_display_err ( $error_message );
 				?>
