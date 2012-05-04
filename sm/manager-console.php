@@ -24,7 +24,10 @@ if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
 }
 
 if (WPSC_RUNNING === true) {
-	$orders_details_url = ADMIN_URL . "/index.php?page=wpsc-sales-logs&purchaselog_id=";
+	if ( IS_WPSC388 )	
+		$orders_details_url = ADMIN_URL . "/index.php?page=wpsc-purchase-logs&c=item_details&id=";
+	else
+		$orders_details_url = ADMIN_URL . "/index.php?page=wpsc-sales-logs&purchaselog_id=";
 
 	$weight_unit ['items']  = array (array ('id' => 0, 'name' => 'Pounds', 'value' => 'pound' ), array ('id' => 1, 'name' => 'Ounces', 'value' => 'ounce' ), array ('id' => 2, 'name' => 'Grams', 'value' => 'gram' ), array ('id' => 3, 'name' => 'Kilograms', 'value' => 'kilogram' ) );
 	$weight_unit ['totalCount'] = count ( $weight_unit ['items'] );
@@ -40,7 +43,6 @@ if (WPSC_RUNNING === true) {
 			$ordersfield_data [] = $data;
 		$ordersfield_result = $ordersfield_data [0];
 	}
-
 
 	$ordersfield_names = array ();
 	$cnt = 0;
@@ -248,7 +250,6 @@ $products_cols['lengthCol']['tableName']="{$wpdb->prefix}postmeta";
 
 $products_cols['post_parent']['colName']='post_parent';
 $products_cols['post_parent']['actionType']='';
-
 
 if (WPSC_RUNNING === true) {
 	

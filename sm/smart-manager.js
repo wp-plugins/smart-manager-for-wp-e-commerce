@@ -554,7 +554,9 @@ Ext.onReady(function () {
 			tooltip: 'Description',
 			width: 180,
 			editor: new fm.TextArea({				
-				autoHeight: true
+				autoHeight: true,
+				grow: true,
+				growMax: 10000
 			})
 		},{
 			header: SM.productsCols.addDesc.name,
@@ -564,7 +566,9 @@ Ext.onReady(function () {
 			tooltip: 'Additional Description',
 			width: 180,
 			editor: new fm.TextArea({
-				autoHeight: true
+				autoHeight: true,
+				grow: true,
+				growMax: 10000
 			})
 		},{
 	  		header: SM.productsCols.pnp.name,
@@ -2376,7 +2380,14 @@ var billingDetailsIframe = function(recordId){
 		maximizable: true,
 		maximized: false,
 		resizeable: true,
-		listeners: { 	},
+		listeners: { 
+			maximize: function () {
+				this.setPosition( 0, 30 );
+			},
+			show: function () {
+				this.setPosition( 250, 30 );
+			}
+		},
 		html: '<iframe src='+ ordersDetailsLink + '' + recordId +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'
 	});
 	billingDetailsWindow.show();
@@ -2517,10 +2528,10 @@ var showCustomerDetails = function(record,rowIndex){
 									icon: Ext.MessageBox.WARNING
 								});
 							} else {
-								SM.dashboardComboBox.setValue(dashboardComboStore[0][1]);
-								grid.cm = eval(SM.dashboardComboBox.value.toLowerCase()+'ColumnModel');
-								grid.store = eval(SM.dashboardComboBox.value.toLowerCase()+'Store');
-								grid.stateId = SM.dashboardComboBox.value.toLowerCase()+'EditorGridPanelWpsc';
+//								SM.dashboardComboBox.setValue(dashboardComboStore[0][1]);
+//								grid.cm = eval(SM.dashboardComboBox.value.toLowerCase()+'ColumnModel');
+//								grid.store = eval(SM.dashboardComboBox.value.toLowerCase()+'Store');
+//								grid.stateId = SM.dashboardComboBox.value.toLowerCase()+'EditorGridPanelWpsc';
 											
 								SM.dashboardComboBox.store.loadData(dashboardComboStore);
 								showSelectedModule(SM.dashboardComboBox.value);	
@@ -2546,7 +2557,6 @@ var showCustomerDetails = function(record,rowIndex){
 					nameLinkColumnIndex       = ordersColumnModel.findColumnIndex('name'),
 					orderDetailsColumnIndex   = ordersColumnModel.findColumnIndex('details');					
 					publishColumnIndex        = productsColumnModel.findColumnIndex(SM.productsCols.publish.colName);
-					nameColumnIndex        	  = productsColumnModel.findColumnIndex(SM.productsCols.name.colName);
 
 				if(SM.activeModule == 'Orders'){
 					if(columnIndex == orderDetailsColumnIndex){
@@ -2577,12 +2587,24 @@ var showCustomerDetails = function(record,rowIndex){
 							shadow : true,
 							shadowOffset : 10,
 							animateTarget:'editLink',
-							listeners: { show: function(t){ storeDetailsWindowState(t,t.stateId); }	},
+							listeners: { 
+								show: function(t){ 
+									storeDetailsWindowState(t,t.stateId); 
+								},
+								maximize: function () {
+									this.setPosition( 0, 30 );
+								},
+								show: function () {
+									this.setPosition( 250, 30 );
+								}	
+							},
 							html: '<iframe src='+ productsDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'
 						});
-				
-					productsDetailsWindow.show('editLink');
-					
+						// To disable Product's details window for product variations
+						if(record.get('post_parent') == 0){
+							productsDetailsWindow.show('editLink');
+						}
+						
 					// show Inherit option only for the product variations otherwise show only Published & Draft 	
 					}else if(columnIndex == publishColumnIndex){						
 						if(fileExists == 1){
@@ -2594,14 +2616,6 @@ var showCustomerDetails = function(record,rowIndex){
 								productsColumnModel.setEditable(columnIndex,false);
 							}
 						}
-					} else if(columnIndex == nameColumnIndex){					// To disable Inline editing for Parent product of variation	
-						if(fileExists == 1){
-							if(record.get('post_parent') == 0){
-								productsColumnModel.setEditable(columnIndex,false);
-							}else{
-								productsColumnModel.setEditable(columnIndex,true);
-							}
-						}columnIndex == nameColumnIndex
 					} else if ( columnIndex == editImageColumnIndex ) {
 						if ( isWPSC37 != 1 ) {
 							var productsImageWindow = new Ext.Window({
@@ -2621,7 +2635,12 @@ var showCustomerDetails = function(record,rowIndex){
 										if ( fileExists != 1 ) 
 											this.setTitle( 'Manage your Product Images - Available only in Pro version' );
 									},
-									
+									maximize: function () {
+										this.setPosition( 0, 30 );
+									},
+									show: function () {
+										this.setPosition( 250, 30 );
+									},
 									close: function() {
 										var object = {
 											url:jsonURL
@@ -2692,11 +2711,9 @@ var showCustomerDetails = function(record,rowIndex){
 		// Fires when the grid view is available.
 		// This happens only for the first time when the page is rendered with the editorgrid panel.
 		// From here the flow of the code starts.
-//		viewready: function(grid){
-//			
-//			
-//			showSelectedModule(SM.dashboardComboBox.value);	
-//		},
+		viewready: function(grid){
+			showSelectedModule(SM.dashboardComboBox.value);	
+		},
 		// Fires when the grid is reconfigured with a new store and/or column model.
 		// state of the editor grid is captured and applied to back to the grid.
 		reconfigure : function(grid,store,colModel ){

@@ -78,13 +78,15 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 			$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
 
-			$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '% $search_on%'
+			$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
 				               OR post_content LIKE '%$search_on%'
 				               OR post_excerpt LIKE '%$search_on%'
 				               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
 							   OR prod_othermeta_value LIKE '%$search_on%'
 							   OR category LIKE '%$search_on%'
 					           ";
+			
+			( $show_variation == true ) ? $search_condn .= " OR variation_name LIKE '%$search_on%' " : '';
 		}
 
 		$from_where = "FROM {$wpdb->prefix}posts as products
@@ -227,7 +229,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 					
 				}
 			}
-			$num_records = count($records);
+			
 			unset($result);
 			unset($meta_value);
 			unset($meta_key);
@@ -305,7 +307,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 						$postmeta = array_combine ( $meta_key, $meta_value);
 						if (is_serialized($postmeta['_order_items'])) {
 							$order_items = unserialize(trim($postmeta['_order_items']));
-							foreach ($order_items as $order_item) {
+							foreach ( (array)$order_items as $order_item) {
 								$data['details'] += $order_item['qty'];
 								$data['products_name'] .= $order_item['name'].'('.$order_item['qty'].'), ';
 							}
@@ -330,7 +332,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 						}
 					}
 				}
-				$num_records = count($records);
+				
 				unset($meta_value);
 				unset($meta_key);
 				unset($postmeta);
