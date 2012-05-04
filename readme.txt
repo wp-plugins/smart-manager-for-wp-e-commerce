@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.3
-Stable tag: 2.3
+Stable tag: 2.4
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -95,6 +95,22 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 2.4 =
+* Fixed: Customers & Orders list showing only 100 records ( WooCommerce )
+* Fixed: 'Export CSV' not exporting values containing comma
+* Fixed: Export CSV not working in PHP versions below 5.3
+* Added: Can filter products list based on attribute names for WooCommerce
+* Updated: Added 'Site Title' in the name of Exported CSV file
+* Fixed: State restore - Smart Manager will open the dashboard you left it on
+* Fixed: Order detail permission issue in WPeC 3.8.8
+* Updated: Minimize, Maximize and Close buttons will now be always visible in popup windows (Product Edit / Billing Details / Image Management)
+* Updated: Enabled Inline Editing of product names for WPeC
+* Updated: Product Description & Additional Description text fields now grow with content
+* Updated: Added SKU field in Packing Slip for WPeC
+* Updated: Disabled "Edit Link" for product variation for WPeC & WooCommerce
+* Updated: Only those postmeta will be updated whose value is greater than 0
+* Updated: Smart Manager License Key setting & displaying messages for WordPress Multisite
 
 = 2.3 =
 * New: "Export CSV" support for WooCommerce 1.4+ and WP e-Commerce 3.7+
@@ -284,6 +300,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 2.4 =
+Recommended upgrade. Fixed issues in CSV export and many other small fixes and enhancements. 
 
 = 2.3 =
 Recommended upgrade. Export CSV support for WooCommerce added. Fixed issue related to Sale Price for WooCommerce. Upgrade WPeC / WooCommerce before upgrading Smart Manager. 
