@@ -1,5 +1,7 @@
 <?php 
-include_once ('../../../../wp-load.php');
+if ( ! defined('ABSPATH') ) {
+	include_once ('../../../../wp-load.php');
+}
 
 $mem_limit = ini_get('memory_limit');
 if(intval(substr($mem_limit,0,strlen($mem_limit)-1)) < 64 ){
@@ -13,9 +15,9 @@ $offset = (isset ( $_POST ['start'] )) ? $_POST ['start'] : 0;
 $limit = (isset ( $_POST ['limit'] )) ? $_POST ['limit'] : 100;
 
 // For pro version check if the required file exists
-if (file_exists ( '../pro/woo.php' )) {
+if (file_exists ( WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/woo.php' )) {
 	define ( 'SMPRO', true );
-	include_once ('../pro/woo.php');
+	include_once (WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/woo.php');
 } else {
 	define ( 'SMPRO', false );
 }
@@ -40,7 +42,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 	
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
 	if ($active_module == 'Products') { // <-products
-		
+		$woo_default_image = WP_PLUGIN_URL . '/smart-reporter-for-wp-e-commerce/resources/themes/images/woo_default_image.png';
 		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] === 'true' && SMPRO == true) {
 			$show_variation = true;
 		} else {
@@ -67,9 +69,6 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 					category,
 					$variation_name
 					$parent_name
-					(SELECT products_guid.guid FROM {$wpdb->prefix}posts AS products_guid WHERE products.ID = products_guid.post_parent 
-						AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment' LIMIT 1) as alt_thumbnail,
-					(SELECT guid FROM {$wpdb->prefix}posts WHERE ID = image_postmeta.meta_value) as thumbnail,
 					GROUP_CONCAT(prod_othermeta.meta_key order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_key,
 					GROUP_CONCAT(prod_othermeta.meta_value order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_value,
 					prod_meta.meta_value as prod_meta
@@ -77,27 +76,41 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 			$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
-
-			$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
-				               OR post_content LIKE '%$search_on%'
-				               OR post_excerpt LIKE '%$search_on%'
-				               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
-							   OR prod_othermeta_value LIKE '%$search_on%'
-							   OR category LIKE '%$search_on%'
-					           ";
-			
-			( $show_variation == true ) ? $search_condn .= " OR variation_name LIKE '%$search_on%' " : '';
+			$search_ons = explode( ' ', $search_on );
+			if ( is_array( $search_ons ) ) {	
+				$search_condn = " HAVING ";
+				foreach ( $search_ons as $search_on ) {
+					$search_condn .= " concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
+						               OR post_content LIKE '%$search_on%'
+						               OR post_excerpt LIKE '%$search_on%'
+						               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
+									   OR prod_othermeta_value LIKE '%$search_on%'
+									   OR category LIKE '%$search_on%'
+							           ";
+					
+					( $show_variation == true ) ? $search_condn .= " OR variation_name LIKE '%$search_on%' " : '';
+					$search_condn .= " OR";
+				}
+				$search_condn = substr( $search_condn, 0, -2 );
+			} else {
+				$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
+					               OR post_content LIKE '%$search_on%'
+					               OR post_excerpt LIKE '%$search_on%'
+					               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
+								   OR prod_othermeta_value LIKE '%$search_on%'
+								   OR category LIKE '%$search_on%'
+						           ";
+					
+				( $show_variation == true ) ? $search_condn .= " OR variation_name LIKE '%$search_on%' " : '';
+			}
 		}
 
 		$from_where = "FROM {$wpdb->prefix}posts as products
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_othermeta ON (prod_othermeta.post_id = products.id and
-						prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price') )
+						prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price','_thumbnail_id') )
 						
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_meta ON (prod_meta.post_id = products.id and
 						prod_meta.meta_key = '_product_attributes')
-						
-						LEFT JOIN {$wpdb->prefix}postmeta as image_postmeta ON (products.ID = image_postmeta.post_id 
-						AND image_postmeta.meta_key = '_thumbnail_id')
 						
 						$from_variation
 						
@@ -129,12 +142,11 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 		} else {
 			
 			for ($i = 0; $i < $num_rows; $i++){
-				if ( empty ( $records[$i]->thumbnail ) || $records[$i]->thumbnail == '' ) 
-					$records[$i]->thumbnail = $records[$i]->alt_thumbnail;
-				$records[$i]->thumbnail = strstr($records[$i]->thumbnail, 'uploads/'); 
-				
 				$prod_meta_values = explode ( '###', $records[$i]->prod_othermeta_value );
 				$prod_meta_key    = explode ( '###', $records[$i]->prod_othermeta_key);
+				if ( count($prod_meta_values) != count($prod_meta_key) ) continue;
+				unset ( $records[$i]->prod_othermeta_value );
+				unset ( $records[$i]->prod_othermeta_key );
 				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );
 				$records[$i]->category = ( $records[$i]->post_parent == 0 ) ? $records[$i]->category : '';			// To hide category name from Product's variations
 				
@@ -148,15 +160,16 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 					$records[$i]    = array_merge((array)$records[$i],(array)$unsez_data[$i]);
 				}
 				$records[$i] = array_merge((array)$records[$i],$prod_meta_key_values);
-
+				$thumbnail = isset( $records[$i]['_thumbnail_id'] ) ? wp_get_attachment_image_src( $records[$i]['_thumbnail_id'], 'admin-product-thumbnails' ) : '';
+				$records[$i]['thumbnail'] = ( $thumbnail[0] != '' ) ? $thumbnail[0] : '';
 				if ( $show_variation === true && $records[$i]['post_parent'] != 0 ) {
 					$records[$i]['_regular_price'] = $records[$i]['_price'];
 					$records[$i]['post_title'] = $records[$i]['parent_name'] . " - " . $records[$i]['variation_name'];
 				}
+				unset ( $records[$i]->prod_othermeta_value );
+				unset ( $records[$i]->prod_meta );
+				unset ( $records[$i]->prod_othermeta_key );
 			}
-			unset ( $records[$i]->prod_othermeta_value );
-			unset ( $records[$i]->prod_meta );
-			unset ( $records[$i]->prod_othermeta_key );
 		}
 	} elseif ($active_module == 'Customers') {
 		//BOF Customer's module
@@ -417,7 +430,16 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
 			break;
 	}
 	
-	echo export_csv_woo ( $active_module, $columns_header, $data );
+	$file_data = export_csv_woo ( $active_module, $columns_header, $data );
+	
+	header("Content-type: text/x-csv; charset=UTF-8"); 
+	header("Content-Transfer-Encoding: binary");
+	header("Content-Disposition: attachment; filename=".$file_data['file_name']); 
+	header("Pragma: no-cache");
+	header("Expires: 0");
+		
+	echo $file_data['file_content'];
+		
 	exit;
 }
 
@@ -545,6 +567,27 @@ function get_term_taxonomy_id($term_name) {					// for woocommerce orders
 	}
 }
 
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getTerms'){
+	global $wpdb;
+	$action_name =  $_POST['action_name'];
+	$attribute_name = $_POST ['attribute_name'];
+	$attribute_suffix = "pa_" . $attribute_name;
+	$query = "SELECT tt.term_taxonomy_id, t.name FROM {$wpdb->prefix}terms as t join {$wpdb->prefix}term_taxonomy as tt on (t.term_id = tt.term_id) where tt.taxonomy = '$attribute_suffix' ";
+	$results = $wpdb->get_results ($query, 'ARRAY_A');
+	$terms_combo_store = array();
+	$term_count = 0;
+	$terms_combo_store [$term_count] [] = 'all';
+	$terms_combo_store [$term_count] [] = 'All';
+	$term_count++;
+	foreach ( $results as $result ) {
+		$terms_combo_store [$term_count] [] = $result['term_taxonomy_id'];
+		$terms_combo_store [$term_count] [] = $result['name'];
+		$term_count++;
+	}
+	
+	echo json_encode ( $terms_combo_store );
+}
+
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRegion') {
 	global $wpdb, $woocommerce;
 	$cnt = 0;
@@ -561,29 +604,11 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRegion') {
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
-	global $wpdb;
-	
-	$post_type = "'product', 'product_variation'";
-
-	$query = "SELECT products_guid.guid as alt_thumbnail,
-					(SELECT guid FROM {$wpdb->prefix}posts WHERE ID = image_postmeta.meta_value) as thumbnail 
-					
-					FROM {$wpdb->prefix}posts as posts 
-					
-					LEFT JOIN {$wpdb->prefix}posts as products_guid ON (posts.ID = products_guid.post_parent 
-					AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment')
-						
-					LEFT JOIN {$wpdb->prefix}postmeta as image_postmeta ON (posts.ID = image_postmeta.post_id 
-					AND image_postmeta.meta_key = '_thumbnail_id')
-					
-					WHERE posts.post_status IN ('publish', 'draft')
-					AND posts.post_type IN ($post_type)
-					AND posts.ID = $_POST[id]";
-	$result = $wpdb->get_results ( $query );
-	if ( empty ( $result[0]->thumbnail ) || $result[0]->thumbnail == '' ) 
-		$result[0]->thumbnail = $result[0]->alt_thumbnail;
-	$result[0]->thumbnail = strstr($result[0]->thumbnail, 'uploads/'); 
-	echo json_encode ( $result[0]->thumbnail );
+	$woo_default_image = WP_PLUGIN_URL . '/smart-reporter-for-wp-e-commerce/resources/themes/images/woo_default_image.png';
+	$post_thumbnail_id = get_post_thumbnail_id( $_POST ['id'] );
+	$image = isset( $post_thumbnail_id ) ? wp_get_attachment_image_src( $post_thumbnail_id, 'admin-product-thumbnails' ) : '';
+	$thumbnail = ( $image[0] != '' ) ? $image[0] : '';
+	echo json_encode ( $thumbnail );
 }
 
 
