@@ -1,10 +1,10 @@
 === Smart Manager for WP e-Commerce ===
-Contributors: niravmehta, ratnakar.dubey
+Contributors: niravmehta, ratnakar.dubey, rupali
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.3
-Stable tag: 2.4
+Stable tag: 2.5
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -95,6 +95,16 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 2.5 =
+* Added: Support for "Attribute Management" for WooCommerce
+* Added: Support for adding product variation for WPeC
+* Added: Search using multiple keywords
+* Updated: Export CSV
+* Updated: Displaying "Please wait..." message when loading & unloading variation
+* Updated: Showing default image thumbnail instead of actual image
+* Fixed: Smart Manager shows price as zero by default
+* Fixed: Publish date set to current date
 
 = 2.4 =
 * Fixed: Customers & Orders list showing only 100 records ( WooCommerce )
@@ -300,6 +310,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 2.5 =
+Recommended upgrade. Added support for "Adding variations", "Attribute Management" and many other small fixes and enhancements. 
 
 = 2.4 =
 Recommended upgrade. Fixed issues in CSV export and many other small fixes and enhancements. 
