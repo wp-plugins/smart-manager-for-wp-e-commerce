@@ -1,10 +1,11 @@
 <?php
-include_once ('../../../../wp-load.php');
-include_once ('../../../../wp-includes/wp-db.php');
-include_once (ABSPATH . WPINC . '/functions.php');
-
-// for delete logs.
-require_once ('../../' . WPSC_FOLDER . '/wpsc-includes/purchaselogs.class.php');
+if ( ! defined('ABSPATH') ) {
+	include_once ('../../../../wp-load.php');
+}
+include_once (ABSPATH . 'wp-includes/wp-db.php');
+include_once (ABSPATH . 'wp-includes/functions.php');
+include_once (ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-core/wpsc-functions.php');
+include_once (ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-includes/purchaselogs.class.php');
 
 //checking the memory limit allocated
 $mem_limit = ini_get('memory_limit');
@@ -19,9 +20,9 @@ $offset = (isset ( $_POST ['start'] )) ? $_POST ['start'] : 0;
 $limit = (isset ( $_POST ['limit'] )) ? $_POST ['limit'] : 100;
 	
 // For pro version check if the required file exists
-if (file_exists ( '../pro/sm38.php' )) {
+if (file_exists ( WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/sm38.php' )) {
 	define ( 'SMPRO', true );
-	include_once ('../pro/sm38.php');
+	include_once ( WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/sm38.php' );
 } else {
 	define ( 'SMPRO', false );
 }
@@ -57,7 +58,7 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
 	if ($active_module == 'Products') { // <-products
-		
+		$wpsc_default_image = WP_PLUGIN_URL . '/wp-e-commerce/wpsc-theme/wpsc-images/noimage.png';
 		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] == 'true' && SMPRO == true) {
 			$show_variation = true;
 		} else { // query params for non-variation products
@@ -78,9 +79,6 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 					products.post_status,
 					products.post_parent,
 					category,
-					(SELECT products_guid.guid FROM {$wpdb->prefix}posts AS products_guid WHERE products.ID = products_guid.post_parent 
-						AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment' LIMIT 1) as alt_thumbnail,
-					(SELECT guid FROM {$wpdb->prefix}posts WHERE ID = image_postmeta.meta_value) as thumbnail,
 					GROUP_CONCAT(prod_othermeta.meta_key order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_key,
 					GROUP_CONCAT(prod_othermeta.meta_value order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_value,
 					prod_meta.meta_value as prod_meta
@@ -88,25 +86,36 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 		
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 			$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
-			
-			$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
-				               OR post_content LIKE '%$search_on%'
-				               OR post_excerpt LIKE '%$search_on%'
-				               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
-							   OR prod_othermeta_value LIKE '%$search_on%'
-							   OR category LIKE '%$search_on%'
-							   ";
+			$search_ons = explode( ' ', $search_on );
+			if ( is_array( $search_ons ) ) {	
+				$search_condn = " HAVING ";
+				foreach ( $search_ons as $search_on ) {
+					$search_condn .= " concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
+						               OR post_content LIKE '%$search_on%'
+						               OR post_excerpt LIKE '%$search_on%'
+						               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
+									   OR prod_othermeta_value LIKE '%$search_on%'
+									   OR category LIKE '%$search_on%'
+									   OR";
+				}
+				$search_condn = substr( $search_condn, 0, -2 );
+			} else {
+				$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
+						               OR post_content LIKE '%$search_on%'
+						               OR post_excerpt LIKE '%$search_on%'
+						               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
+									   OR prod_othermeta_value LIKE '%$search_on%'
+									   OR category LIKE '%$search_on%'
+									   ";
+			}
 		}
 
 		$from_where = "FROM {$wpdb->prefix}posts as products
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_othermeta ON (prod_othermeta.post_id = products.id and
-						prod_othermeta.meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock') )
+						prod_othermeta.meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock', '_thumbnail_id') )
 						
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_meta ON (prod_meta.post_id = products.id and
 						prod_meta.meta_key = '_wpsc_product_metadata')
-						
-						LEFT JOIN {$wpdb->prefix}postmeta as image_postmeta ON (products.ID = image_postmeta.post_id 
-						AND image_postmeta.meta_key = '_thumbnail_id')
 						
 						LEFT JOIN 
 						(SELECT GROUP_CONCAT(wt.name) as category,wtr.object_id
@@ -135,26 +144,14 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 			$encoded ['msg'] = 'No Records Found';
 		} else {
 			foreach ( $records as &$record ) {
-				if ( empty ( $record->thumbnail ) || $record->thumbnail == '' ) {
-					if ( strpos ( $record->alt_thumbnail, 'uploads/' ) < 0 || strpos ( $record->alt_thumbnail, 'uploads/' ) === false ) {
-						$record->thumbnail = strstr($record->alt_thumbnail, 'files/');
-					} else {
-						$record->thumbnail = strstr($record->alt_thumbnail, 'uploads/');
-					}
-				} else {
-					if ( strpos ( $record->thumbnail, 'uploads/' ) < 0 || strpos ( $record->thumbnail, 'uploads/' ) === false ) {
-						$record->thumbnail = strstr($record->thumbnail, 'files/');
-					} else {
-						$record->thumbnail = strstr($record->thumbnail, 'uploads/');
-					}
-				}
 				$prod_meta_values = explode ( '###', $record->prod_othermeta_value );
 				$prod_meta_key    = explode ( '###', $record->prod_othermeta_key);
-
 				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );
 				$prod_meta_key_values ['prod_meta'] = $record->prod_meta;
 				$record->category = ( $record->post_parent == 0 ) ? $record->category : '';			// To hide category name from Product's variations
-				
+				$thumbnail = isset( $prod_meta_key_values['_thumbnail_id'] ) ? wp_get_attachment_image_src( $prod_meta_key_values['_thumbnail_id'], 'admin-product-thumbnails' ) : '';
+				$record->thumbnail    = ( $thumbnail[0] != '' ) ? $thumbnail[0] : '';
+
 				foreach ( $prod_meta_key_values as $key => $value ) {
 					if (is_serialized ( $value )) {
 						
@@ -435,9 +432,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
 if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 
-	$encoded = get_data_wpsc_38 ( $_GET, $offset, $limit, true );
-	$data = $encoded ['items'];
-	unset($encoded);
 	$columns_header = array();
 	$active_module = $_GET ['active_module'];
 	switch ( $active_module ) {
@@ -502,8 +496,23 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 				$columns_header['shippingcountry'] 			= 'Shippping Country';
 			break;
 	}
+	if ( $active_module == 'Products' ) {
+		$_GET['viewCols'] = json_encode( array_keys( $columns_header ) );
+	}
+	$encoded = get_data_wpsc_38 ( $_GET, $offset, $limit, true );
+	$data = $encoded ['items'];
+	unset($encoded);
 	
-	echo export_csv_wpsc_38 ( $active_module, $columns_header, $data );
+	$file_data = export_csv_wpsc_38 ( $active_module, $columns_header, $data );
+
+	header("Content-type: text/x-csv; charset=UTF-8"); 
+	header("Content-Transfer-Encoding: binary");
+	header("Content-Disposition: attachment; filename=".$file_data['file_name']); 
+	header("Pragma: no-cache");
+	header("Expires: 0");
+		
+	echo $file_data['file_content'];
+		
 	exit;
 }
 
@@ -637,43 +646,11 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
-	global $wpdb;
-	
-	if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] == 'true') {
-		$post_status = "('publish', 'draft', 'inherit')";
-	} else {
-		$post_status = "('publish', 'draft')";
-	}
-
-	$query = "SELECT products_guid.guid as alt_thumbnail,
-					(SELECT guid FROM {$wpdb->prefix}posts WHERE ID = image_postmeta.meta_value) as thumbnail 
-					
-					FROM {$wpdb->prefix}posts as posts 
-					
-					LEFT JOIN {$wpdb->prefix}posts as products_guid ON (posts.ID = products_guid.post_parent 
-					AND products_guid.post_status = 'inherit' AND products_guid.post_type = 'attachment')
-						
-					LEFT JOIN {$wpdb->prefix}postmeta as image_postmeta ON (posts.ID = image_postmeta.post_id 
-					AND image_postmeta.meta_key = '_thumbnail_id')
-					
-					WHERE posts.post_status IN $post_status
-					AND posts.post_type    = 'wpsc-product'
-					AND posts.ID = $_POST[id]";
-	$result = $wpdb->get_results ( $query );
-	if ( empty ( $result[0]->thumbnail ) || $result[0]->thumbnail == '' ) {
-		if ( strpos ( $result[0]->alt_thumbnail, 'uploads/' ) < 0 || strpos ( $result[0]->alt_thumbnail, 'uploads/' ) === false ) {
-			$result[0]->thumbnail = strstr($result[0]->alt_thumbnail, 'files/');
-		} else {
-			$result[0]->thumbnail = strstr($result[0]->alt_thumbnail, 'uploads/');
-		}
-	} else {
-		if ( strpos ( $result[0]->thumbnail, 'uploads/' ) < 0 || strpos ( $result[0]->thumbnail, 'uploads/' ) === false ) {
-			$result[0]->thumbnail = strstr($result[0]->thumbnail, 'files/');
-		} else {
-			$result[0]->thumbnail = strstr($result[0]->thumbnail, 'uploads/');
-		}
-	}
-	echo json_encode ( $result[0]->thumbnail );
+	$wpsc_default_image = WP_PLUGIN_URL . '/wp-e-commerce/wpsc-theme/wpsc-images/noimage.png';
+	$post_thumbnail_id = get_post_thumbnail_id( $_POST ['id'] );
+	$image = isset( $post_thumbnail_id ) ? wp_get_attachment_image_src( $post_thumbnail_id, 'admin-product-thumbnails' ) : '';
+	$thumbnail = ( $image[0] != '' ) ? $image[0] : '';
+	echo json_encode ( $thumbnail );
 }
 
 ?>

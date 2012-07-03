@@ -442,7 +442,7 @@ Ext.onReady(function () {
 			width: 20,
 			hidden: true,
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-				return (record.data.thumbnail != 'false' ? '<img id=editUrl width=16px height=16px src="' + wpContentUrl + '/' + record.data.thumbnail + '"/>' : '');
+				return (record.data.thumbnail != 'false' ? '<img id=editUrl width=16px height=16px src="' + record.data.thumbnail + '"/>' : '');
 			}
 		},
 		{
@@ -710,10 +710,9 @@ Ext.onReady(function () {
 				{name: SM.productsCols.id.colName,                type: 'int'},
 				{name: SM.productsCols.name.colName,              type: 'string'},
 				{name: SM.productsCols.price.colName,             type: 'float'},
-				{name: SM.productsCols.salePrice.colName,         type: 'int'},
+				{name: SM.productsCols.salePrice.colName,         type: 'float'},
 				{name: SM.productsCols.inventory.colName,         type: 'string'},
 				{name: SM.productsCols.publish.colName,           type: 'string'},
-				{name: SM.productsCols.salePrice.colName,         type: 'float'},
 				{name: SM.productsCols.sku.colName,               type: 'string'},
 				{name: SM.productsCols.group.colName,             type: 'string'},
 				{name: SM.productsCols.disregardShipping.colName, type: 'string'},
@@ -861,7 +860,7 @@ var pagingToolbar = new Ext.PagingToolbar({
                     width: 0, 
                     height: 0,
                     css: 'display:none;visibility:hidden;height:0px;', 
-                    src: jsonURL+'?cmd=exportCsvWpsc&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+''
+                    src: jsonURL+'?cmd=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
                 }); 
 			}
 		}
@@ -2027,6 +2026,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							var actionsData        = new Array();
 							var toolbarParent      = this.findParentByType(batchUpdateToolbarInstance, true);
 							var comboFieldCmp      = toolbarParent.get(0);
+							var comboActionCmp     = toolbarParent.get(2);
 							var selectedValue      = comboFieldCmp.value;
 							
 							if(SM.activeModule == 'Orders' || SM.activeModule == 'Customers'){
@@ -2046,10 +2046,18 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								}
 								actionStore.loadData(actionsData);
 							}else{
-								// on swapping between the toolbars	
-							actionStore.loadData(actions[SM['productsCols'][selectedValue].actionType]);
+//								// on swapping between the toolbars	
+								actionStore.loadData( actions[SM['productsCols'][selectedValue].actionType] );
 							}
-						},					
+						},
+					beforeselect: function( combo, record, index ) {
+							var toolbarParent      = this.findParentByType(batchUpdateToolbarInstance, true);
+							var comboFieldCmp      = toolbarParent.get(0);
+							
+							if ( comboFieldCmp.value.substr( 0, 14 ) == 'groupVariation' && index == 0 ) {
+								return false;
+							}
+						},
 					select: function() {
 						var toolbarParent      = this.findParentByType(batchUpdateToolbarInstance, true);
 						var comboFieldCmp      = toolbarParent.get(0);
@@ -2099,7 +2107,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var comboFieldCmp = toolbarParent.get(0);
 						var selectedFieldIndex = comboFieldCmp.selectedIndex;
 						var selectedValue      = comboFieldCmp.value;
-						
+
 						if(SM.activeModule == 'Orders' || SM.activeModule == 'Customers'){
 							var field_type = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].type;
 							var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;

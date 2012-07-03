@@ -1,7 +1,9 @@
 <?php
-include_once ('../../../../wp-load.php');
-include_once ('../../../../wp-includes/wp-db.php');
-include_once ( ABSPATH . WPINC . '/functions.php');
+if ( ! defined('ABSPATH') ) {
+	include_once ('../../../../wp-load.php');
+}
+include_once (ABSPATH . 'wp-includes/wp-db.php');
+include_once (ABSPATH . 'wp-includes/functions.php');
 
 global $wpdb;
 $limit = 10;
@@ -18,13 +20,12 @@ if (isset ( $_POST ['limit'] ))
 	$limit = $wpdb->_real_escape($_POST ['limit']);
 	
 // For pro version check if the required file exists
-if (file_exists ( '../pro/sm37.php' )) {
+if (file_exists ( WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/sm37.php' )) {
 	define ( 'SMPRO', true );
+	include_once ( WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/sm37.php' );
 } else {
 	define ( 'SMPRO', false );
 }
-if (SMPRO == true)
-	include_once ('../pro/sm37.php');
 	
 // getting the active module in the grid
 $active_module = $_POST ['active_module'];

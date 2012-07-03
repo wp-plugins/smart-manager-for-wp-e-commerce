@@ -2,6 +2,7 @@
 <?php
 global $wpdb, $woocommerce;
 $limit = 2;
+
 // to set javascript variable of file exists
 $fileExists = (SMPRO === true) ? 1 : 0;
 $wpsc = (WPSC_RUNNING === true) ? 1 :0;
@@ -449,10 +450,13 @@ if (WPSC_RUNNING === true) {
 				left join {$wpdb->prefix}terms as parent_terms on (parent_terms.term_id = {$wpdb->prefix}term_taxonomy.parent)
 				where taxonomy = 'product_cat'
 		        ";
+		
+		$attribute_list_query = "SELECT attribute_label, attribute_name FROM {$wpdb->prefix}woocommerce_attribute_taxonomies";
 }
 
 $result = mysql_query ( $query );
 while ( $data = mysql_fetch_assoc ( $result ) ) {
+
 	$count = ($old_group_id != $data ['group_id']) ? 0 : ++ $count;
 	
 	 if($count == 0){//setting the default categories for new product
@@ -477,8 +481,78 @@ while ( $data = mysql_fetch_assoc ( $result ) ) {
 	$old_group_id = $data ['group_id']; //string the group_id as old id
 }
 
+if (WPSC_RUNNING === true && IS_WPSC38) {
+	
+	$query = "SELECT {$wpdb->prefix}term_taxonomy.term_taxonomy_id as category_id,
+			          {$wpdb->prefix}terms.name as category_name,
+			          {$wpdb->prefix}term_taxonomy.parent as group_id,
+			          IFNULL(parent_terms.name,'Sets') as group_name
+			          
+					FROM {$wpdb->prefix}term_taxonomy join  {$wpdb->prefix}terms on ({$wpdb->prefix}terms.term_id = {$wpdb->prefix}term_taxonomy.term_id)
+					left join {$wpdb->prefix}terms as parent_terms on (parent_terms.term_id = {$wpdb->prefix}term_taxonomy.parent)
+					where taxonomy = 'wpsc-variation' ORDER BY group_id
+			        ";
+	
+	$result = mysql_query ( $query );
+	while ( $data = mysql_fetch_assoc ( $result ) ) {
+
+		$count = ($old_group_id != $data ['group_id']) ? 0 : ++ $count;
+		
+		 if($count == 0){//setting the default categories for new product
+		 	$cat_id = $data ['category_id'];
+		 	$cat_name = $wpdb->_real_escape ( $data ['category_name']);
+		 }
+		
+		$categories ["category-Variation" . $data ['group_id']] [$count] [0] = $wpdb->_real_escape ( $data ['category_id'] );
+		$categories ["category-Variation" . $data ['group_id']] [$count] [1] = $wpdb->_real_escape ( $data ['category_name'] );
+		
+		$products_cols ["groupVariation" . $data ['group_id']] ['name'] = "Variation: " . $wpdb->_real_escape ( $data ['group_name'] );
+		$products_cols ["groupVariation" . $data ['group_id']] ['actionType'] = "category_actions";
+		$products_cols ["groupVariation" . $data ['group_id']] ['colName'] = (IS_WPSC37) ? "category_id" : "term_taxonomy_id";
+		$products_cols ["groupVariation" . $data ['group_id']] ['tableName'] = (IS_WPSC37) ? WPSC_TABLE_ITEM_CATEGORY_ASSOC : "{$wpdb->prefix}term_relationships";
+		$products_cols ["groupVariation" . $data ['group_id']] ['colFilter'] = "Variation" . $wpdb->_real_escape ( $data ['group_id'] );
+		$old_group_id = $data ['group_id']; //string the group_id as old id
+	}
+	
+} elseif (WOO_RUNNING === true) {
+	
+	$attribute_results = $wpdb->get_results( $attribute_list_query, 'ARRAY_A' );
+	$att_count = 0;
+	$attribute [$att_count] [] = $att_count;
+	$attribute [$att_count] [] = "Custom";
+	$attribute [$att_count] [] = "custom";
+	$att_count++;
+	foreach ( $attribute_results AS $attribute_result ) {
+		$attribute [$att_count] [] = $att_count;
+		$attribute [$att_count] [] = $wpdb->_real_escape ( $attribute_result ['attribute_label'] );
+		$attribute [$att_count] [] = $wpdb->_real_escape ( $attribute_result ['attribute_name'] );
+		$att_count++;
+	
+	}
+	
+	$products_cols ["groupAttributeAdd"] ['name'] = "Add Attribute";
+	$products_cols ["groupAttributeAdd"] ['actionType'] = "attribute_action";
+	$products_cols ["groupAttributeAdd"] ['colName'] = "term_taxonomy_id";
+	$products_cols ["groupAttributeAdd"] ['tableName'] = "{$wpdb->prefix}term_relationships";		
+	$products_cols ["groupAttributeAdd"] ['colFilter'] = "AttributeAdd";
+	
+	$products_cols ["groupAttributeChange"] ['name'] = "Change Attribute";
+	$products_cols ["groupAttributeChange"] ['actionType'] = "attribute_action";
+	$products_cols ["groupAttributeChange"] ['colName'] = "term_taxonomy_id";
+	$products_cols ["groupAttributeChange"] ['tableName'] = "{$wpdb->prefix}term_relationships";		
+	$products_cols ["groupAttributeChange"] ['colFilter'] = "AttributeChange";
+	
+	$products_cols ["groupAttributeRemove"] ['name'] = "Remove Attribute";
+	$products_cols ["groupAttributeRemove"] ['actionType'] = "attribute_action";
+	$products_cols ["groupAttributeRemove"] ['colName'] = "term_taxonomy_id";
+	$products_cols ["groupAttributeRemove"] ['tableName'] = "{$wpdb->prefix}term_relationships";		
+	$products_cols ["groupAttributeRemove"] ['colFilter'] = "AttributeRemove";
+
+}
+
 $categories = json_encode ( $categories );
 $products_cols = json_encode($products_cols);
+$attribute = json_encode($attribute);
 // EOF Product category
 // BOF Products Fields
 
@@ -511,7 +585,8 @@ if (WPSC_RUNNING === true) {
 	echo "
 	var regions             =  '" . $encodedRegions . "';
 	var ordersStatus        =  '" . $encodedOrderStatus . "';
-	var weightUnits         =  '" . $encodedWeightUnits . "';";
+	var weightUnits         =  '" . $encodedWeightUnits . "';
+	var attribute           =  '" . $attribute  . "';";
 }
 	echo "
 	var newCatName          = '" . $cat_name . "';

@@ -36,6 +36,7 @@ Ext.notification = function(){
 // global Variables and array declaration.
 var actions            = new Array(), //an array for actions combobox in batchupdate window.
 	categories         = new Array(), //an array for category combobox in batchupdate window.
+	attribute          = new Array(),
 	cellClicked        = false,  	  //flag to check if any cell is clicked in the editor grid.
 	search_timeout_id  = 0, 		  //timeout for sending request while searching.
 	colModelTimeoutId  = 0, 		  //timeout to reconfigure the grid.
@@ -401,11 +402,11 @@ Ext.onReady(function () {
 			header: SM.productsCols.image.name,
 			id: 'image',
 			dataIndex: SM.productsCols.image.colName,
-			tooltip: 'Product Image',
+			tooltip: 'Product Images',
 			width: 20,
 			hidden: true,
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-				return (record.data.thumbnail != 'false' ? '<img id=editUrl width=16px height=16px src="' + wpContentUrl + '/' + record.data.thumbnail + '"/>' : '');
+				return (record.data.thumbnail != 'false' ? '<img width=16px height=16px src="' + record.data.thumbnail + '"/>' : '');
 			}
 		},
 		{
@@ -422,14 +423,13 @@ Ext.onReady(function () {
 		{
 			header: SM.productsCols.price.name,
 			id: 'price',
-			type: 'float',
 			align: 'right',
 			sortable: true,
 			dataIndex: SM.productsCols.price.colName,
 			tooltip: 'Price',
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
-				allowBlank: false,
+				allowBlank: true,
 				allowNegative: false
 			})
 		},{
@@ -441,7 +441,7 @@ Ext.onReady(function () {
 			renderer: amountRenderer,
 			tooltip: 'Sale Price',
 			editor: new fm.NumberField({
-				allowBlank: false,
+				allowBlank: true,
 				allowNegative: false
 			})
 		},{
@@ -478,7 +478,7 @@ Ext.onReady(function () {
 			dataIndex: SM.productsCols.inventory.colName,
 			tooltip: 'Inventory',
 			editor: new fm.NumberField({
-				allowBlank: false,
+				allowBlank: true,
 				allowNegative: false
 			})
 		},{
@@ -488,7 +488,7 @@ Ext.onReady(function () {
 			dataIndex: SM.productsCols.sku.colName,
 			tooltip: 'SKU',
 			editor: new fm.TextField({
-				allowBlank: false
+				allowBlank: true
 			})
 		},{
 			header: SM.productsCols.group.name,
@@ -506,7 +506,7 @@ Ext.onReady(function () {
 			tooltip: 'Weight',
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
-				allowBlank: false,
+				allowBlank: true,
 				allowNegative: false
 			})
 		},{
@@ -550,7 +550,7 @@ Ext.onReady(function () {
 			tooltip: 'Height',			
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
-				allowBlank: false,
+				allowBlank: true,
 				allowNegative: false
 			})
 		},{
@@ -564,7 +564,7 @@ Ext.onReady(function () {
 			tooltip: 'Width',
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
-				allowBlank: false,
+				allowBlank: true,
 				allowNegative: false
 			})
 		},{
@@ -578,7 +578,7 @@ Ext.onReady(function () {
 			tooltip: 'Length',			
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
-				allowBlank: false,
+				allowBlank: true,
 				allowNegative: false
 			})
 		},{
@@ -623,13 +623,12 @@ Ext.onReady(function () {
 		fields: [
 				{name: SM.productsCols.id.colName,                type: 'int'},
 				{name: SM.productsCols.name.colName,              type: 'string'},
-				{name: SM.productsCols.price.colName,             type: 'float'},
-				{name: SM.productsCols.salePrice.colName,         type: 'int'},
+				{name: SM.productsCols.price.colName,             type: 'string'},
+				{name: SM.productsCols.salePrice.colName,         type: 'string'},
 				{name: SM.productsCols.salePriceFrom.colName,     type: 'date', dateFormat: 'Y-m-d'},
 				{name: SM.productsCols.salePriceTo.colName,       type: 'date', dateFormat: 'Y-m-d'},
 				{name: SM.productsCols.inventory.colName,         type: 'string'},
 				{name: SM.productsCols.publish.colName,           type: 'string'},
-				{name: SM.productsCols.salePrice.colName,         type: 'float'},
 				{name: SM.productsCols.sku.colName,               type: 'string'},
 				{name: SM.productsCols.group.colName,             type: 'string'},
 				{name: SM.productsCols.desc.colName,              type: 'string'},
@@ -1214,7 +1213,9 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var comboCategoriesActionCmp = toolbarParent.get(7);
 						var setTextfield = toolbarParent.get(6);
 						var comboActionCmp = toolbarParent.get(2);
-						var comboCountriesCmp = toolbarParent.get(4);						
+						var comboCountriesCmp = toolbarParent.get(4);
+						var selectedActionvalue = comboActionCmp.value;
+						var textField2Cmp      = toolbarParent.get(8);						
 						
 						toolbarParent.get(5).hide();			//to hide extra space on batchUpdateToolbar
 						
@@ -1226,30 +1227,41 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							}							
 							if (field_type == 'category' || categoryActionType == 'category_actions') {
 								setTextfield.hide();
+								textField2Cmp.hide();
 								comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
+							} else if(field_type == 'attribute_action'){
+								setTextfield.hide();
+								textField2Cmp.hide();
+								comboCategoriesActionCmp.hide();
 							} else if (field_type == 'string') {
 								setTextfield.hide();
+								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
 							} else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping') {								
 								setTextfield.hide();
+								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
 							} else if (field_name == 'Weight' || field_name == 'Variations: Weight'||field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
 								setTextfield.show();
+								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
 							} else if(field_name == 'Order Status'){
 								actions_index = field_type;
 								setTextfield.hide();
+								textField2Cmp.hide();
 								comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
 							} else if (field_name.indexOf('Country') != -1) {
 								actions_index = 'bigint';
 								setTextfield.hide();
+								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
 								comboCountriesCmp.show();
 								comboCountriesCmp.reset();
 							} else {
 								setTextfield.show();
+								textField2Cmp.hide();
 								if (field_type == 'blob' || field_type == 'modStrActions') {
 									objRegExp = '';
 									regexError = '';
@@ -1272,7 +1284,9 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							setTextfield.regex = '';
 							setTextfield.regexText = '';	
 						}else if(SM.activeModule == 'Products'){
-							actionStore.loadData(actions[SM['productsCols'][this.value].actionType]);
+							if ( this.value.substring( 0, 14 ) != 'groupAttribute'){
+								actionStore.loadData(actions[SM['productsCols'][this.value].actionType]);
+							}
 							// @todo apply regex accordign to the req
 							setTextfield.regex = objRegExp;
 							setTextfield.regexText = regexError;	
@@ -1324,8 +1338,18 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								}
 								actionStore.loadData(actionsData);
 							}else{
-								// on swapping between the toolbars	
-								actionStore.loadData(actions[SM['productsCols'][selectedValue].actionType]);
+								if ( selectedValue.substring( 0, 14 ) == 'groupAttribute' ) {
+									var attributeArray = Ext.decode(attribute);
+									if(selectedValue == 'groupAttributeChange' || selectedValue == 'groupAttributeRemove'){
+										attributeArray.splice(0,1);
+										actionStore.loadData(attributeArray);
+									} else {
+										actionStore.loadData(attributeArray);
+									}
+								} else {
+									// on swapping between the toolbars	
+									actionStore.loadData(actions[SM['productsCols'][selectedValue].actionType]);
+								}
 							}
 						},					
 					select: function() {
@@ -1333,9 +1357,60 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var comboFieldCmp      = toolbarParent.get(0);
 						var comboactionCmp     = toolbarParent.get(2);
 						var comboCountriesCmp  = toolbarParent.get(4);
+						var textField1Cmp      = toolbarParent.get(6);
 						var selectedFieldIndex = comboFieldCmp.selectedIndex;
 						var selectedValue      = comboFieldCmp.value;
 						var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
+						var selectedActionvalue = comboactionCmp.value;
+						var comboCategoriesActionCmp = toolbarParent.get(7);
+						var textField2Cmp      = toolbarParent.get(8);
+						
+						if ( selectedValue.substring( 0, 14 ) == 'groupAttribute' ){
+							if( selectedActionvalue == 'custom'){
+								comboCategoriesActionCmp.hide();
+								comboCategoriesActionCmp.reset();
+								textField1Cmp.emptyText = 'Enter Attribute Name...';
+								textField1Cmp.regex = null;
+								textField1Cmp.show();
+								textField2Cmp.show();
+								textField1Cmp.reset();
+								textField2Cmp.reset();
+							} else {
+								comboCategoriesActionCmp.show();
+								comboCategoriesActionCmp.reset();
+								textField1Cmp.hide();
+								textField2Cmp.hide();
+								var object = {
+												url:jsonURL
+												,method:'post'
+												,callback: function(options, success, response)	{
+													var myJsonObj = Ext.decode(response.responseText);
+													if(true !== success){
+														Ext.notification.msg('Failed',response.responseText) ;
+														return;
+													} try{
+														if ( myJsonObj != '' ) {
+															categoryStore.loadData(myJsonObj);
+														}
+														return;
+													} catch(e){
+														var err = e.toString();
+														Ext.notification.msg('Error', err);
+														return;
+													}
+												}
+												,scope:this
+												,params:
+												{
+													cmd: 'getTerms',
+											 		active_module: SM.activeModule,
+											 		action_name: selectedValue,
+											 		attribute_name: selectedActionvalue
+												}
+											};
+								Ext.Ajax.request(object);
+							}
+						}
 					}
 				}
 			},'',{
@@ -1425,7 +1500,12 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				emptyText: 'Enter the value...',
 				cls: 'searchPanel',
 				hidden: true,
-				selectOnFocus: true
+				selectOnFocus: true,
+				listeners: {
+					beforerender: function( cmp ) {
+						cmp.emptyText = 'Enter the value...';
+					}
+				}
 			},{
 				xtype: 'combo',
 				width: 170,
@@ -1455,12 +1535,37 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var field_name		   = toolbarParent.items.items[0].store.reader.jsonData.items[selectedFieldIndex].name;
 						
 						if (SM.activeModule == 'Products') {
-							categoryStore.loadData(categories["category-"+SM['productsCols'][selectedValue].colFilter]);
+							if ( selectedValue.substring( 0, 14 ) != 'groupAttribute' ){
+								categoryStore.loadData(categories["category-"+SM['productsCols'][selectedValue].colFilter]);
+							}
 						} else if(SM.activeModule == 'Orders' && field_name == 'Order Status') {
 							this.store = orderStatusStore;
 						}
 				    }
 				}
+			},{
+				xtype: 'textfield',
+				width: 170,
+				allowBlank: false,
+				style: {
+					fontSize: '12px',
+					paddingLeft: '2px'
+				},
+				enableKeyEvents: true,
+				displayField: 'fullname',
+				emptyText: 'Enter values...',
+				cls: 'searchPanel',
+				hidden: true,
+				listeners: {
+					render: function( cmp ) {
+						Ext.QuickTips.register({
+						    target: cmp.getEl(),
+						    title: 'Important:',
+						    text: 'For more than one values, use pipe (|) as delimiter'
+						});
+					}
+				},
+				selectOnFocus: true
 			}, '->',
 			{
 				icon: imgURL + 'del_row.png',
@@ -1493,7 +1598,7 @@ var batchUpdateToolbar = new Ext.Toolbar({
 		}
 	}]
 });
-batchUpdateToolbar.get(0).get(9).hide(); //hide delete row icon from first toolbar.
+batchUpdateToolbar.get(0).get(10).hide(); //hide delete row icon from first toolbar.
 
 
 var batchUpdatePanel = new Ext.Panel({
@@ -1587,6 +1692,9 @@ batchUpdateWindow = new Ext.Window({
 			
 			firstToolbar.items.items[7].reset();
 			firstToolbar.items.items[7].hide();
+
+			firstToolbar.items.items[8].reset();
+			firstToolbar.items.items[8].hide();
 
 			values = '';
 			ids = '';

@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 2.4
+Version: 2.5
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012 Store Apps All rights reserved.
@@ -29,7 +29,7 @@ function smart_deactivate() {
 
 function smart_get_latest_version() {
 	$sm_plugin_info = get_site_transient ( 'update_plugins' );
-	$latest_version = $sm_plugin_info->response [SM_PLUGIN_FILE]->new_version;
+	$latest_version = isset( $sm_plugin_info ) ? $sm_plugin_info->response [SM_PLUGIN_FILE]->new_version : '';
 	return $latest_version;
 }
 
@@ -50,6 +50,7 @@ function smart_is_pro_updated() {
  */
 //if (is_admin ()) {
 	include ABSPATH . 'wp-includes/pluggable.php';
+	require_once( ABSPATH . WPINC . '/default-constants.php' );
 	$plugin = plugin_basename ( __FILE__ );
 	define ( 'SM_PLUGIN_DIR',dirname($plugin));
 	define ( 'SM_PLUGIN_FILE', $plugin );
@@ -91,7 +92,7 @@ function smart_is_pro_updated() {
 		}
 		wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
 		wp_register_script ( 'sm_ext_all', plugins_url ( '/ext/ext-all.js', __FILE__ ), array ('sm_ext_base' ), $ext_version );
-		if ($_GET['post_type'] == 'wpsc-product' || $_GET['page'] == 'smart-manager-wpsc') {
+		if ( ( isset($_GET['post_type']) && $_GET['post_type'] == 'wpsc-product' ) || ( isset($_GET['page']) && $_GET['page'] == 'smart-manager-wpsc' ) ) {
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager.js', __FILE__ ), array ('sm_ext_all'), $sm_plugin_info ['Version'] );
 			define('WPSC_RUNNING', true);
 			define('WOO_RUNNING', false);
@@ -102,7 +103,7 @@ function smart_is_pro_updated() {
 				define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.8', '<' ));
 				define('IS_WPSC388', version_compare ( WPSC_VERSION, '3.8.8', '>=' ));
 			}
-		} else if ($_GET['post_type'] == 'product' || $_GET['page'] == 'smart-manager-woo') {
+		} else if ( ( isset($_GET['post_type']) && $_GET['post_type'] == 'product' ) || ( isset($_GET['page']) && $_GET['page'] == 'smart-manager-woo' ) ) {
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager-woo.js', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
 			define('WPSC_RUNNING', false);
 			define('WOO_RUNNING', true);
@@ -133,7 +134,7 @@ function smart_is_pro_updated() {
 	function smart_admin_notices() {
 		if (! is_plugin_active ( 'woocommerce/woocommerce.php' ) && ! is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
 			echo '<div id="notice" class="error"><p>';
-			_e ( '<b>Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> plugin or <a href="http://www.woothemes.com/woocommerce/">WooCommerce</a> plugin. Please install and activate it.' );
+			_e ( '<b>Smart Manager</b> add-on requires <a href="http://www.storeapps.org/wpec/">WP e-Commerce</a> plugin or <a href="http://www.storeapps.org/woocommerce/">WooCommerce</a> plugin. Please install and activate it.' );
 			echo '</p></div>', "\n";
 		}
 	}
@@ -154,7 +155,7 @@ function smart_is_pro_updated() {
 		$current_user = wp_get_current_user();
 		$page = add_submenu_page ('edit.php?post_type=product', 'Smart Manager', 'Smart Manager', $current_user->roles[0], 'smart-manager-woo', 'smart_show_console' );
 	    
-		if ($_GET ['action'] != 'sm-settings') { // not be include for settings page
+		if ( $_GET ['action'] != 'sm-settings') { // not be include for settings page
 			add_action ( 'admin_print_scripts-' . $page, 'smart_admin_scripts' );
 		}
 		add_action ( 'admin_print_styles-' . $page, 'smart_admin_styles' );
@@ -166,7 +167,7 @@ function smart_is_pro_updated() {
 		$current_user = wp_get_current_user();
 		$page = add_submenu_page ( $base_page, 'Smart Manager', 'Smart Manager', $current_user->roles[0], 'smart-manager-wpsc', 'smart_show_console' );
 		
-		if ($_GET ['action'] != 'sm-settings') { // not be include for settings page
+		if ( $_GET ['action'] != 'sm-settings' ) { // not be include for settings page
 			add_action ( 'admin_print_scripts-' . $page, 'smart_admin_scripts' );
 		}
 		
@@ -187,7 +188,7 @@ function smart_is_pro_updated() {
 	}
 	
 	add_action('admin_menu', 'smart_add_menu_access', 9);
-
+	
 	if ( is_multisite() && is_network_admin() ) {
 		
 		function smart_add_license_key_page() {
@@ -213,7 +214,7 @@ function smart_is_pro_updated() {
 		function smart_add_privilege_page() {
 			$page = add_submenu_page ('options-general.php', 'Smart Manager', 'Smart Manager', 10, 'smart-manager-privilege', 'smart_show_privilege_page' );
 		    
-			if ($_GET ['action'] != 'sm-settings') { // not be include for settings page
+			if ( isset($_GET ['action']) && $_GET ['action'] != 'sm-settings') { // not be include for settings page
 				add_action ( 'admin_print_scripts-' . $page, 'smart_admin_scripts' );
 			}
 			add_action ( 'admin_print_styles-' . $page, 'smart_admin_styles' );
@@ -242,7 +243,7 @@ function smart_is_pro_updated() {
 		$latest_version = smart_get_latest_version ();
 		$is_pro_updated = smart_is_pro_updated ();
 		
-		if ($_GET ['action'] == 'sm-settings') {
+		if ( isset($_GET ['action']) && $_GET ['action'] == 'sm-settings') {
 			smart_settings_page ();
 		} else {
 			$base_path = WP_PLUGIN_DIR . '/' . str_replace ( basename ( __FILE__ ), "", plugin_basename ( __FILE__ ) ) . 'sm/';
@@ -251,15 +252,8 @@ function smart_is_pro_updated() {
 <div id="icon-smart-manager" class="icon32"><br />
 </div>
 
-<h2><?php
-			echo _e ( 'Smart Manager' );
-			echo ' ';
-			if (SMPRO === true) {
-				echo _e ( 'Pro' );
-			} else {
-				echo _e ( 'Lite' );
-			}
-			?>
+<h2><?php echo 'Smart Manager ';
+		  echo ( SMPRO === true ) ? 'Pro' : 'Lite'; ?>
    		<p class="wrap" style="font-size: 12px"><span style="float: right"> <?php
 			if ( SMPRO === true && ! is_multisite() ) {
 				$before_plug_page = '<a href="admin.php?page=smart-manager-';
@@ -356,7 +350,7 @@ if (SMPRO === true) {
 					}
 				}
 			} else {
-				$error_message = '<b>Smart Manager</b> add-on requires <a href="http://getshopped.org/">WP e-Commerce</a> plugin or <a href="http://www.woothemes.com/woocommerce/">WooCommerce</a> plugin. Please install and activate it.';
+				$error_message = '<b>Smart Manager</b> add-on requires <a href="http://www.storeapps.org/wpec/">WP e-Commerce</a> plugin or <a href="http://www.storeapps.org/woocommerce/">WooCommerce</a> plugin. Please install and activate it.';
 			}
 
 			if ($error_message != '') {
