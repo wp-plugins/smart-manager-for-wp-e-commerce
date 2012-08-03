@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.3
-Stable tag: 2.5
+Stable tag: 2.6
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -95,6 +95,18 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 2.6 =
+* Added: Multilingual support for Danish & French languages
+* Updated: "Batch Update" of Customers & Orders for WPec - added extra field for region
+* Updated: Un-wanted changes in products when updating from Smart Manager
+* Updated: Automatic update of Smart Manager in WordPress Multisite
+* Updated: Reduced number of request to Database
+* Fixed: Smart Manager creation & removal of variation in WPeC
+* Fixed: Batch Updation of Country & Region in Customer & Order dashboard
+* Fixed: Publish date set to current date in WPeC
+* Fixed: Export CSV showing PHP Warnings
+* Fixed: Export CSV exporting thumbnail's URL instead of original image's URL
 
 = 2.5 =
 * Added: Support for "Attribute Management" for WooCommerce
@@ -310,6 +322,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 2.6 =
+Multilingual support, export CSV fixes and batch update enhancements. Recommended upgrade.
 
 = 2.5 =
 Recommended upgrade. Added support for "Adding variations", "Attribute Management" and many other small fixes and enhancements. 
