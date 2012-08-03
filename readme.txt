@@ -9,6 +9,8 @@ Stable tag: 2.6
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
 
+Thousands of people are already raving about it. Download Smart Manager today!
+
 == Description ==
 Smart Manager is a unique, revolutionary tool that gives you the **power to efficiently manage products, 
 product variations, customers and orders** using the popular WordPress e-Commerce plugin 
