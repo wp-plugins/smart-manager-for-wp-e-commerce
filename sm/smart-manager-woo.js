@@ -34,8 +34,7 @@ Ext.notification = function(){
 }();// Floating notification end
 
 // global Variables and array declaration.
-var actions            = new Array(), //an array for actions combobox in batchupdate window.
-	categories         = new Array(), //an array for category combobox in batchupdate window.
+var	categories         = new Array(), //an array for category combobox in batchupdate window.
 	attribute          = new Array(),
 	cellClicked        = false,  	  //flag to check if any cell is clicked in the editor grid.
 	search_timeout_id  = 0, 		  //timeout for sending request while searching.
@@ -45,61 +44,6 @@ var actions            = new Array(), //an array for actions combobox in batchup
 	weightUnitStore    = '',
 	showOrdersView     = '',
 	countriesStore     = '';
-
-//creating an array of actions to be used in the actions combobox in batch update window.
-actions['blob']   = [{'id': 0,'name': 'set to','value': 'SET_TO'},
-				     {'id': 1,'name': 'append','value': 'APPEND'},
-				     {'id': 2,'name': 'prepend','value': 'PREPEND'}];
-
-actions['bigint'] = [{'id': 0,'name': 'set to','value': 'SET_TO'}];
-
-actions['real']   = [{'id': 0,'name': 'set to','value': 'SET_TO'},
-				     {'id': 1,'name': 'increase by %','value': 'INCREASE_BY_%'},
-				     {'id': 1,'name': 'decrease by %','value': 'DECREASE_BY_%'},
-				     {'id': 2,'name': 'increase by number','value': 'INCREASE_BY_NUMBER'},
-				     {'id': 3,'name': 'decrease by number','value': 'DECREASE_BY_NUMBER'}];
-
-actions['int']    = [{'id': 0,'name': 'set to','value': 'SET_TO'},
-				     {'id': 1,'name': 'increase by number','value': 'INCREASE_BY_NUMBER'},
-				     {'id': 2,'name': 'decrease by number','value': 'DECREASE_BY_NUMBER'}];
-
-actions['float']  = [{'id': 0,'name': 'set to','value': 'SET_TO'},
-			         {'id': 1,'name': 'increase by number','value': 'INCREASE_BY_NUMBER'},
-			         {'id': 2,'name': 'decrease by number','value': 'DECREASE_BY_NUMBER'}];
-
-actions['string'] = [{'id': 0,'name': 'Yes','value': 'YES'},
-					 {'id': 1,'name': 'No','value': 'NO'}];
-
-actions['category_actions'] = [{'id': 0,'name': 'set to','value': 'SET_TO'},
-							   {'id': 1,'name': 'add to','value': 'ADD_TO'},
-							   {'id': 2,'name': 'remove from','value': 'REMOVE_FROM'}];
-
-actions['modStrActions']   = [[ 0, 'set to', 'SET_TO'],
-                              [ 1, 'append', 'APPEND'],
-                              [ 2, 'prepend', 'PREPEND']];
-
-actions['setStrActions']   = [[ 0,'set to', 'SET_TO']];
-
-actions['setAdDelActions'] = [[0, 'set to', 'SET_TO'],
-                              [1, 'add to', 'ADD_TO'],
-                              [2, 'remove from', 'REMOVE_FROM']];
-
-actions['modIntPercentActions']   = [[0, 'set to', 'SET_TO'],
-                                     [1, 'increase by %', 'INCREASE_BY_%'],
-                                     [2, 'decrease by %', 'DECREASE_BY_%'],
-                                     [3, 'increase by number','INCREASE_BY_NUMBER'],
-                                     [4, 'decrease by number', 'DECREASE_BY_NUMBER']];
-
-actions['modIntActions']   		  = [[0, 'set to', 'SET_TO'],
-                              		 [1, 'increase by number','INCREASE_BY_NUMBER'],
-                              		 [2, 'decrease by number', 'DECREASE_BY_NUMBER']];
-
-actions['YesNoActions']   		  = [[0,'Yes','YES'],
-                             		 [1,'No','NO']];
-
-actions['category_actions'] 	  = [[0, 'set to','SET_TO'],
-							   		 [1,'add to','ADD_TO'],
-							   		 [2,'remove from','REMOVE_FROM']];
 
 Ext.onReady(function () {
 	try{
@@ -129,6 +73,63 @@ Ext.onReady(function () {
 	SM.incVariation      = false;
 	SM.typeColIndex 	 = '';
 	
+	var actions = new Array();
+	
+	//creating an array of actions to be used in the actions combobox in batch update window.
+	actions['blob']   = [{'id': 0,'name': getText('set to'), 'value':'SET_TO'},
+					     {'id': 1,'name': getText('append'),'value': 'APPEND'},
+					     {'id': 2,'name': getText('prepend'),'value': 'PREPEND'}];
+
+	actions['bigint'] = [{'id': 0,'name': getText('set to'),'value': 'SET_TO'}];
+
+	actions['real']   = [{'id': 0,'name': getText('set to'),'value': 'SET_TO'},
+					     {'id': 1,'name': getText('increase by %'),'value': 'INCREASE_BY_%'},
+					     {'id': 1,'name': getText('decrease by %'),'value': 'DECREASE_BY_%'},
+					     {'id': 2,'name': getText('increase by number'),'value': 'INCREASE_BY_NUMBER'},
+					     {'id': 3,'name': getText('decrease by number'),'value': 'DECREASE_BY_NUMBER'}];
+
+	actions['int']    = [{'id': 0,'name': getText('set to'),'value': 'SET_TO'},
+					     {'id': 1,'name': getText('increase by number'),'value': 'INCREASE_BY_NUMBER'},
+					     {'id': 2,'name': getText('decrease by number'),'value': 'DECREASE_BY_NUMBER'}];
+
+	actions['float']  = [{'id': 0,'name': getText('set to'),'value': 'SET_TO'},
+				         {'id': 1,'name': getText('increase by number'),'value': 'INCREASE_BY_NUMBER'},
+				         {'id': 2,'name': getText('decrease by number'),'value': 'DECREASE_BY_NUMBER'}];
+
+	actions['string'] = [{'id': 0,'name': getText('Yes'),'value': 'YES'},
+						 {'id': 1,'name': getText('No'),'value': 'NO'}];
+
+	actions['category_actions'] = [{'id': 0,'name': getText('set to'),'value': 'SET_TO'},
+								   {'id': 1,'name': getText('add to'),'value': 'ADD_TO'},
+								   {'id': 2,'name': getText('remove from'),'value': 'REMOVE_FROM'}];
+
+	actions['modStrActions']   = [[ 0, getText('set to'), 'SET_TO'],
+	                              [ 1, getText('append'), 'APPEND'],
+	                              [ 2, getText('prepend'), 'PREPEND']];
+
+	actions['setStrActions']   = [[ 0,getText('set to'), 'SET_TO']];
+
+	actions['setAdDelActions'] = [[0, getText('set to'), 'SET_TO'],
+	                              [1, getText('add to'), 'ADD_TO'],
+	                              [2, getText('remove from'), 'REMOVE_FROM']];
+
+	actions['modIntPercentActions']   = [[0, getText('set to'), 'SET_TO'],
+	                                     [1, getText('increase by %'), 'INCREASE_BY_%'],
+	                                     [2, getText('decrease by %'), 'DECREASE_BY_%'],
+	                                     [3, getText('increase by number'),'INCREASE_BY_NUMBER'],
+	                                     [4, getText('decrease by number'), 'DECREASE_BY_NUMBER']];
+
+	actions['modIntActions']   		  = [[0, getText('set to'), 'SET_TO'],
+	                              		 [1, getText('increase by number'),'INCREASE_BY_NUMBER'],
+	                              		 [2, getText('decrease by number'), 'DECREASE_BY_NUMBER']];
+
+	actions['YesNoActions']   		  = [[0,getText('Yes'),'YES'],
+	                             		 [1,getText('No'),'NO']];
+
+	actions['category_actions'] 	  = [[0, getText('set to'),'SET_TO'],
+								   		 [1,getText('add to'),'ADD_TO'],
+								   		 [2,getText('remove from'),'REMOVE_FROM']];
+	
 	//fm used as a short form for Ext.form
 	var fm 		     = Ext.form,
 		toolbarCount =  1,
@@ -137,7 +138,7 @@ Ext.onReady(function () {
 	
 	//Regex to allow only numbers.
 	var objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;
-	var regexError = 'Only numbers are allowed';
+	var regexError = getText('Only numbers are allowed'); 
 		
 	//number format in which the amounts in the grid will be displayed.
 	var amountRenderer = Ext.util.Format.numberRenderer('0,0.00'),
@@ -218,8 +219,8 @@ Ext.onReady(function () {
 			});
 
 			var addProductButton = new Ext.Button({
-				text      : 'Add Product',
-				tooltip   : 'Add a new product',
+				text      : getText('Add product'),
+				tooltip   : getText('Add a new product'),
 				icon      : imgURL + 'add.png',
 				disabled  : true,
 				hidden    : false,
@@ -231,7 +232,7 @@ Ext.onReady(function () {
 						if(fileExists == 1){
 							addProduct(productsStore, cnt_array, cnt, newCatName);
 						}else{
-							Ext.notification.msg('Smart Manager', 'Add product feature is available only in Pro version');
+							Ext.notification.msg('Smart Manager', getText('Add product feature is available only in Pro version')); 
 						}
 					}
 				}
@@ -260,8 +261,8 @@ Ext.onReady(function () {
 			});
 
 			var printButton = new Ext.Button({
-				text: 'Print',
-				tooltip: 'Print Packing Slips',
+				text: getText('Print'),
+				tooltip: getText('Print Packing Slips'),
 				disabled: true,
 				ref: 'printButton',
 				id: 'printButton',
@@ -272,7 +273,7 @@ Ext.onReady(function () {
 						if(fileExists == 1){
 							showPrintWindow(editorGrid);
 						}else{
-							Ext.notification.msg('Smart Manager', 'Print Preview feature is available only in Pro version');
+							Ext.notification.msg('Smart Manager', getText('Print Preview feature is available only in Pro version') );
 						}
 					}
 				}
@@ -298,8 +299,8 @@ Ext.onReady(function () {
 			});
 
 			var deleteButton = new Ext.Button({
-				text: 'Delete',
-				tooltip: 'Delete the selected items',
+				text: getText('Delete'),
+				tooltip: getText('Delete the selected items'),
 				disabled: true,
 				ref: 'deleteButton',
 				id: 'deleteButton',
@@ -391,7 +392,7 @@ Ext.onReady(function () {
 			header: '',
 			id: 'type',
 			dataIndex: SM.productsCols.post_parent.colName,
-			tooltip: 'Type',
+			tooltip: getText('Type'),
 			width: 20,
 			hidden: true,
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
@@ -402,7 +403,7 @@ Ext.onReady(function () {
 			header: SM.productsCols.image.name,
 			id: 'image',
 			dataIndex: SM.productsCols.image.colName,
-			tooltip: 'Product Images',
+			tooltip: getText('Product Images'),
 			width: 20,
 			hidden: true,
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
@@ -414,7 +415,7 @@ Ext.onReady(function () {
 			id: 'name',
 			sortable: true,
 			dataIndex: SM.productsCols.name.colName,
-			tooltip: 'Product Name',
+			tooltip: getText('Product Name'),
 			width: 300,
 			editor: new fm.TextField({
 				allowBlank: false
@@ -426,7 +427,7 @@ Ext.onReady(function () {
 			align: 'right',
 			sortable: true,
 			dataIndex: SM.productsCols.price.colName,
-			tooltip: 'Price',
+			tooltip: getText('Price'),
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: true,
@@ -439,7 +440,7 @@ Ext.onReady(function () {
 			align: 'right',
 			dataIndex: SM.productsCols.salePrice.colName,
 			renderer: amountRenderer,
-			tooltip: 'Sale Price',
+			tooltip: getText('Sale Price'),
 			editor: new fm.NumberField({
 				allowBlank: true,
 				allowNegative: false
@@ -448,7 +449,7 @@ Ext.onReady(function () {
             header: SM.productsCols.salePriceFrom.name,
             id: 'salePriceFrom',
 			sortable: true,
-			tooltip: 'Sale Price From',
+			tooltip: getText('Sale Price From'),
             dataIndex: SM.productsCols.salePriceFrom.colName,
             renderer: formatDate,
             editor: new fm.DateField({
@@ -461,7 +462,7 @@ Ext.onReady(function () {
             header: SM.productsCols.salePriceTo.name,
             id: 'salePriceTo',
 			sortable: true,
-			tooltip: 'Sale Price To',
+			tooltip: getText('Sale Price To'),
             dataIndex: SM.productsCols.salePriceTo.colName,
             renderer: formatDate,
             editor: new fm.DateField({
@@ -476,7 +477,7 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.inventory.colName,
-			tooltip: 'Inventory',
+			tooltip: getText('Inventory'),
 			editor: new fm.NumberField({
 				allowBlank: true,
 				allowNegative: false
@@ -486,7 +487,7 @@ Ext.onReady(function () {
 			id: 'sku',
 			sortable: true,
 			dataIndex: SM.productsCols.sku.colName,
-			tooltip: 'SKU',
+			tooltip: getText('SKU'),
 			editor: new fm.TextField({
 				allowBlank: true
 			})
@@ -495,7 +496,7 @@ Ext.onReady(function () {
 			id: 'group',
 			sortable: true,
 			dataIndex: SM.productsCols.group.colName,
-			tooltip: 'Category'
+			tooltip: getText('Category'),
 		},{
 			header: SM.productsCols.weight.name,
 			id: 'weight',
@@ -503,7 +504,7 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.weight.colName,
-			tooltip: 'Weight',
+			tooltip: getText('Weight'),
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: true,
@@ -514,13 +515,13 @@ Ext.onReady(function () {
 			id: 'publish',
 			sortable: true,
 			dataIndex: SM.productsCols.publish.colName,
-			tooltip: 'Product Status',
+			tooltip: getText('Product Status'),
 			renderer: Ext.util.Format.comboRenderer(productStatusCombo)
 		},{
 			header: SM.productsCols.desc.name,
 			id: 'desc',
 			dataIndex: SM.productsCols.desc.colName,
-			tooltip: 'Description',
+			tooltip: getText('Description'),
 			width: 180,
 			editor: new fm.TextArea({				
 				autoHeight: true,
@@ -532,7 +533,7 @@ Ext.onReady(function () {
 			id: 'addDesc',
 			hidden: true,
 			dataIndex: SM.productsCols.addDesc.colName,
-			tooltip: 'Additional Description',
+			tooltip: getText('Additional Description'),
 			width: 180,
 			editor: new fm.TextArea({
 				autoHeight: true,
@@ -547,7 +548,7 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.height.colName,
-			tooltip: 'Height',			
+			tooltip: getText('Height'),		
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: true,
@@ -561,7 +562,7 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.width.colName,
-			tooltip: 'Width',
+			tooltip: getText('Width'),
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: true,
@@ -575,17 +576,17 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.lengthCol.colName,
-			tooltip: 'Length',			
+			tooltip: getText('Length'),		
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: true,
 				allowNegative: false
 			})
 		},{
-			header: 'Edit',
+			header: getText('Edit'),
 			id: 'edit',
 			sortable: true,
-			tooltip: 'Product Info',
+			tooltip: getText('Product Info'),
 			dataIndex: 'edit_url',
 			width: 50,
 			id: 'editLink',
@@ -706,8 +707,8 @@ var pagingToolbar = new Ext.PagingToolbar({
 	id: 'pagingToolbar',
 	items: ['->', {xtype:'tbseparator', id:'beforeBatchSeparator'},
 	{
-		text: 'Batch Update',
-		tooltip: 'Update selected items',
+		text: getText('Batch Update'), 
+		tooltip: getText('Update selected items'), 
 		icon: imgURL + 'batch_update.png',
 		id: 'batchUpdateButton',
 		disabled: true,
@@ -730,8 +731,8 @@ var pagingToolbar = new Ext.PagingToolbar({
 			}
 		}
 	},{xtype:'tbseparator', id:'beforeSaveSeparator'},{
-		text: 'Save',
-		tooltip: 'Save all Changes',
+		text: getText('Save'),
+		tooltip: getText('Save all Changes'),
 		icon: imgURL + 'save.png',
 		disabled: true,
 		scope: this,
@@ -748,8 +749,8 @@ var pagingToolbar = new Ext.PagingToolbar({
 		}}
 	},{xtype:'tbseparator', id:'beforeExportSeparator'},
 	{
-		text: 'Export CSV',
-		tooltip: 'Download CSV file',
+		text: getText('Export CSV'),
+		tooltip: getText('Download CSV file'),
 		icon: imgURL + 'export_csv.gif',
 		id: 'exportCsvButton',
 		ref: 'exportButton',
@@ -757,7 +758,7 @@ var pagingToolbar = new Ext.PagingToolbar({
 		listeners: { 
 			click: function () { 
 				if ( fileExists != 1 ) {
-					Ext.notification.msg('Smart Manager', '"Export CSV" feature is available only in Pro version');
+					Ext.notification.msg('Smart Manager', getText('Export CSV feature is available only in Pro version') ); 
 					return;
 				}
 				Ext.DomHelper.append(Ext.getBody(), { 
@@ -779,7 +780,7 @@ var pagingToolbar = new Ext.PagingToolbar({
 	hideBorders: true,
 	align: 'center',
 	displayMsg: 'Displaying {0} - {1} of {2}',
-	emptyMsg: SM.activeModule+' list is empty'
+	emptyMsg: SM.activeModule + ' ' + getText('list is empty') 
 });
 
 var pagingActivePage = pagingToolbar.getPageData().activePage;
@@ -890,12 +891,12 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			}
 		}
 		if (records.length == 1)
-		var msg = 'Are you sure you want to delete the selected record?';
+		var msg = getText('Are you sure you want to delete the selected record?');
 		else
-		var msg = 'Are you sure you want to delete the selected records?';
+		var msg = getText('Are you sure you want to delete the selected records?');
 
 		Ext.Msg.show({
-			title: 'Confirm File Delete',
+			title: getText('Confirm File Delete'),
 			msg: msg,
 			width: 400,
 			buttons: Ext.MessageBox.YESNO,
@@ -928,14 +929,15 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		getState: function(){ return { value: this.getValue()}; },
 		applyState: function(state) {
 			this.setValue(state.value);
-			pagingToolbar.emptyMsg =  state.value+' list is empty';
+			pagingToolbar.emptyMsg =  state.value + ' ' + getText('list is empty');
 		},
 		store: new Ext.data.ArrayStore({
 			autoDestroy: true,
 			forceSelection: true,
-			fields: ['id', 'fullname']
+			fields: ['id', 'fullname', 'display']
 		}),
-		displayField: 'fullname',
+		displayField: 'display',
+		valueField: 'fullname',
 		cls: 'searchPanel',
 		mode: 'local',
 		triggerAction: 'all',
@@ -949,7 +951,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		width: 135,
 		listeners: {
 			select: function () {
-				pagingToolbar.emptyMsg = this.getValue()+' list is empty';
+				pagingToolbar.emptyMsg = this.getValue() + ' ' + getText('list is empty');
 				editorGrid.stateId = this.value.toLowerCase()+'EditorGridPanelWoo';
 
 				cellClicked = false;
@@ -982,8 +984,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 						showSelectedModule(clickedActiveModule);
 					};
 					Ext.Msg.show({
-						title: 'Confirm Save',
-						msg: 'Do you want to save the modified records?',
+						title: getText('Confirm Save'),
+						msg: getText('Do you want to save the modified records?'),
 						width: 400,
 						buttons: Ext.MessageBox.YESNO,
 						fn: saveModification,
@@ -1010,12 +1012,12 @@ SM.searchTextField = new Ext.form.TextField({
 	params: {
 		cmd: 'searchText'
 	},
-	emptyText: 'Search...',
+	emptyText: getText('Search') + '...', 
 	enableKeyEvents: true,
 	listeners: {
 		keyup: function () {
 			if ( fileExists != 1 ) {
-				Ext.notification.msg('Smart Manager', 'Search feature is available only in Pro version');
+				Ext.notification.msg('Smart Manager', getText('Search feature is available only in Pro version') );
 				return;
 			}			
 			//set a store depending on the active Module
@@ -1034,8 +1036,8 @@ SM.searchTextField = new Ext.form.TextField({
 					searchLogic();
 				}
 				Ext.Msg.show({
-					title: 'Confirm Save',
-					msg: 'Do you want to save the modified records?',
+					title: getText('Confirm Save'),
+					msg: getText('Do you want to save the modified records?'),
 					width: 400,
 					buttons: Ext.MessageBox.YESNO,
 					fn: saveModification,
@@ -1164,11 +1166,11 @@ var countriesStoreCombo = new Ext.form.ComboBox({
 });
 
 var mask = new Ext.LoadMask(Ext.getBody(), {
-	msg: "Please wait..."
+	msg: getText('Please wait') + "..."
 });
 
 var batchMask = new Ext.LoadMask(Ext.getBody(), {
-	msg: "Please wait..."
+	msg: getText('Please wait') + "..."
 });
 
 
@@ -1194,7 +1196,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				valueField: 'value',
 				mode: 'local',
 				cls: 'searchPanel',
-				emptyText: 'Select a field...',
+				emptyText: getText('Select a field') + '...',
 				triggerAction: 'all',
 				editable: false,				
 				selectOnFocus: true,
@@ -1220,7 +1222,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						toolbarParent.get(5).hide();			//to hide extra space on batchUpdateToolbar
 						
 						objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;;
-						regexError = 'Only numbers are allowed';
+						regexError = getText('Only numbers are allowed');
 						
 							if(SM['productsCols'][this.value] != undefined ){
 								var categoryActionType = SM['productsCols'][this.value].actionType;
@@ -1311,7 +1313,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				valueField: 'value',
 				mode: 'local',
 				cls: 'searchPanel',
-				emptyText: 'Select an action...',
+				emptyText: getText('Select an action')+ '...',
 				triggerAction: 'all',
 				editable: false,
 				selectOnFocus: true,
@@ -1369,7 +1371,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							if( selectedActionvalue == 'custom'){
 								comboCategoriesActionCmp.hide();
 								comboCategoriesActionCmp.reset();
-								textField1Cmp.emptyText = 'Enter Attribute Name...';
+								textField1Cmp.emptyText = getText('Enter Attribute Name') + '...';
 								textField1Cmp.regex = null;
 								textField1Cmp.show();
 								textField2Cmp.show();
@@ -1430,7 +1432,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				displayField: 'name',
 				mode: 'local',
 				cls: 'searchPanel',
-				emptyText: 'Select a value...',
+				emptyText: getText('Select a value') + '...',
 				triggerAction: 'all',
 				editable: false,
 				forceSelection: true,
@@ -1497,13 +1499,13 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				regex: objRegExp,
 				regexText: regexError,
 				displayField: 'fullname',
-				emptyText: 'Enter the value...',
+				emptyText: getText('Enter the value') + '...',
 				cls: 'searchPanel',
 				hidden: true,
 				selectOnFocus: true,
 				listeners: {
 					beforerender: function( cmp ) {
-						cmp.emptyText = 'Enter the value...';
+						cmp.emptyText = getText('Enter the value') + '...'; 
 					}
 				}
 			},{
@@ -1519,7 +1521,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				valueField: 'id',
 				mode: 'local',
 				cls: 'searchPanel',
-				emptyText: 'Select a category...',
+				emptyText: getText('Select a category') + '...',
 				triggerAction: 'all',
 				editable: false,
 				forceSelection: false,
@@ -1536,7 +1538,18 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						
 						if (SM.activeModule == 'Products') {
 							if ( selectedValue.substring( 0, 14 ) != 'groupAttribute' ){
-								categoryStore.loadData(categories["category-"+SM['productsCols'][selectedValue].colFilter]);
+								var category = categories["category-"+SM['productsCols'][selectedValue].colFilter];
+								if ( category instanceof Object ) {
+									var categoryData = [];
+									for ( var catId in category  ) {
+										if ( category[catId] != undefined ) {
+											categoryData.push(category[catId]);
+										}
+									}
+									categoryStore.loadData(categoryData);
+								} else {
+									categoryStore.loadData(category);
+								}
 							}
 						} else if(SM.activeModule == 'Orders' && field_name == 'Order Status') {
 							this.store = orderStatusStore;
@@ -1553,15 +1566,15 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				},
 				enableKeyEvents: true,
 				displayField: 'fullname',
-				emptyText: 'Enter values...',
+				emptyText: getText('Enter values') + '...',
 				cls: 'searchPanel',
 				hidden: true,
 				listeners: {
 					render: function( cmp ) {
 						Ext.QuickTips.register({
 						    target: cmp.getEl(),
-						    title: 'Important:',
-						    text: 'For more than one values, use pipe (|) as delimiter'
+						    title: getText('Important:'),
+						    text: getText('For more than one values, use pipe (|) as delimiter')
 						});
 					}
 				},
@@ -1569,7 +1582,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 			}, '->',
 			{
 				icon: imgURL + 'del_row.png',
-				tooltip: 'Delete Row',
+				tooltip: getText('Delete Row'),
 				handler: function () {
 					toolbarCount--;
 					var toolbarParent = this.findParentByType(batchUpdateToolbarInstance, true);
@@ -1586,8 +1599,8 @@ var batchUpdateToolbar = new Ext.Toolbar({
 	cls: 'batchtoolbar',
 	items: [new batchUpdateToolbarInstance(), '->',
 	{
-		text: 'Add Row',
-		tooltip: 'Add a new row',
+		text: getText('Add Row'),
+		tooltip: getText('Add a new row') ,
 		ref: 'addRowButton',
 		icon: imgURL + 'add_row.png',
 		handler: function () {
@@ -1608,10 +1621,10 @@ var batchUpdatePanel = new Ext.Panel({
 	width: 900,
 	bbar: ['->',
 	{
-		text: 'Update',
+		text: getText('Update'),
 		id: 'updateButton',
 		ref: 'updateButton',
-		tooltip: 'Apply all changes',
+		tooltip: getText('Apply all changes'),
 		icon: imgURL + 'batch_update.png',
 		disabled: false,
 		listeners: { click: function () {
@@ -1646,7 +1659,7 @@ var batchRadioToolbar = new Ext.Toolbar({
 		{
 			xtype: 'tbtext',
 		    width: 90,
-		    text: 'Update...'
+		    text: getText('Update') + '...'
 		},new Ext.form.RadioGroup({
 			id: 'updateItemsOrStore' ,
 		    width: 400,
@@ -1661,7 +1674,7 @@ var batchRadioToolbar = new Ext.Toolbar({
 });
 
 batchUpdateWindow = new Ext.Window({
-	title: 'Batch Update - available only in Pro version',
+	title: getText('Batch Update - available only in Pro version'),
 	animEl: 'BU',
 	collapsible:true,
 	shadow : true,
@@ -1737,7 +1750,7 @@ var billingDetailsIframe = function(recordId){
 				this.setPosition( 250, 30 );
 			}
 		},
-		html: '<iframe src='+ ordersDetailsLink + '' + recordId +'&action=edit style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'
+		html: '<iframe src='+ ordersDetailsLink + '' + recordId +'&action=edit style="width:100%;height:100%;border:none;"><p> ' + getText('Your browser does not support iframes.') + '</p></iframe>'
 	});
 	billingDetailsWindow.show();
 };
@@ -1772,8 +1785,8 @@ var checkModifiedAndshowDetails = function(record,rowIndex){
 				showCustomerDetails(record,rowIndex);
 		};
 		Ext.Msg.show({
-			title: 'Confirm Save',
-			msg: 'Do you want to save the modified records?',
+			title: getText('Confirm Save'),
+			msg: getText('Do you want to save the modified records?'),
 			width: 400,
 			buttons: Ext.MessageBox.YESNO,
 			fn: saveModification,
@@ -1804,10 +1817,10 @@ var showCustomerDetails = function(record,rowIndex){
 	var customersColumnModel = new Ext.grid.ColumnModel({	
 		columns:[editorGridSelectionModel, //checkbox for
 		{
-			header: 'First Name',
+			header: getText('First Name'),
 			id: '_billing_first_name',
 			dataIndex: '_billing_first_name',
-			tooltip: 'Billing First Name',
+			tooltip: getText('Billing First Name'),
 			editable: false,
 			editor: new fm.TextField({
 				allowBlank: false,
@@ -1815,10 +1828,10 @@ var showCustomerDetails = function(record,rowIndex){
 			}),
 			width: 150
 		},{
-			header: 'Last Name',
+			header: getText('Last Name'),
 			id: '_billing_last_name',
 			dataIndex: '_billing_last_name',
-			tooltip: 'Billing Last Name',
+			tooltip: getText('Billing Last Name'),
 			editable: false,
 			editor: new fm.TextField({
 				allowBlank: false,
@@ -1826,10 +1839,10 @@ var showCustomerDetails = function(record,rowIndex){
 			}),
 			width: 150
 		},{
-			header: 'Email',
+			header: getText('Email'),
 			id: '_billing_email',
 			dataIndex: '_billing_email',
-			tooltip: 'Email Address',
+			tooltip: getText('Email Address'),
 			editable: false,
 			editor: new fm.TextField({
 				allowBlank: true,
@@ -1837,10 +1850,10 @@ var showCustomerDetails = function(record,rowIndex){
 			}),
 			width: 200
 		},{
-			header: 'Address',
+			header: getText('Address'),
 			id: '_billing_address',
 			dataIndex: '_billing_address',
-			tooltip: 'Billing Address',
+			tooltip: getText('Billing Address'),
 			editable: false,
 			editor: new fm.TextField({
 				allowBlank: false,
@@ -1848,10 +1861,10 @@ var showCustomerDetails = function(record,rowIndex){
 			}),
 			width: 200
 		},{
-			header: 'Postal Code',
+			header: getText('Postal Code'),
 			id: '_billing_postcode',
 			dataIndex: '_billing_postcode',
-			tooltip: 'Billing Postal Code',
+			tooltip: getText('Billing Postal Code'),
 			editable: false,
 			editor: new fm.TextField({
 				allowBlank: true,
@@ -1859,10 +1872,10 @@ var showCustomerDetails = function(record,rowIndex){
 			}),
 			width: 150
 		},{
-			header: 'City',
+			header: getText('City'),
 			id: '_billing_city',
 			dataIndex: '_billing_city',
-			tooltip: 'Billing City',
+			tooltip: getText('Billing City'),
 			align: 'left',
 			editable: false,
 			editor: new fm.TextField({
@@ -1872,38 +1885,38 @@ var showCustomerDetails = function(record,rowIndex){
 			width: 150
 		},
 		{
-			header: 'Region',
+			header: getText('Region'),
 			id: '_billing_state',
 			dataIndex: '_billing_state',
-			tooltip: 'Billing Region',
+			tooltip: getText('Billing Region'), 
 			align: 'center',
 			width: 100
 		},
 		{
-			header: 'Country',
+			header: getText('Country'),
 			id: '_billing_country',
 			dataIndex: '_billing_country',
-			tooltip: 'Billing Country',
+			tooltip: getText('Billing Country'),
 			width: 120
 		},
 		{
-			header: 'Total Purchased',
+			header: getText('Total Purchased'),
 			id: 'total_purchased', //@todo: change the id to Total_Purchased
 			dataIndex: '_order_total',
-			tooltip: 'Total Purchased',
+			tooltip: getText('Total Purchased'),
 			align: 'right',
 			width: 150			
 		},{
-			header: 'Last Order',
+			header: getText('Last Order'),
 			id: 'last_order',
 			dataIndex: 'last_order',
-			tooltip: 'Last Order Details',
+			tooltip: getText('Last Order Details'), 
 			width: 220			
 		},{   
-			header: 'Phone Number',
+			header: getText('Phone Number'),
 			id: '_billing_phone',
 			dataIndex: '_billing_phone',
-			tooltip: 'Phone Number',
+			tooltip: getText('Phone Number'), 
 			editable: false,
 			editor: new fm.TextField({
 				allowBlank: true,
@@ -2023,7 +2036,7 @@ var showCustomerDetails = function(record,rowIndex){
 	var fromDateMenu = new Ext.menu.DateMenu({
 		handler: function(dp, date){
 			if ( fileExists != 1 ) {
-				Ext.notification.msg('Smart Manager', '"Filter through Date" feature is available only in Pro version');
+				Ext.notification.msg('Smart Manager', getText('Filter through Date feature is available only in Pro version') );
 				return;
 			}
 			fromDateTxt.setValue(date.format('M j Y'));
@@ -2035,7 +2048,7 @@ var showCustomerDetails = function(record,rowIndex){
 	var toDateMenu = new Ext.menu.DateMenu({
 		handler: function(dp, date){
 			if ( fileExists != 1 ) {
-				Ext.notification.msg('Smart Manager', '"Filter through Date" feature is available only in Pro version');
+				Ext.notification.msg('Smart Manager', getText('Filter through Date feature is available only in Pro version') );
 				return;
 			}
 			toDateTxt.setValue(date.format('M j Y'));
@@ -2073,63 +2086,63 @@ var showCustomerDetails = function(record,rowIndex){
 	var ordersColumnModel = new Ext.grid.ColumnModel({	
 		columns:[editorGridSelectionModel, //checkbox for
 		{
-			header: 'Order Id',
+			header: getText('Order Id'),
 			id: 'id',
 			dataIndex: 'id',
-			tooltip: 'Order Id'
+			tooltip: getText('Order Id') 
 		},{
-			header: 'Date / Time',
+			header: getText('Date / Time'),
 			id: 'date',
 			dataIndex: 'date',
-			tooltip: 'Date / Time',
+			tooltip: getText('Date / Time'),
 			width: 250
 		},{
-			header: 'Name',
+			header: getText('Name'), 
 			id: 'name',
 			dataIndex: 'name',
-			tooltip: 'Customer Name',
+			tooltip: getText('Customer Name'),
 			width: 350
 		},{
-			header: 'Amount',
+			header: getText('Amount'),
 			id: '_order_total',
 			dataIndex: '_order_total',
-			tooltip: 'Amount',
+			tooltip: getText('Amount'),
 			align: 'right',
 			renderer: amountRenderer,
 			width: 100
 		},{
-			header: 'Details',
+			header: getText('Details'),
 			id: 'details',
 			dataIndex: 'details',
-			tooltip: 'Details',
+			tooltip: getText('Details'),
 			width: 100
 		},{
-			header: 'Payment Method',
+			header: getText('Payment Method'),
 			id: '_payment_method',
 			dataIndex: '_payment_method',
-			tooltip: 'Payment Method',
+			tooltip: getText('Payment Method'),
 			align: 'left',
 			width: 110
 		},{
-			header: 'Status',
+			header: getText('Status'),
 			id: 'order_status',
 			dataIndex: 'order_status',
-			tooltip: 'Order Status',
+			tooltip: getText('Order Status'),
 			width: 150,
 			editable: true,
 			editor: orderStatusCombo,
 			renderer: Ext.util.Format.comboRenderer(orderStatusCombo)
 		},{
-			header: 'Shipping Method',
+			header: getText('Shipping Method'),
 			id: '_shipping_method',
 			dataIndex: '_shipping_method',
-			tooltip: 'Shipping Method',
+			tooltip: getText('Shipping Method'),
 			width: 180
 		},{   
-			header: 'Shipping First Name',
+			header: getText('Shipping First Name'),
 			id: '_shipping_first_name',
 			dataIndex: '_shipping_first_name',
-			tooltip: 'Shipping First Name',
+			tooltip: getText('Shipping First Name'),
 			hidden: true,
 			editable: false,
 			editor: new fm.TextField({
@@ -2138,10 +2151,10 @@ var showCustomerDetails = function(record,rowIndex){
 			}),
 			width: 200
 		},{   
-			header: 'Shipping Last Name',
+			header: getText('Shipping Last Name'),
 			id: '_shipping_last_name',
 			dataIndex: '_shipping_last_name',
-			tooltip: 'Shipping Last Name',
+			tooltip: getText('Shipping Last Name'),
 			hidden: true,
 			editable: false,
 			editor: new fm.TextField({
@@ -2150,10 +2163,10 @@ var showCustomerDetails = function(record,rowIndex){
 			}),
 			width: 200
 		},{   
-			header: 'Shipping Address',
+			header: getText('Shipping Address'),
 			id: '_shipping_address',
 			dataIndex: '_shipping_address',
-			tooltip: 'Shipping Address',
+			tooltip: getText('Shipping Address'),
 			hidden: true,
 			editable: false,
 			editor: new fm.TextField({
@@ -2162,10 +2175,10 @@ var showCustomerDetails = function(record,rowIndex){
 			}),
 			width: 200		
 		},{
-			header: 'Shipping Postal Code',
+			header: getText('Shipping Postal Code'),
 			id: '_shipping_postcode',
 			dataIndex: '_shipping_postcode',
-			tooltip: 'Shipping Postal Code',
+			tooltip: getText('Shipping Postal Code'),
 			hidden: true,
 			editable: false,
 			editor: new fm.TextField({
@@ -2174,10 +2187,10 @@ var showCustomerDetails = function(record,rowIndex){
 			}),
 			width: 200
 		},{   
-			header: 'Shipping City',
+			header: getText('Shipping City'),
 			id: '_shipping_city',
 			dataIndex: '_shipping_city',
-			tooltip: 'Shipping City',
+			tooltip: getText('Shipping City'),
 			hidden: true,
 			editable: false,
 			editor: new fm.TextField({
@@ -2187,19 +2200,19 @@ var showCustomerDetails = function(record,rowIndex){
 			width: 200
 		},
 		{   
-			header: 'Shipping Region',
+			header: getText('Shipping Region'),
 			id: '_shipping_state',
 			dataIndex: '_shipping_state',
-			tooltip: 'Shipping Region',
+			tooltip: getText('Shipping Region'),
 			align: 'center',
 			hidden: true,
 			width: 100		
 		},
 		{
-			header: 'Shipping Country',
+			header: getText('Shipping Country'), 
 			id: '_shipping_country',
 			dataIndex: '_shipping_country',
-			tooltip: 'Shipping Country',
+			tooltip: getText('Shipping Country'),
 			hidden: true,
 			width: 120
 		}
@@ -2354,15 +2367,17 @@ var showCustomerDetails = function(record,rowIndex){
 				stateful: true,
 				getState: function(){ return { value: this.getValue()}; },
 				applyState: function(state) { this.setValue(state.value);},
-			 	boxLabel: 'Show Variations',
+			 	boxLabel: getText('Show Variations'),
 			 	listeners: {
 			 		check : function(checkbox, bool) {
-			 			if(fileExists == 1){
-			 				SM.incVariation  = bool;
-			 				productsStore.setBaseParam('incVariation', SM.incVariation);
-			 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
-			 			}else{
-			 				Ext.notification.msg('Smart Manager', 'Show Variations feature is available only in Pro version');
+			 			if ( SM.activeModule == 'Products' ) {
+				 			if(fileExists == 1){
+				 				SM.incVariation  = bool;
+				 				productsStore.setBaseParam('incVariation', SM.incVariation);
+				 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
+				 			}else{
+				 				Ext.notification.msg('Smart Manager', getText('Show Variations feature is available only in Pro version'));
+				 			}
 			 			}
 			 		}
 			 	}
@@ -2378,17 +2393,17 @@ var showCustomerDetails = function(record,rowIndex){
 							var dashboardComboStore = new Array();
 							for ( var i = 0; i < myJsonObj.length; i++) {
 								if ( myJsonObj[i].indexOf("_") != -1) {
-									dashboardComboStore.push(new Array(i, myJsonObj[i].slice(0,9)));
-									dashboardComboStore.push(new Array(i+1, myJsonObj[i].slice(10)));
+									dashboardComboStore.push( new Array( i, myJsonObj[i].slice( 0,9 ), getText( myJsonObj[i].slice( 0,9 ) ) ) );
+									dashboardComboStore.push( new Array( i+1, myJsonObj[i].slice( 10 ), getText( myJsonObj[i].slice( 10 ) ) ) );
 								} else {
-									dashboardComboStore.push(new Array(i, myJsonObj[i]));
+									dashboardComboStore.push( new Array( i, myJsonObj[i], getText( myJsonObj[i] ) ) );
 								}
 								
 							}
 							if ( dashboardComboStore < 1) {
 								Ext.Msg.show({
-									title: 'Access Denied',
-									msg: 'You don\'t have sufficient permission to view this page',
+									title: getText('Access Denied'),
+									msg: getText('You don\'t have sufficient permission to view this page'),
 									buttons: Ext.MessageBox.OK,
 									fn: function() {
 										location.href = 'index.php';
@@ -2402,7 +2417,7 @@ var showCustomerDetails = function(record,rowIndex){
 //								grid.stateId = SM.dashboardComboBox.value.toLowerCase()+'EditorGridPanelWoo';
 											
 								SM.dashboardComboBox.store.loadData(dashboardComboStore);
-								showSelectedModule(SM.dashboardComboBox.value);	
+//								showSelectedModule(SM.dashboardComboBox.value);	
 							}
 						}
 						,scope: SM.dashboardComboBox
@@ -2433,7 +2448,7 @@ var showCustomerDetails = function(record,rowIndex){
 
 				if(SM.activeModule == 'Orders'){
 					if ( fileExists != 1 && ( columnIndex == orderDetailsColumnIndex || columnIndex == nameLinkColumnIndex ) ) {
-						Ext.notification.msg('Smart Manager', 'This feature is available only in Pro version');
+						Ext.notification.msg('Smart Manager', getText('This feature is available only in Pro version')); 
 						return;
 					}
 					if(columnIndex == orderDetailsColumnIndex){
@@ -2454,7 +2469,7 @@ var showCustomerDetails = function(record,rowIndex){
 							shadowOffset: 10,
 							stateEvents : ['show','bodyresize','maximize'],
 							stateful: true,
-							title: 'Products Details',
+							title: getText('Products Details'),
 							width:500,
 							height: 600,						
 							minimizable: false,
@@ -2475,7 +2490,7 @@ var showCustomerDetails = function(record,rowIndex){
 									this.setPosition( 250, 30 );
 								}
 							},
-							html: '<iframe src='+ productsDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'
+							html: '<iframe src='+ productsDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;"><p> ' + getText('Your browser does not support iframes.') + '</p></iframe>'
 						});
 						// To disable Product's details window for product variations
 						if(record.get('post_parent') == 0){
@@ -2498,7 +2513,7 @@ var showCustomerDetails = function(record,rowIndex){
 							collapsible:true,
 							shadow : true,
 							shadowOffset: 10,
-							title: 'Manage your Product Images',
+							title: getText('Manage your Product Images'),
 							width: 700,
 							height: 400,						
 							minimizable: false,
@@ -2509,7 +2524,7 @@ var showCustomerDetails = function(record,rowIndex){
 							listeners: {
 								beforeshow: function() {
 									if ( fileExists != 1 ) 
-										this.setTitle( 'Manage your Product Images - Available only in Pro version' );
+										this.setTitle( getText('Manage your Product Images - Available only in Pro version') );
 								},
 								maximize: function () {
 									this.setPosition( 0, 30 );
@@ -2537,7 +2552,7 @@ var showCustomerDetails = function(record,rowIndex){
 									Ext.Ajax.request(object);
 								}
 							},
-							html: ( fileExists == 1 ) ? '<iframe src="'+ site_url + '/wp-admin/media-upload.php?post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>' : ''
+							html: ( fileExists == 1 ) ? '<iframe src="'+ site_url + '/wp-admin/media-upload.php?post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;"><p> ' + getText('Your browser does not support iframes.') + '</p></iframe>' : ''
 						});
 						productsImageWindow.show('image');
 					}
@@ -2585,7 +2600,9 @@ var showCustomerDetails = function(record,rowIndex){
 		// This happens only for the first time when the page is rendered with the editorgrid panel.
 		// From here the flow of the code starts.
 		viewready: function(grid){
-			showSelectedModule(SM.dashboardComboBox.value);
+            showSelectedModule( SM.dashboardComboBox.getValue() );
+			SM.dashboardComboBox.setValue( getText( SM.dashboardComboBox.getValue() ) );
+
 		},
 		// Fires when the grid is reconfigured with a new store and/or column model.
 		// state of the editor grid is captured and applied to back to the grid.
@@ -2610,10 +2627,10 @@ SM.typeColIndex   = productsColumnModel.findColumnIndex(SM.productsCols.post_par
 
 //For pro version check if the required file exists
 if(fileExists == 1){
-	batchUpdateWindow.title = 'Batch Update';
+	batchUpdateWindow.title = getText('Batch Update'); 
 }else{	
 	batchUpdateRecords = function () {
-		Ext.notification.msg('Smart Manager', 'Batch Update feature is available only in Pro version');
+		Ext.notification.msg('Smart Manager', getText('Batch Update feature is available only in Pro version') );
 	};
 	
 	//disable inline editing for products

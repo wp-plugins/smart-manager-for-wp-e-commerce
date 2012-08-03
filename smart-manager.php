@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for WP e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 2.5
+Version: 2.6
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012 Store Apps All rights reserved.
@@ -29,7 +29,7 @@ function smart_deactivate() {
 
 function smart_get_latest_version() {
 	$sm_plugin_info = get_site_transient ( 'update_plugins' );
-	$latest_version = isset( $sm_plugin_info ) ? $sm_plugin_info->response [SM_PLUGIN_FILE]->new_version : '';
+	$latest_version = isset( $sm_plugin_info->response[SM_PLUGIN_FILE] ) ? $sm_plugin_info->response[SM_PLUGIN_FILE]->new_version : '';
 	return $latest_version;
 }
 
@@ -83,9 +83,10 @@ function smart_is_pro_updated() {
 		$plugin_info = get_plugins ();
 		$sm_plugin_info = $plugin_info [SM_PLUGIN_FILE];
 		$ext_version = '3.3.1';
-		if (is_plugin_active ( 'woocommerce/woocommerce.php' ) && is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
+		load_plugin_textdomain( 'smart-manager', false, dirname( plugin_basename( __FILE__ ) ).'/languages' );
+		if (is_plugin_active ( 'woocommerce/woocommerce.php' ) && is_plugin_active ( 'wp-e-commerce/wp-shopping-cart.php' )) {
 			define('WPSC_WOO_ACTIVATED',true);
-		} elseif (is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
+		} elseif (is_plugin_active ( 'wp-e-commerce/wp-shopping-cart.php' )) {
 			define('WPSC_ACTIVATED',true);
 		} elseif (is_plugin_active ( 'woocommerce/woocommerce.php' )) {
 			define('WOO_ACTIVATED', true);
@@ -132,9 +133,9 @@ function smart_is_pro_updated() {
 	}
 	
 	function smart_admin_notices() {
-		if (! is_plugin_active ( 'woocommerce/woocommerce.php' ) && ! is_plugin_active ( basename(WPSC_URL).'/wp-shopping-cart.php' )) {
+		if (! is_plugin_active ( 'woocommerce/woocommerce.php' ) && ! is_plugin_active ( 'wp-e-commerce/wp-shopping-cart.php' )) {
 			echo '<div id="notice" class="error"><p>';
-			_e ( '<b>Smart Manager</b> add-on requires <a href="http://www.storeapps.org/wpec/">WP e-Commerce</a> plugin or <a href="http://www.storeapps.org/woocommerce/">WooCommerce</a> plugin. Please install and activate it.' );
+			echo '<b>' . __( 'Smart Manager','smart-manager' ) . '</b> ' . __( 'add-on requires','smart-manager' ) . ' <a href="http://www.storeapps.org/wpec/">' . __( 'WP e-Commerce','smart-manager' ) . '</a> ' . __( 'plugin or','smart-manager' ) . ' <a href="http://www.storeapps.org/woocommerce/">' . __( 'WooCommerce','smart-manager' ) . '</a> ' . __( 'plugin. Please install and activate it.','smart-manager' );
 			echo '</p></div>', "\n";
 		}
 	}
@@ -207,14 +208,14 @@ function smart_is_pro_updated() {
 				include_once ($plugin_base . 'sm-privilege.php');
 				return;
 			} else {
-				$error_message = 'A required Smart Manager file is missing. Can\'t continue.';
+				$error_message = __( "A required Smart Manager file is missing. Can't continue. ",'smart-manager'); 
 			}
 		}
 		
 		function smart_add_privilege_page() {
 			$page = add_submenu_page ('options-general.php', 'Smart Manager', 'Smart Manager', 10, 'smart-manager-privilege', 'smart_show_privilege_page' );
 		    
-			if ( isset($_GET ['action']) && $_GET ['action'] != 'sm-settings') { // not be include for settings page
+			if ( $_GET ['action'] != 'sm-settings') { // not be include for settings page
 				add_action ( 'admin_print_scripts-' . $page, 'smart_admin_scripts' );
 			}
 			add_action ( 'admin_print_styles-' . $page, 'smart_admin_styles' );
@@ -237,8 +238,8 @@ function smart_is_pro_updated() {
 		}
 		define ( 'JSON_URL', SM_PLUGIN_DIRNAME . "/sm/$json_filename.php" );		
 		define ( 'ADMIN_URL', get_admin_url () ); //defining the admin url
-		define ('ABS_WPSC_URL',WP_PLUGIN_DIR.'/'.basename(WPSC_URL));
-		define ('WPSC_NAME',basename(WPSC_URL));
+		define ('ABS_WPSC_URL',WP_PLUGIN_DIR.'/wp-e-commerce');
+		define ('WPSC_NAME','wp-e-commerce');
 		
 		$latest_version = smart_get_latest_version ();
 		$is_pro_updated = smart_is_pro_updated ();
@@ -268,16 +269,16 @@ function smart_is_pro_updated() {
 				$after_plug_page = '';
 				$plug_page = '';
 			}
-			printf ( __ ( '%1s%2s%3s<a href="%4s" target=_storeapps>Need Help?</a>' ), $before_plug_page, $plug_page, $after_plug_page, "http://www.storeapps.org/support" );
+			printf ( __ ( '%1s%2s%3s<a href="%4s" target=_storeapps>Need Help?</a>' , 'smart-manager'), $before_plug_page, $plug_page, $after_plug_page, "http://www.storeapps.org/support" );
 			?>
 			</span><?php
-			echo __ ( '10x productivity gains with store administration. Quickly find and update products, orders and customers' );
+			_e('10x productivity gains with store administration. Quickly find and update products, orders and customers','smart-manager');
 			?></p>
 </h2>
 <h6 align="right"><?php
 			if (! $is_pro_updated) {
 				$admin_url = ADMIN_URL . "plugins.php";
-				$update_link = "An upgrade for Smart Manager Pro  $latest_version is available. <a align='right' href=$admin_url> Click to upgrade. </a>";
+				$update_link = __( 'An upgrade for Smart Manager Pro','smart-manager' ) . $latest_version . __( 'is available.','smart-manager' ) . "<a align='right' href=$admin_url>" . __( 'Click to upgrade.','smart-manager' ) . "</a>"; 
 				smart_display_notice ( $update_link );
 			}
 			?>
@@ -294,7 +295,7 @@ if (SMPRO === true) {
 				} elseif (WOO_RUNNING == true) {
 					$plug_page = 'woo';
 				}
-				smart_display_notice( 'Please enter your license key for automatic upgrades and support to get activated. <a href="admin.php?page=smart-manager-' . $plug_page . '&action=sm-settings">Enter License Key</a>' );
+				smart_display_notice( __( 'Please enter your license key for automatic upgrades and support to get activated.', 'smart-manager' ) . '<a href=admin.php?page=smart-manager-' . $plug_page . '&action=sm-settings>' . __('Enter License Key','smart-manager') . '</a>' );
 			}
 		}
 }
@@ -307,7 +308,7 @@ if (SMPRO === true) {
 				?>
 <div id="message" class="updated fade">
 <p><?php
-				printf ( __ ( '<b>Important:</b> Upgrading to Pro gives you powerful features and helps us continue innovating. <a href="%1s" target=_storeapps>Learn more about Pro version here</a> or take a <a href="%2s" target=_livedemo>Live Demo here</a>.' ), 'http://storeapps.org/', 'http://demo.storeapps.org/' );
+				printf ( ( '<b>' . __('Important:','smart-manager') . '</b>' . __('Upgrading to Pro gives you powerful features and helps us continue innovating.','smart-manager') . '<a href="%1s" target=_storeapps>' . __('Learn more about Pro version here','smart-manager') . '</a>' . __('or take a','smart-manager') . '<a href="%2s" target=_livedemo>' . __('Live Demo here','smart-manager') . '</a>' ), 'http://storeapps.org/', 'http://demo.storeapps.org/' );
 				?></p>
 </div>
 <?php
@@ -325,32 +326,32 @@ if (SMPRO === true) {
 								include_once ($base_path . 'manager-console.php');
 								return;
 							} else {
-								$error_message = 'A required Smart Manager file is missing. Can\'t continue.';
+								$error_message = __( "A required Smart Manager file is missing. Can't continue.",'smart-manager' ) ; 
 							}
 						} else {
-							$error_message = 'Smart Manager currently works only with WP e-Commerce 3.7 or above.';
+							$error_message = __( 'Smart Manager currently works only with WP e-Commerce 3.7 or above.','smart-manager' ) ; 
 						}
 					} else {
-						$error_message = 'WP e-Commerce plugin is not activated. <br/><b>Smart Manager</b> add-on requires WP e-Commerce plugin, please activate it.';
+						$error_message = __( 'WP e-Commerce plugin is not activated.','smart-manager' ) .  "<br/><b>" . _e( 'Smart Manager','smart-manager' ) . "</b>" . _e( 'add-on requires WP e-Commerce plugin, please activate it.','smart-manager' );
 					}
 				} else if ( file_exists ( WP_PLUGIN_DIR . '/woocommerce/woocommerce.php' ) ) {
 					if ( is_plugin_active ( 'woocommerce/woocommerce.php' ) ) {
 						if ( IS_WOO13 ) {
-							$error_message = 'Smart Manager currently works only with WooCommerce 1.4 or above.';
+							$error_message = __( 'Smart Manager currently works only with WooCommerce 1.4 or above.','smart-manager' ) ;
 						} else {
 							if ( file_exists ( $base_path . 'manager-console.php' ) ) {
 								include_once ( $base_path . 'manager-console.php' );
 								return;
 							} else {
-								$error_message = 'A required Smart Manager file is missing. Can\'t continue.';
+								$error_message = __( "A required Smart Manager file is missing. Can't continue.",'smart-manager' ) ;
 							}
 						}
 					} else {
-						$error_message = 'WooCommerce plugin is not activated. <br/><b>Smart Manager</b> add-on requires WooCommerce plugin, please activate it.';
+						$error_message = __( 'WooCommerce plugin is not activated.','smart-manager' ) . "<br/><b>" . __( 'Smart Manager','smart-manager' ) . "</b>" . __( 'add-on requires WooCommerce plugin, please activate it.','smart-manager' ) ;
 					}
 				}
 			} else {
-				$error_message = '<b>Smart Manager</b> add-on requires <a href="http://www.storeapps.org/wpec/">WP e-Commerce</a> plugin or <a href="http://www.storeapps.org/woocommerce/">WooCommerce</a> plugin. Please install and activate it.';
+				$error_message = "<b>" . __( 'Smart Manager','smart-manager' ) . "</b>" . __( 'add-on requires','smart-manager' ) . '<a href="http://www.storeapps.org/wpec/">' . __( 'WP e-Commerce','smart-manager' ) . "</a>" . __( 'plugin or','smart-manager' ) . '<a href="http://www.storeapps.org/woocommerce/">' . __( 'WooCommerce','smart-manager' ) . "</a>" . __( 'plugin. Please install and activate it.','smart-manager' ) ;
 			}
 
 			if ($error_message != '') {
@@ -367,13 +368,13 @@ if (SMPRO === true) {
 		$plugins = get_site_transient ( 'update_plugins' );
 		$link = $plugins->response [SM_PLUGIN_FILE]->package;
 		
-		echo $man_download_link = " Or <a href='$link'>click here to download the latest version.</a>";
+		echo $man_download_link = __('Or','smart-manager') .  "<a href='$link'>" . __( 'click here to download the latest version.','smart-manager' ) . "</a>" ;
 	
 	}
 	
 	function smart_display_err($error_message) {
 		echo "<div id='notice' class='error'>";
-		echo _e ( '<b>Error: </b>' . $error_message );
+		echo "<b>" . __('Error:','smart-manager') . "</b>" . $error_message ; 
 		echo "</div>";
 	}
 	

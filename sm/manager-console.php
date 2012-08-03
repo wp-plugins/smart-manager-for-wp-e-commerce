@@ -4,11 +4,14 @@ global $wpdb, $woocommerce;
 $limit = 2;
 
 // to set javascript variable of file exists
-$fileExists = (SMPRO === true) ? 1 : 0;
-$wpsc = (WPSC_RUNNING === true) ? 1 :0;
-$woo = (WOO_RUNNING === true) ? 1 :0;
-$wpsc_woo = (WPSC_WOO_ACTIVATED === true) ? 1 : 0;
+$fileExists = (defined('SMPRO') && SMPRO === true) ? 1 : 0;
+$wpsc = (defined('WPSC_RUNNING') && WPSC_RUNNING === true) ? 1 :0;
+$woo = (defined('WOO_RUNNING') && WOO_RUNNING === true) ? 1 :0;
+$wpsc_woo = (defined( 'WPSC_WOO_ACTIVATED' ) && WPSC_WOO_ACTIVATED === true) ? 1 : 0;
 $site_url = get_option('siteurl');
+
+// creating a domain name for mutilingual
+$sm_domain = 'smart-manager';
 
 //creating the order links
 $blog_info = get_bloginfo ( 'url' );
@@ -137,7 +140,7 @@ $encodedOrderStatus = json_encode ( $order_status );
 			$customerFields ['items'] [$cnt] ['type'] = 'blob';
 		}
 		
-		$customerFields ['items'] [$cnt] ['name'] = $form_data_value;
+		$customerFields ['items'] [$cnt] ['name'] = __( $form_data_value, 'smart-manager' );
 		$customerFields ['items'] [$cnt] ['value'] = 'value' . ', ' . WPSC_TABLE_SUBMITED_FORM_DATA . ', ' . $form_data_key;
 		$customerFields ['totalCount'] = $cnt ++;
 	}
@@ -166,7 +169,7 @@ $result = mysql_query ( $query );
 $count = 0;
 if (mysql_num_rows ( $result ) >= 1) {
 	while ( $data = mysql_fetch_assoc ( $result ) ) {
-		if ($old_country_id != $data ['country_id'])
+		if (isset( $old_country_id ) && $old_country_id != $data ['country_id'])
 			$count = 0;
 		$regions [$data ['country_id']] ['items'] [] = array ('id' => $count, 'name' => $data ['name'], 'value' => $data ['name'], 'region_id' => $data ['id'] );
 		$regions ['no_regions'] ['items'] [] = array ('id' => 0, 'name' => '', 'value' => '' );
@@ -182,70 +185,70 @@ $products_cols['id']['actionType'] ='';
 $products_cols['id']['colName']    ='id';
 $products_cols['id']['tableName']  ="{$wpdb->prefix}posts";
 
-$products_cols['image']['name']       ='Image';
+$products_cols['image']['name']       =__( 'Image', $sm_domain );
 $products_cols['image']['actionType'] ='';
 $products_cols['image']['colName']    ='thumbnail';
 $products_cols['image']['tableName']  ="{$wpdb->prefix}posts";
 
-$products_cols['name']['name']      ='Name';
+$products_cols['name']['name']      =__( 'Name', $sm_domain );
 $products_cols['name']['actionType']='modStrActions';
 $products_cols['name']['colName']   ='post_title';
 $products_cols['name']['tableName'] ="{$wpdb->prefix}posts";
 
-$products_cols['price']['name']='Price';
+$products_cols['price']['name']=__( 'Price', $sm_domain );
 $products_cols['price']['actionType']='modIntPercentActions';
 $products_cols['price']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['price']['updateColName']='meta_value';
 
-$products_cols['salePrice']['name']='Sale Price';
+$products_cols['salePrice']['name']=__( 'Sale Price', $sm_domain );
 $products_cols['salePrice']['actionType']='modIntPercentActions';
 $products_cols['salePrice']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['salePrice']['updateColName']='meta_value';
 	
-$products_cols['inventory']['name']='Inventory';
+$products_cols['inventory']['name']=__( 'Inventory', $sm_domain );
 $products_cols['inventory']['actionType']='modIntActions';
 $products_cols['inventory']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['inventory']['updateColName']='meta_value';
 
-$products_cols['sku']['name']='SKU';
+$products_cols['sku']['name']=__( 'SKU', $sm_domain );
 $products_cols['sku']['actionType']='modStrActions';
 $products_cols['sku']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['sku']['updateColName']='meta_value';
 
-$products_cols['group']['name']='Group';
+$products_cols['group']['name']=__( 'Group', $sm_domain );
 $products_cols['group']['actionType']='setAdDelActions';
 $products_cols['group']['colName']='category';
 $products_cols['group']['tableName']="{$wpdb->prefix}term_relationships";
 $products_cols['group']['updateColName']='term_taxonomy_id';
 
-$products_cols['weight']['name']='Weight';
+$products_cols['weight']['name']=__( 'Weight', $sm_domain );
 $products_cols['weight']['actionType']='modIntPercentActions';
 $products_cols['weight']['tableName']="{$wpdb->prefix}postmeta";
 
-$products_cols['publish']['name']='Publish';
+$products_cols['publish']['name']=__( 'Publish', $sm_domain );
 $products_cols['publish']['actionType']='YesNoActions';
 $products_cols['publish']['colName']='post_status';
 $products_cols['publish']['tableName']="{$wpdb->prefix}posts";
 
-$products_cols['desc']['name']='Description';
+$products_cols['desc']['name']=__( 'Description', $sm_domain );
 $products_cols['desc']['actionType']='modStrActions';
 $products_cols['desc']['colName']='post_content';
 $products_cols['desc']['tableName']="{$wpdb->prefix}posts";
 
-$products_cols['addDesc']['name']='Additional Description';
+$products_cols['addDesc']['name']=__( 'Additional Description', $sm_domain );
 $products_cols['addDesc']['actionType']='modStrActions';
 $products_cols['addDesc']['colName']='post_excerpt';
 $products_cols['addDesc']['tableName']="{$wpdb->prefix}posts";
 
-$products_cols['height']['name']='Height';
+$products_cols['height']['name']=__( 'Height', $sm_domain );
 $products_cols['height']['actionType']='modIntPercentActions';
 $products_cols['height']['tableName']="{$wpdb->prefix}postmeta";
 
-$products_cols['width']['name']='Width';
+$products_cols['width']['name']=__( 'Width', $sm_domain );
 $products_cols['width']['actionType']='modIntPercentActions';
 $products_cols['width']['tableName']="{$wpdb->prefix}postmeta";
 
-$products_cols['lengthCol']['name']='Length';
+$products_cols['lengthCol']['name']=__( 'Length', $sm_domain );
 $products_cols['lengthCol']['actionType']='modIntPercentActions';
 $products_cols['lengthCol']['tableName']="{$wpdb->prefix}postmeta";
 
@@ -259,17 +262,17 @@ if (WPSC_RUNNING === true) {
 	$products_cols['inventory']['colName']='_wpsc_stock';
 	$products_cols['sku']['colName']='_wpsc_sku';
 
-	$products_cols['disregardShipping']['name']='Disregard Shipping';
+	$products_cols['disregardShipping']['name']=__( 'Disregard Shipping', $sm_domain );
 	$products_cols['disregardShipping']['actionType']='YesNoActions';
 	$products_cols['disregardShipping']['colName']='no_shipping';
 	$products_cols['disregardShipping']['tableName']="{$wpdb->prefix}postmeta";
 	
-	$products_cols['pnp']['name']='Local Shipping Fee';
+	$products_cols['pnp']['name']=__( 'Local Shipping Fee', $sm_domain );
 	$products_cols['pnp']['actionType']='modIntPercentActions';
 	$products_cols['pnp']['colName']='local';
 	$products_cols['pnp']['tableName']="{$wpdb->prefix}postmeta";
 	
-	$products_cols['intPnp']['name']='International Shipping Fee';
+	$products_cols['intPnp']['name']=__( 'International Shipping Fee', $sm_domain );
 	$products_cols['intPnp']['actionType']='modIntPercentActions';
 	$products_cols['intPnp']['colName']='international';
 	$products_cols['intPnp']['tableName']="{$wpdb->prefix}postmeta";
@@ -279,32 +282,32 @@ if (WPSC_RUNNING === true) {
 	$products_cols['width']['colName']='width';
 	$products_cols['lengthCol']['colName']='length';
 
-	$products_cols['weightUnit']['name']='Unit';
+	$products_cols['weightUnit']['name']=__( 'Unit', $sm_domain );
 	$products_cols['weightUnit']['actionType']='';
 	$products_cols['weightUnit']['colName']='weight_unit';
 	$products_cols['weightUnit']['tableName']="{$wpdb->prefix}postmeta";
 	
-	$products_cols['heightUnit']['name']='Unit';
+	$products_cols['heightUnit']['name']=__( 'Unit', $sm_domain );
 	$products_cols['heightUnit']['actionType']='';
 	$products_cols['heightUnit']['colName']='height_unit';
 	$products_cols['heightUnit']['tableName']="{$wpdb->prefix}postmeta";
 	
-	$products_cols['widthUnit']['name']='Unit';
+	$products_cols['widthUnit']['name']=__( 'Unit', $sm_domain );
 	$products_cols['widthUnit']['actionType']='';
 	$products_cols['widthUnit']['colName']='width_unit';
 	$products_cols['widthUnit']['tableName']="{$wpdb->prefix}postmeta";
 	
-	$products_cols['lengthUnit']['name']='Unit';
+	$products_cols['lengthUnit']['name']=__( 'Unit', $sm_domain );
 	$products_cols['lengthUnit']['actionType']='';
 	$products_cols['lengthUnit']['colName']='length_unit';
 	$products_cols['lengthUnit']['tableName']="{$wpdb->prefix}postmeta";
 	
-	$products_cols['qtyLimited']['name']='Stock: Quantity Limited';
+	$products_cols['qtyLimited']['name']=__( 'Stock: Quantity Limited', $sm_domain ) ;
 	$products_cols['qtyLimited']['actionType']='YesNoActions';
 	$products_cols['qtyLimited']['tableName']="{$wpdb->prefix}postmeta";
 	$products_cols['qtyLimited']['updateColName']='meta_value';
 	
-	$products_cols['oos']['name']='Stock: Inform When Out Of Stock';
+	$products_cols['oos']['name']=__( 'Stock: Inform When Out Of Stock', $sm_domain );
 	$products_cols['oos']['actionType']='YesNoActions';
 	$products_cols['oos']['colName']='unpublish_when_none_left';
 	$products_cols['oos']['tableName']="{$wpdb->prefix}postmeta";
@@ -365,7 +368,7 @@ if (WPSC_RUNNING === true) {
 	$cnt = 0;
 	foreach ($customerFieldsResults as $obj) {
 		$customerFields ['items'] [$cnt] ['id'] = $cnt;
-		$customerFields ['items'] [$cnt] ['name'] = ucwords(str_replace('_', ' ', substr($obj->meta_key, 9)));
+		$customerFields ['items'] [$cnt] ['name'] = __( ucwords(str_replace('_', ' ', substr($obj->meta_key, 9))), 'smart-manager' );
 		if ($customerFields ['items'] [$cnt] ['name'] == 'Country') {
 			$customerFields ['items'] [$cnt] ['type'] = 'bigint';
 		} else {
@@ -391,13 +394,13 @@ if (WPSC_RUNNING === true) {
 	$products_cols['inventory']['colName']='_stock'; // for woo
 	$products_cols['sku']['colName']='_sku'; // for woo
 	
-	$products_cols['salePriceFrom']['name']='From';
+	$products_cols['salePriceFrom']['name']=__( 'From', $sm_domain );
 	$products_cols['salePriceFrom']['actionType']='';
 	$products_cols['salePriceFrom']['colName']='_sale_price_dates_from';
 	$products_cols['salePriceFrom']['tableName']="{$wpdb->prefix}postmeta";
 	$products_cols['salePriceFrom']['updateColName']='meta_value';
 	
-	$products_cols['salePriceTo']['name']='To';
+	$products_cols['salePriceTo']['name']=__( 'To', $sm_domain );
 	$products_cols['salePriceTo']['actionType']='';
 	$products_cols['salePriceTo']['colName']='_sale_price_dates_to';
 	$products_cols['salePriceTo']['tableName']="{$wpdb->prefix}postmeta";
@@ -457,7 +460,7 @@ if (WPSC_RUNNING === true) {
 $result = mysql_query ( $query );
 while ( $data = mysql_fetch_assoc ( $result ) ) {
 
-	$count = ($old_group_id != $data ['group_id']) ? 0 : ++ $count;
+	$count = (isset( $old_group_id ) && $old_group_id != $data ['group_id']) ? 0 : ++ $count;
 	
 	 if($count == 0){//setting the default categories for new product
 	 	$cat_id = $data ['category_id'];
@@ -467,7 +470,7 @@ while ( $data = mysql_fetch_assoc ( $result ) ) {
 	$categories ["category-" . $data ['group_id']] [$count] [0] = $wpdb->_real_escape ( $data ['category_id'] );
 	$categories ["category-" . $data ['group_id']] [$count] [1] = $wpdb->_real_escape ( $data ['category_name'] );
 	
-	$products_cols ["group" . $data ['group_id']] ['name'] = "Group: " . $wpdb->_real_escape ( $data ['group_name'] );
+	$products_cols ["group" . $data ['group_id']] ['name'] =  __( 'Group', 'smart-manager') . ":" .  $wpdb->_real_escape ( $data ['group_name'] );
 	$products_cols ["group" . $data ['group_id']] ['actionType'] = "category_actions";
 	if (WPSC_RUNNING === true) {
 		$products_cols ["group" . $data ['group_id']] ['colName'] = (IS_WPSC37) ? "category_id" : "term_taxonomy_id";
@@ -506,7 +509,7 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 		$categories ["category-Variation" . $data ['group_id']] [$count] [0] = $wpdb->_real_escape ( $data ['category_id'] );
 		$categories ["category-Variation" . $data ['group_id']] [$count] [1] = $wpdb->_real_escape ( $data ['category_name'] );
 		
-		$products_cols ["groupVariation" . $data ['group_id']] ['name'] = "Variation: " . $wpdb->_real_escape ( $data ['group_name'] );
+		$products_cols ["groupVariation" . $data ['group_id']] ['name'] = __("Variation: ",$sm_domain) . $wpdb->_real_escape ( $data ['group_name'] ); 
 		$products_cols ["groupVariation" . $data ['group_id']] ['actionType'] = "category_actions";
 		$products_cols ["groupVariation" . $data ['group_id']] ['colName'] = (IS_WPSC37) ? "category_id" : "term_taxonomy_id";
 		$products_cols ["groupVariation" . $data ['group_id']] ['tableName'] = (IS_WPSC37) ? WPSC_TABLE_ITEM_CATEGORY_ASSOC : "{$wpdb->prefix}term_relationships";
@@ -530,19 +533,19 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 	
 	}
 	
-	$products_cols ["groupAttributeAdd"] ['name'] = "Add Attribute";
+	$products_cols ["groupAttributeAdd"] ['name'] = __("Add Attribute",$sm_domain); 
 	$products_cols ["groupAttributeAdd"] ['actionType'] = "attribute_action";
 	$products_cols ["groupAttributeAdd"] ['colName'] = "term_taxonomy_id";
 	$products_cols ["groupAttributeAdd"] ['tableName'] = "{$wpdb->prefix}term_relationships";		
 	$products_cols ["groupAttributeAdd"] ['colFilter'] = "AttributeAdd";
 	
-	$products_cols ["groupAttributeChange"] ['name'] = "Change Attribute";
+	$products_cols ["groupAttributeChange"] ['name'] = __("Change Attribute",$sm_domain);
 	$products_cols ["groupAttributeChange"] ['actionType'] = "attribute_action";
 	$products_cols ["groupAttributeChange"] ['colName'] = "term_taxonomy_id";
 	$products_cols ["groupAttributeChange"] ['tableName'] = "{$wpdb->prefix}term_relationships";		
 	$products_cols ["groupAttributeChange"] ['colFilter'] = "AttributeChange";
 	
-	$products_cols ["groupAttributeRemove"] ['name'] = "Remove Attribute";
+	$products_cols ["groupAttributeRemove"] ['name'] = __("Remove Attribute",$sm_domain);
 	$products_cols ["groupAttributeRemove"] ['actionType'] = "attribute_action";
 	$products_cols ["groupAttributeRemove"] ['colName'] = "term_taxonomy_id";
 	$products_cols ["groupAttributeRemove"] ['tableName'] = "{$wpdb->prefix}term_relationships";		
@@ -550,9 +553,11 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 
 }
 
-$categories = json_encode ( $categories );
-$products_cols = json_encode($products_cols);
-$attribute = json_encode($attribute);
+$encoded_categories = json_encode ( $categories );
+$products_cols = json_encode( $products_cols );
+if ( isset( $attribute ) ) {
+	$attribute = json_encode( $attribute );
+}
 // EOF Product category
 // BOF Products Fields
 
@@ -564,7 +569,7 @@ $attribute = json_encode($attribute);
 	
 	var ordersFields        =  " . $encodedOrdersFields . ";
 	var customersFields     =  " . $encodedCustomersFields . ";
-	var categories 			=  " . $categories . ";
+	var categories 			=  " . $encoded_categories . ";
 	var countries           =  " . $encodedCountries . ";
 	var site_url            =  '" . $site_url . "';
 	var wpContentUrl        =  '" . WP_CONTENT_URL . "';";
@@ -599,6 +604,150 @@ if (WPSC_RUNNING === true) {
 	var imgURL              = '" . IMG_URL . "';
 	var productsDetailsLink = '" . $products_details_url . "';	
 	var ordersDetailsLink   = '" . $orders_details_url . "';
+	
+	var getText = function( oldText ) {
+	
+		var oldTextKey = oldText.replace( /[-.'?:%,()|/+\s]/g, '_' ).toLowerCase();
+		var lang 				= new Object;
+		lang.products			= '" . __('Products',$sm_domain) . "';
+		lang.customers			= '" . __('Customers',$sm_domain) . "';
+		lang.orders				= '" . __('Orders',$sm_domain) . "';
+		lang.add_product        = '" . __('Add Product',$sm_domain) . "';
+		lang.add_a_new_product  = '" . __('Add a new product',$sm_domain) . "';
+		lang.smart_manager     	= '" . __('Smart Manager',$sm_domain) . "';
+		lang.add_product_feature_is_available_only_in_pro_version  = '" . __('Add product feature is available only in Pro version',$sm_domain) . "';
+		lang.print		        = '" . __('Print',$sm_domain) . "';
+		lang.print_packing_slips = '" . __('Print Packing Slips',$sm_domain) . "';
+		lang.print_preview_feature_is_available_only_in_pro_version	= '" . __('Print Preview feature is available only in Pro version',$sm_domain) . "';
+		lang.delete         	= '" . __('Delete',$sm_domain) . "';
+		lang.delete_the_selected_items = '" . __('Delete the selected items',$sm_domain) . "'; 
+		lang.type	         	= '" . __('Type',$sm_domain) . "';
+		lang.product_images	   	= '" . __('Product Images',$sm_domain) . "';
+		lang.product_name	    = '" . __('Product Name',$sm_domain) . "'
+		lang.price	         	= '" . __('Price',$sm_domain) . "';
+		lang.sale_price			= '" . __('Sale Price',$sm_domain) . "';
+		lang.sale_price_from	= '" . __('Sale Price From',$sm_domain) . "';
+		lang.sale_price_to		= '" . __('Sale Price To',$sm_domain) . "';
+		lang.inventory	        = '" . __('Inventory',$sm_domain) . "';
+		lang.sku	            = '" . __('SKU',$sm_domain) . "';
+		lang.category	        = '" . __('Category',$sm_domain) . "';
+		lang.weight		        = '" . __('Weight',$sm_domain) . "';
+		lang.product_status		= '" . __('Product Status',$sm_domain) . "';
+		lang.description		= '" . __('Description',$sm_domain) . "';
+		lang.additional_description	= '" . __('Additional Description',$sm_domain) . "';
+		lang.height		        = '" . __('Height',$sm_domain) . "';
+		lang.width		        = '" . __('Width',$sm_domain) . "';
+		lang.length		        = '" . __('Length',$sm_domain) . "';
+		lang.edit				= '" . __('Edit',$sm_domain) . "';
+		lang.product_info		= '" . __('Product Info',$sm_domain) . "';
+		lang.batch_update		= '" . __('Batch Update',$sm_domain) . "';
+		lang.update_selected_items = '" . __('Update selected items',$sm_domain) . "';
+		lang.save		        = '" . __('Save',$sm_domain) . "';
+		lang.save_all_changes	= '" . __('Save all Changes',$sm_domain) . "';
+		lang.export_csv		    = '" . __('Export CSV',$sm_domain) . "';
+		lang.download_csv_file	= '" . __('Download CSV file',$sm_domain) . "';
+		lang.export_csv_feature_is_available_only_in_pro_version	= '" . __('Export CSV feature is available only in Pro version',$sm_domain) . "';
+		lang.are_you_sure_you_want_to_delete_the_selected_record_	= '" . __('Are you sure you want to delete the selected record?',$sm_domain) . "';
+		lang.are_you_sure_you_want_to_delete_the_selected_records_	= '" . __('Are you sure you want to delete the selected records?',$sm_domain) . "';
+		lang.confirm_file_delete = '" . __('Confirm File Delete',$sm_domain) . "';
+		lang.list_is_empty		= '" . __('list is empty',$sm_domain) . "';
+		lang.confirm_save		= '" . __('Confirm Save',$sm_domain) . "';
+		lang.do_you_want_to_save_the_modified_records_	= '" . __('Do you want to save the modified records?',$sm_domain) . "';
+		lang.search				= '" . __('Search',$sm_domain) . "';
+		lang.search_feature_is_available_only_in_pro_version	= '" . __('Search feature is available only in Pro version',$sm_domain) . "';
+		lang.please_wait			= '" . __('Please wait',$sm_domain) . "';
+		lang.select_a_field		= '" . __('Select a field',$sm_domain) . "';
+		lang.only_numbers_are_allowed	= '" . __('Only numbers are allowed',$sm_domain) . "';
+		lang.enter_attribute_name	= '" . __('Enter Attribute Name',$sm_domain) . "';
+		lang.select_an_action		= '" . __('Select an action',$sm_domain) . "';
+		lang.select_a_value		= '" . __('Select a value',$sm_domain) . "';
+		lang.enter_the_value		= '" . __('Enter the value',$sm_domain) . "';
+		lang.select_a_category	= '" . __('Select a category',$sm_domain) . "';
+		lang.enter_values		= '" . __('Enter values',$sm_domain) . "';
+		lang.important_			= '" . __('Important:',$sm_domain) . "';
+		lang.for_more_than_one_values__use_pipe_____as_delimiter	= '" . __('For more than one values, use pipe (|) as delimiter',$sm_domain) . "';
+		lang.delete_row			= '" . __('Delete Row',$sm_domain) . "';
+		lang.add_row			= '" . __('Add Row',$sm_domain) . "';
+		lang.add_a_new_row			= '" . __('Add a new row',$sm_domain) . "';
+		lang.update				= '" . __('Update',$sm_domain) . "';
+		lang.apply_all_changes	= '" . __('Apply all changes',$sm_domain) . "';
+		lang.batch_update___available_only_in_pro_version		= '" . __('Batch Update - available only in Pro version',$sm_domain) . "';
+		lang.your_browser_does_not_support_iframes_		= '" . __('Your browser does not support iframes.',$sm_domain) . "';
+		lang.first_name			= '" . __('First Name',$sm_domain) . "';
+		lang.billing_first_name	= '" . __('Billing First Name',$sm_domain) . "';
+		lang.last_name			= '" . __('Last Name',$sm_domain) . "';
+		lang.billing_last_name	= '" . __('Billing Last Name',$sm_domain) . "';
+		lang.email				= '" . __('Email',$sm_domain) . "';
+		lang.email_address		= '" . __('Email Address',$sm_domain) . "';
+		lang.address			= '" . __('Address',$sm_domain) . "';
+		lang.billing_address		= '" . __('Billing Address',$sm_domain) . "';
+		lang.postal_code		= '" . __('Postal Code',$sm_domain) . "';
+		lang.billing_postal_code	= '" . __('Billing Postal Code',$sm_domain) . "';
+		lang.city				= '" . __('City',$sm_domain) . "';
+		lang.billing_city		= '" . __('Billing City',$sm_domain) . "';
+		lang.region				= '" . __('Region',$sm_domain) . "';
+		lang.billing_region		= '" . __('Billing Region',$sm_domain) . "';
+		lang.country			= '" . __('Country',$sm_domain) . "';
+		lang.billing_country		= '" . __('Billing Country',$sm_domain) . "';
+		lang.total_purchased		= '" . __('Total Purchased',$sm_domain) . "';
+		lang.last_order			= '" . __('Last Order',$sm_domain) . "';
+		lang.last_order_details	= '" . __('Last Order Details',$sm_domain) . "';
+		lang.phone_number		= '" . __('Phone Number',$sm_domain) . "';
+		lang.filter_through_date_feature_is_available_only_in_pro_versionlast_name	= '" . __('Filter through Date feature is available only in Pro versionLast Name',$sm_domain) . "';
+		lang.order_id			= '" . __('Order Id',$sm_domain) . "';
+		lang.date___time			= '" . __('Date / Time',$sm_domain) . "';
+		lang.name				= '" . __('Name',$sm_domain) . "';
+		lang.customer_name		= '" . __('Customer Name',$sm_domain) . "';
+		lang.amount				= '" . __('Amount',$sm_domain) . "';
+		lang.details			= '" . __('Details',$sm_domain) . "';
+		lang.track_id			= '" . __('Track Id',$sm_domain) . "';
+		lang.payment_method		= '" . __('Payment Method',$sm_domain) . "';
+		lang.status				= '" . __('Status',$sm_domain) . "';
+		lang.order_status		= '" . __('Order Status',$sm_domain) . "';
+		lang.orders_notes			= '" . __('Orders Notes',$sm_domain) . "';
+		lang.shipping_method		= '" . __('Shipping Method',$sm_domain) . "';
+		lang.shipping_first_name	= '" . __('Shipping First Name',$sm_domain) . "';
+		lang.shipping_last_name	= '" . __('Shipping Last Name',$sm_domain) . "';
+		lang.shipping_address	= '" . __('Shipping Address',$sm_domain) . "';
+		lang.shipping_postal_code	= '" . __('Shipping Postal Code',$sm_domain) . "';
+		lang.shipping_city		= '" . __('Shipping City',$sm_domain) . "';
+		lang.shipping_region		= '" . __('Shipping Region',$sm_domain) . "';
+		lang.shipping_country	= '" . __('Shipping Country',$sm_domain) . "';
+		lang.show_variations_feature_is_available_only_in_pro_version	= '" . __('Show Variations feature is available only in Pro version',$sm_domain) . "';
+		lang.show_variations_feature_is_available_only_for_wpec_3_8_		= '" . __('Show Variations feature is available only for WPeC 3.8+',$sm_domain) . "';
+		lang.show_variations	= '" . __('Show Variations',$sm_domain) . "';
+		lang.access_denied		= '" . __('Access Denied',$sm_domain) . "';
+		lang.you_dont_have_sufficient_permission_to_view_this_page		= '" . __("You dont have sufficient permission to view this page",$sm_domain) . "';
+		lang.this_feature_is_available_only_in_pro_version				= '" . __('This feature is available only in Pro version',$sm_domain) . "';
+		lang.products_details	= '" . __('Products Details',$sm_domain) . "';
+		lang.manage_your_product_images	= '" . __('Manage your Product Images',$sm_domain) . "';
+		lang.manage_your_product_images___available_only_in_pro_version = '" . __('Manage your Product Images - Available only in Pro version',$sm_domain) . "';
+		lang.batch_update_feature_is_available_only_in_pro_version	= '" . __('Batch Update feature is available only in Pro version',$sm_domain) . "';
+		lang.set_to				= '" . __('set to',$sm_domain) . "';
+		lang.append			= '" . __('append',$sm_domain) . "';
+		lang.prepend			= '" . __('prepend',$sm_domain) . "';
+		lang.increase_by__ 		= '" . __('increase by %',$sm_domain) . "';
+		lang.decrease_by__		= '" . __('decrease by %',$sm_domain) . "';
+		lang.increase_by_number	= '" . __('increase by number',$sm_domain) . "';
+		lang.decrease_by_number	= '" . __('decrease by number',$sm_domain) . "';
+		lang.yes				= '" . __('Yes',$sm_domain) . "';
+		lang.no				= '" . __('No',$sm_domain) . "';
+		lang.add_to				= '" . __('add to',$sm_domain) . "';
+		lang.remove_from		= '" . __('remove from',$sm_domain) . "';
+		lang.inches			= '" . __('inches',$sm_domain) . "';
+		lang.cm				= '" . __('cm',$sm_domain) . "';
+		lang.meter				= '" . __('meter',$sm_domain) . "';
+		lang.disregard_shipping	= '" . __('Disregard Shipping',$sm_domain) . "';
+		lang.local_shipping_fee	= '" . __('Local Shipping Fee',$sm_domain) . "';
+		lang.international_shipping_fee	= '" . __('International Shipping Fee',$sm_domain) . "';
+		lang.weight_unit				= '" . __('Weight Unit',$sm_domain) . "';
+		lang.height_unit				= '" . __('Height Unit',$sm_domain) . "';
+		lang.width_unit				= '" . __('Width Unit',$sm_domain) . "';
+		lang.length_unit				= '" . __('Length Unit',$sm_domain) . "';		
+		
+		newText = lang[oldTextKey];
+		return newText;
+	};
 	
 	/*BOF setting the product fields acc. to the WPSC version*/
 	var productsViewCols    = new Array(); /*data indexes of the columns in products view*/
@@ -680,11 +829,11 @@ if (WPSC_RUNNING === true) {
 	
 
 	Ext.iterate(SM.productsCols , function(key,value) { // adding values in the value field
-		SM['productsCols'][key]['value'] = key;";
+		SM['productsCols'][key]['value'] = key; ";
 	
 if (WPSC_RUNNING === true) {	
 		
-		echo "if(isWPSC37 != '' && value.actionType != ''){
+		echo " if(isWPSC37 != '' && value.actionType != ''){
 			if(value.value != 'height'){
 				if(value.value != 'width'){
 					if(value.value != 'lengthCol'){

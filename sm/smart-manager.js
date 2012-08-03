@@ -34,8 +34,7 @@ Ext.notification = function(){
 }();// Floating notification end
 
 // global Variables and array declaration.
-var actions            = new Array(), //an array for actions combobox in batchupdate window.
-	categories         = new Array(), //an array for category combobox in batchupdate window.
+var	categories         = new Array(), //an array for category combobox in batchupdate window.
 	dimensionUnits     = new Array(), //an array for dimension units combobox in batchupdate window.
 	cellClicked        = false,  	  //flag to check if any cell is clicked in the editor grid.
 	search_timeout_id  = 0, 		  //timeout for sending request while searching.
@@ -48,67 +47,6 @@ var actions            = new Array(), //an array for actions combobox in batchup
 	countriesStore     = '',
 	regionsStore       = '',
 	reloadRegionCombo  = '';
-
-//creating an array of actions to be used in the actions combobox in batch update window.
-actions['blob']   = [{'id': 0,'name': 'set to','value': 'SET_TO'},
-				     {'id': 1,'name': 'append','value': 'APPEND'},
-				     {'id': 2,'name': 'prepend','value': 'PREPEND'}];
-
-actions['bigint'] = [{'id': 0,'name': 'set to','value': 'SET_TO'}];
-
-actions['real']   = [{'id': 0,'name': 'set to','value': 'SET_TO'},
-				     {'id': 1,'name': 'increase by %','value': 'INCREASE_BY_%'},
-				     {'id': 1,'name': 'decrease by %','value': 'DECREASE_BY_%'},
-				     {'id': 2,'name': 'increase by number','value': 'INCREASE_BY_NUMBER'},
-				     {'id': 3,'name': 'decrease by number','value': 'DECREASE_BY_NUMBER'}];
-
-actions['int']    = [{'id': 0,'name': 'set to','value': 'SET_TO'},
-				     {'id': 1,'name': 'increase by number','value': 'INCREASE_BY_NUMBER'},
-				     {'id': 2,'name': 'decrease by number','value': 'DECREASE_BY_NUMBER'}];
-
-actions['float']  = [{'id': 0,'name': 'set to','value': 'SET_TO'},
-			         {'id': 1,'name': 'increase by number','value': 'INCREASE_BY_NUMBER'},
-			         {'id': 2,'name': 'decrease by number','value': 'DECREASE_BY_NUMBER'}];
-
-actions['string'] = [{'id': 0,'name': 'Yes','value': 'YES'},
-					 {'id': 1,'name': 'No','value': 'NO'}];
-
-actions['category_actions'] = [{'id': 0,'name': 'set to','value': 'SET_TO'},
-							   {'id': 1,'name': 'add to','value': 'ADD_TO'},
-							   {'id': 2,'name': 'remove from','value': 'REMOVE_FROM'}];
-
-
-dimensionUnits    = {'items': [{'id':0 , 'name':'inches', 'value': 'in'},
-					  	       {'id':1 , 'name':'cm', 'value': 'cm'},
-							   {'id':2 , 'name':'meter', 'value': 'meter'}],
-	                 'totalCount': 3 };
-
-actions['modStrActions']   = [[ 0, 'set to', 'SET_TO'],
-                              [ 1, 'append', 'APPEND'],
-                              [ 2, 'prepend', 'PREPEND']];
-
-actions['setStrActions']   = [[ 0,'set to', 'SET_TO']];
-
-actions['setAdDelActions'] = [[0, 'set to', 'SET_TO'],
-                              [1, 'add to', 'ADD_TO'],
-                              [2, 'remove from', 'REMOVE_FROM']];
-
-actions['modIntPercentActions']   = [[0, 'set to', 'SET_TO'],
-                                     [1, 'increase by %', 'INCREASE_BY_%'],
-                                     [2, 'decrease by %', 'DECREASE_BY_%'],
-                                     [3, 'increase by number','INCREASE_BY_NUMBER'],
-                                     [4, 'decrease by number', 'DECREASE_BY_NUMBER']];
-
-actions['modIntActions']   		  = [[0, 'set to', 'SET_TO'],
-                              		 [1, 'increase by number','INCREASE_BY_NUMBER'],
-                              		 [2, 'decrease by number', 'DECREASE_BY_NUMBER']];
-
-actions['YesNoActions']   		  = [[0,'Yes','YES'],
-                             		 [1,'No','NO']];
-
-actions['category_actions'] 	  = [[0, 'set to','SET_TO'],
-							   		 [1,'add to','ADD_TO'],
-							   		 [2,'remove from','REMOVE_FROM']];
 
 Ext.onReady(function () {
 		
@@ -137,6 +75,63 @@ Ext.onReady(function () {
 	SM.incVariation      = false;
 	SM.typeColIndex 	 = '';
 	
+	var actions            = new Array(); //an array for actions combobox in batchupdate window.
+	
+	//creating an array of actions to be used in the actions combobox in batch update window.
+	actions['blob']   = [{'id': 0,'name': getText('set to'), 'value':'SET_TO'},
+					     {'id': 1,'name': getText('append'),'value': 'APPEND'},
+					     {'id': 2,'name': getText('prepend'),'value': 'PREPEND'}];
+
+	actions['bigint'] = [{'id': 0,'name': getText('set to'),'value': 'SET_TO'}];
+
+	actions['real']   = [{'id': 0,'name': getText('set to'),'value': 'SET_TO'},
+					     {'id': 1,'name': getText('increase by %'),'value': 'INCREASE_BY_%'},
+					     {'id': 1,'name': getText('decrease by %'),'value': 'DECREASE_BY_%'},
+					     {'id': 2,'name': getText('increase by number'),'value': 'INCREASE_BY_NUMBER'},
+					     {'id': 3,'name': getText('decrease by number'),'value': 'DECREASE_BY_NUMBER'}];
+
+	actions['int']    = [{'id': 0,'name': getText('set to'),'value': 'SET_TO'},
+					     {'id': 1,'name': getText('increase by number'),'value': 'INCREASE_BY_NUMBER'},
+					     {'id': 2,'name': getText('decrease by number'),'value': 'DECREASE_BY_NUMBER'}];
+
+	actions['float']  = [{'id': 0,'name': getText('set to'),'value': 'SET_TO'},
+				         {'id': 1,'name': getText('increase by number'),'value': 'INCREASE_BY_NUMBER'},
+				         {'id': 2,'name': getText('decrease by number'),'value': 'DECREASE_BY_NUMBER'}];
+
+	actions['string'] = [{'id': 0,'name': getText('Yes'),'value': 'YES'},
+						 {'id': 1,'name': getText('No'),'value': 'NO'}];
+
+	actions['category_actions'] = [{'id': 0,'name': getText('set to'),'value': 'SET_TO'},
+								   {'id': 1,'name': getText('add to'),'value': 'ADD_TO'},
+								   {'id': 2,'name': getText('remove from'),'value': 'REMOVE_FROM'}];
+
+	actions['modStrActions']   = [[ 0, getText('set to'), 'SET_TO'],
+	                              [ 1, getText('append'), 'APPEND'],
+	                              [ 2, getText('prepend'), 'PREPEND']];
+
+	actions['setStrActions']   = [[ 0,getText('set to'), 'SET_TO']];
+
+	actions['setAdDelActions'] = [[0, getText('set to'), 'SET_TO'],
+	                              [1, getText('add to'), 'ADD_TO'],
+	                              [2, getText('remove from'), 'REMOVE_FROM']];
+
+	actions['modIntPercentActions']   = [[0, getText('set to'), 'SET_TO'],
+	                                     [1, getText('increase by %'), 'INCREASE_BY_%'],
+	                                     [2, getText('decrease by %'), 'DECREASE_BY_%'],
+	                                     [3, getText('increase by number'),'INCREASE_BY_NUMBER'],
+	                                     [4, getText('decrease by number'), 'DECREASE_BY_NUMBER']];
+
+	actions['modIntActions']   		  = [[0, getText('set to'), 'SET_TO'],
+	                              		 [1, getText('increase by number'),'INCREASE_BY_NUMBER'],
+	                              		 [2, getText('decrease by number'), 'DECREASE_BY_NUMBER']];
+
+	actions['YesNoActions']   		  = [[0,getText('Yes'),'YES'],
+	                             		 [1,getText('No'),'NO']];
+
+	actions['category_actions'] 	  = [[0, getText('set to'),'SET_TO'],
+								   		 [1,getText('add to'),'ADD_TO'],
+								   		 [2,getText('remove from'),'REMOVE_FROM']];
+	
 	//fm used as a short form for Ext.form
 	var fm 		     = Ext.form,
 		toolbarCount =  1,
@@ -145,7 +140,7 @@ Ext.onReady(function () {
 	
 	//Regex to allow only numbers.
 	var objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;
-	var regexError = 'Only numbers are allowed';
+	var regexError = getText('Only numbers are allowed');
 		
 	//number format in which the amounts in the grid will be displayed.
 	var amountRenderer = Ext.util.Format.numberRenderer('0,0.00'),
@@ -226,8 +221,8 @@ Ext.onReady(function () {
 			});
 
 			var addProductButton = new Ext.Button({
-				text      : 'Add Product',
-				tooltip   : 'Add a new product',
+				text   	  : getText('Add product'),
+				tooltip   : getText('Add a new product'),
 				icon      : imgURL + 'add.png',
 				disabled  : true,
 				hidden    : false,
@@ -239,7 +234,7 @@ Ext.onReady(function () {
 						if(fileExists == 1){
 							addProduct(productsStore, cnt_array, cnt, newCatName);
 						}else{
-							Ext.notification.msg('Smart Manager', 'Add product feature is available only in Pro version');
+							Ext.notification.msg('Smart Manager', getText('Add product feature is available only in Pro version') );
 						}
 					}
 				}
@@ -268,8 +263,8 @@ Ext.onReady(function () {
 			});
 
 			var printButton = new Ext.Button({
-				text: 'Print',
-				tooltip: 'Print Packing Slips',
+				text: getText('Print'),
+				tooltip: getText('Print Packing Slips'),
 				disabled: true,
 				ref: 'printButton',
 				id: 'printButton',
@@ -280,7 +275,7 @@ Ext.onReady(function () {
 						if(fileExists == 1){
 							showPrintWindow(editorGrid);
 						}else{
-							Ext.notification.msg('Smart Manager', 'Print Preview feature is available only in Pro version');
+							Ext.notification.msg('Smart Manager',  getText('Print Preview feature is available only in Pro version') );
 						}
 					}
 				}
@@ -306,8 +301,8 @@ Ext.onReady(function () {
 			});
 
 			var deleteButton = new Ext.Button({
-				text: 'Delete',
-				tooltip: 'Delete the selected items',
+				text: getText('Delete'),
+				tooltip: getText('Delete the selected items'),
 				disabled: true,
 				ref: 'deleteButton',
 				id: 'deleteButton',
@@ -427,7 +422,7 @@ Ext.onReady(function () {
 			header: '',
 			id: 'type',
 			dataIndex: SM.productsCols.post_parent.colName,
-			tooltip: 'Type',
+			tooltip: getText('Type'), 
 			width: 20,
 			hidden: true,
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
@@ -438,7 +433,7 @@ Ext.onReady(function () {
 			header: SM.productsCols.image.name,
 			id: 'image',
 			dataIndex: SM.productsCols.image.colName,
-			tooltip: 'Product Image',
+			tooltip: getText('Product Image'),
 			width: 20,
 			hidden: true,
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
@@ -450,7 +445,7 @@ Ext.onReady(function () {
 			id: 'name',
 			sortable: true,
 			dataIndex: SM.productsCols.name.colName,
-			tooltip: 'Product Name',
+			tooltip: getText('Product Name'),
 			width: 300,
 			editable: true,
 			editor: new fm.TextField({
@@ -464,7 +459,7 @@ Ext.onReady(function () {
 			align: 'right',
 			sortable: true,
 			dataIndex: SM.productsCols.price.colName,
-			tooltip: 'Price',
+			tooltip: getText('Price'),
 			editable: true,
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
@@ -478,7 +473,7 @@ Ext.onReady(function () {
 			align: 'right',
 			dataIndex: SM.productsCols.salePrice.colName,
 			renderer: amountRenderer,
-			tooltip: 'Sale Price',
+			tooltip: getText('Sale Price'),
 			editor: new fm.NumberField({
 				allowBlank: false,
 				allowNegative: false
@@ -489,7 +484,7 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.inventory.colName,
-			tooltip: 'Inventory',
+			tooltip: getText('Inventory'),
 			editor: new fm.NumberField({
 				allowBlank: false,
 				allowNegative: false
@@ -499,7 +494,7 @@ Ext.onReady(function () {
 			id: 'sku',
 			sortable: true,
 			dataIndex: SM.productsCols.sku.colName,
-			tooltip: 'SKU',
+			tooltip: getText('SKU'),
 			editor: new fm.TextField({
 				allowBlank: false
 			})
@@ -508,7 +503,7 @@ Ext.onReady(function () {
 			id: 'group',
 			sortable: true,
 			dataIndex: SM.productsCols.group.colName,
-			tooltip: 'Category'
+			tooltip: getText('Category')
 		},{
 			header: SM.productsCols.weight.name,
 			id: 'weight',
@@ -516,7 +511,7 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.weight.colName,
-			tooltip: 'Weight',
+			tooltip: getText('Weight'),
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: false,
@@ -528,7 +523,7 @@ Ext.onReady(function () {
 			sortable: true,
 			hidden: true,
 			dataIndex: SM.productsCols.weightUnit.colName,
-			tooltip: 'Weight Unit',
+			tooltip: getText('Weight Unit'),
 			editor: weightUnitCombo,
 			renderer: Ext.util.Format.comboRenderer(weightUnitCombo)
 		},{
@@ -536,7 +531,7 @@ Ext.onReady(function () {
 			id: 'publish',
 			sortable: true,
 			dataIndex: SM.productsCols.publish.colName,
-			tooltip: 'Product Status',
+			tooltip: getText('Product Status'),
 			renderer: Ext.util.Format.comboRenderer(productStatusCombo)
 		},{
 			header: SM.productsCols.disregardShipping.name,
@@ -544,14 +539,14 @@ Ext.onReady(function () {
 			hidden: true,
 			sortable: true,
 			dataIndex: SM.productsCols.disregardShipping.colName,
-			tooltip: 'Disregard Shipping',
+			tooltip: getText('Disregard Shipping'),
 			editor: yesNoCombo,
 			renderer: Ext.util.Format.comboRenderer(yesNoCombo)
 		},{
 			header: SM.productsCols.desc.name,
 			id: 'desc',
 			dataIndex: SM.productsCols.desc.colName,
-			tooltip: 'Description',
+			tooltip: getText('Description'), 
 			width: 180,
 			editor: new fm.TextArea({				
 				autoHeight: true,
@@ -563,7 +558,7 @@ Ext.onReady(function () {
 			id: 'addDesc',
 			hidden: true,
 			dataIndex: SM.productsCols.addDesc.colName,
-			tooltip: 'Additional Description',
+			tooltip: getText('Additional Description'),
 			width: 180,
 			editor: new fm.TextArea({
 				autoHeight: true,
@@ -578,7 +573,7 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.pnp.colName,
-			tooltip: 'Local Shipping Fee',			
+			tooltip: getText('Local Shipping Fee'),			
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: false,
@@ -592,7 +587,7 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.intPnp.colName,
-			tooltip: 'International Shipping Fee',
+			tooltip: getText('International Shipping Fee'),
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: false,
@@ -606,7 +601,7 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.height.colName,
-			tooltip: 'Height',			
+			tooltip: getText('Height'),		
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: false,
@@ -618,7 +613,7 @@ Ext.onReady(function () {
 			hidden: true,
 			sortable: true,
 			dataIndex: SM.productsCols.heightUnit.colName,
-			tooltip: 'Height Unit',
+			tooltip: getText('Height Unit'),
 			editor: dimensionCombo,
 			renderer: Ext.util.Format.comboRenderer(dimensionCombo)
 		},{
@@ -629,7 +624,7 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.width.colName,
-			tooltip: 'Width',
+			tooltip: getText('Width'),
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: false,
@@ -641,7 +636,7 @@ Ext.onReady(function () {
 			hidden: true,
 			sortable: true,
 			dataIndex: SM.productsCols.widthUnit.colName,
-			tooltip: 'Width Unit',
+			tooltip: getText('Width Unit'),
 			editor: dimensionCombo,
 			renderer: Ext.util.Format.comboRenderer(dimensionCombo)
 		},{
@@ -652,7 +647,7 @@ Ext.onReady(function () {
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.lengthCol.colName,
-			tooltip: 'Length',			
+			tooltip: getText('Length'),			
 			renderer: amountRenderer,
 			editor: new fm.NumberField({
 				allowBlank: false,
@@ -664,14 +659,14 @@ Ext.onReady(function () {
 			hidden: true,
 			id: 'lengthUnit',
 			dataIndex: SM.productsCols.lengthUnit.colName,
-			tooltip: 'Length Unit',
+			tooltip: getText('Length Unit'),
 			editor: dimensionCombo,
 			renderer: Ext.util.Format.comboRenderer(dimensionCombo)
 		},{
-			header: 'Edit',
+			header: getText('Edit'), 
 			id: 'edit',
 			sortable: true,
-			tooltip: 'Product Info',
+			tooltip: getText('Product Info'),
 			dataIndex: 'edit_url',
 			width: 50,
 			id: 'editLink',
@@ -799,8 +794,8 @@ var pagingToolbar = new Ext.PagingToolbar({
 	id: 'pagingToolbar',
 	items: ['->', {xtype:'tbseparator', id:'beforeBatchSeparator'},
 	{
-		text: 'Batch Update',
-		tooltip: 'Update selected items',
+		text: getText('Batch Update'), 
+		tooltip: getText('Update selected items'),
 		icon: imgURL + 'batch_update.png',
 		id: 'batchUpdateButton',
 		disabled: true,
@@ -823,8 +818,8 @@ var pagingToolbar = new Ext.PagingToolbar({
 			}
 		}
 	},{xtype:'tbseparator', id:'beforeSaveSeparator'},{
-		text: 'Save',
-		tooltip: 'Save all Changes',
+		text: getText('Save'),
+		tooltip: getText('Save all Changes'),
 		icon: imgURL + 'save.png',
 		disabled: true,
 		scope: this,
@@ -841,8 +836,8 @@ var pagingToolbar = new Ext.PagingToolbar({
 		}}
 	},{xtype:'tbseparator', id:'beforeExportSeparator'},
 	{
-		text: 'Export CSV',
-		tooltip: 'Download CSV file',
+		text: getText('Export CSV'),
+		tooltip: getText('Download CSV file'), 
 		icon: imgURL + 'export_csv.gif',
 		id: 'exportCsvButton',
 		ref: 'exportButton',
@@ -850,7 +845,7 @@ var pagingToolbar = new Ext.PagingToolbar({
 		listeners: { 
 			click: function () { 
 				if ( fileExists != 1 ) {
-					Ext.notification.msg('Smart Manager', '"Export CSV" feature is available only in Pro version');
+					Ext.notification.msg('Smart Manager', getText('Export CSV feature is available only in Pro version') ); 
 					return;
 				}
 				Ext.DomHelper.append(Ext.getBody(), { 
@@ -872,7 +867,7 @@ var pagingToolbar = new Ext.PagingToolbar({
 	hideBorders: true,
 	align: 'center',
 	displayMsg: 'Displaying {0} - {1} of {2}',
-	emptyMsg: SM.activeModule+' list is empty'
+	emptyMsg: SM.activeModule + ' ' + getText('list is empty')
 });
 var pagingActivePage = pagingToolbar.getPageData().activePage;
 	
@@ -981,12 +976,12 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			}
 		}
 		if (records.length == 1)
-		var msg = 'Are you sure you want to delete the selected record?';
+		var msg = getText('Are you sure you want to delete the selected record?'); 
 		else
-		var msg = 'Are you sure you want to delete the selected records?';
+		var msg = getText('Are you sure you want to delete the selected records?');
 
 		Ext.Msg.show({
-			title: 'Confirm File Delete',
+			title: getText('Confirm File Delete'),
 			msg: msg,
 			width: 400,
 			buttons: Ext.MessageBox.YESNO,
@@ -1019,14 +1014,15 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		getState: function(){ return { value: this.getValue()}; },
 		applyState: function(state) {
 			this.setValue(state.value);
-			pagingToolbar.emptyMsg =  state.value+' list is empty';
+			pagingToolbar.emptyMsg =  state.value + ' ' + getText(' list is empty');
 		},
 		store: new Ext.data.ArrayStore({
 			autoDestroy: true,
 			forceSelection: true,
-			fields: ['id', 'fullname']
+			fields: ['id', 'fullname', 'display']
 		}),
-		displayField: 'fullname',
+		displayField: 'display',
+		valueField: 'fullname',
 		cls: 'searchPanel',
 		mode: 'local',
 		triggerAction: 'all',
@@ -1040,7 +1036,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		width: 135,
 		listeners: {
 			select: function () {
-				pagingToolbar.emptyMsg = this.getValue()+' list is empty';
+				pagingToolbar.emptyMsg = this.getValue() + ' ' + getText('list is empty');
 				editorGrid.stateId = this.value.toLowerCase()+'EditorGridPanelWpsc';
 
 				cellClicked = false;
@@ -1073,8 +1069,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 						showSelectedModule(clickedActiveModule);
 					};
 					Ext.Msg.show({
-						title: 'Confirm Save',
-						msg: 'Do you want to save the modified records?',
+						title: getText('Confirm Save'), 
+						msg: getText('Do you want to save the modified records?'), 
 						width: 400,
 						buttons: Ext.MessageBox.YESNO,
 						fn: saveModification,
@@ -1190,60 +1186,60 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 	var customersColumnModel = new Ext.grid.ColumnModel({	
 		columns:[editorGridSelectionModel, //checkbox for
 		{
-			header: 'First Name',
+			header: getText('First Name'), 
 			id: 'billingfirstname',
 			dataIndex: 'billingfirstname',
-			tooltip: 'Billing First Name',
+			tooltip: getText('Billing First Name'),
 			editor: new fm.TextField({
 				allowBlank: false,
 				allowNegative: false
 			}),
 			width: 150
 		},{
-			header: 'Last Name',
+			header: getText('Last Name'),
 			id: 'billinglastname',
 			dataIndex: 'billinglastname',
-			tooltip: 'Billing Last Name',
+			tooltip: getText('Billing Last Name'),
 			editor: new fm.TextField({
 				allowBlank: false,
 				allowNegative: false
 			}),
 			width: 150
 		},{
-			header: 'Email',
+			header: getText('Email'),
 			id: 'billingemail',
 			dataIndex: 'billingemail',
-			tooltip: 'Email Address',
+			tooltip: getText('Email Address'),
 			editor: new fm.TextField({
 				allowBlank: true,
 				allowNegative: false
 			}),
 			width: 200
 		},{
-			header: 'Address',
+			header: getText('Address'),
 			id: 'billingaddress',
 			dataIndex: 'billingaddress',
-			tooltip: 'Billing Address',
+			tooltip: getText('Billing Address'),
 			editor: new fm.TextField({
 				allowBlank: false,
 				allowNegative: false
 			}),
 			width: 200
 		},{
-			header: 'Postal Code',
+			header: getText('Postal Code'), 
 			id: 'billingpostcode',
 			dataIndex: 'billingpostcode',
-			tooltip: 'Billing Postal Code',
+			tooltip: getText('Billing Postal Code'),
 			editor: new fm.TextField({
 				allowBlank: true,
 				allowNegative: false
 			}),
 			width: 150
 		},{
-			header: 'City',
+			header: getText('City'),
 			id: 'billingcity',
 			dataIndex: 'billingcity',
-			tooltip: 'Billing City',
+			tooltip: getText('Billing City'),
 			align: 'left',
 			editor: new fm.TextField({
 				allowBlank: false,
@@ -1252,38 +1248,38 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			width: 150
 		},
 		{
-			header: 'Region',
+			header: getText('Region'),
 			id: 'billingstate',
 			dataIndex: 'billingstate',
-			tooltip: 'Billing Region',
+			tooltip: getText('Billing Region'),
 			align: 'center',
 			width: 100
 		},
 		{
-			header: 'Country',
+			header: getText('Country'),
 			id: 'billingcountry',
 			dataIndex: 'billingcountry',
-			tooltip: 'Billing Country',
+			tooltip: getText('Billing Country'),
 			width: 120
 		},
 		{
-			header: 'Total Purchased',
+			header: getText('Total Purchased'),
 			id: 'total_purchased', //@todo: change the id to Total_Purchased
 			dataIndex: 'Total_Purchased',
-			tooltip: 'Total Purchased',
+			tooltip: getText('Total Purchased'),
 			align: 'right',
 			width: 150			
 		},{
-			header: 'Last Order',
+			header: getText('Last Order'), 
 			id: 'last_order',
 			dataIndex: 'Last_Order',
-			tooltip: 'Last Order Details',
+			tooltip: getText('Last Order Details'),
 			width: 220			
 		},{   
-			header: 'Phone Number',
+			header: getText('Phone Number'),
 			id: 'billingphone',
 			dataIndex: 'billingphone',
-			tooltip: 'Phone Number',
+			tooltip: getText('Phone Number'),
 			editor: new fm.TextField({
 				allowBlank: true,
 				allowNegative: false
@@ -1397,7 +1393,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 	var fromDateMenu = new Ext.menu.DateMenu({
 		handler: function(dp, date){
 			if ( fileExists != 1 ) {
-				Ext.notification.msg('Smart Manager', '"Filter through Date" feature is available only in Pro version');
+				Ext.notification.msg('Smart Manager', getText('Filter through Date feature is available only in Pro version') );
 				return;
 			}
 			fromDateTxt.setValue(date.format('M j Y'));
@@ -1409,7 +1405,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 	var toDateMenu = new Ext.menu.DateMenu({
 		handler: function(dp, date){
 			if ( fileExists != 1 ) {
-				Ext.notification.msg('Smart Manager', '"Filter through Date" feature is available only in Pro version');
+				Ext.notification.msg('Smart Manager', getText('Filter through Date feature is available only in Pro version') ); 
 				return;
 			}
 			toDateTxt.setValue(date.format('M j Y'));
@@ -1464,41 +1460,41 @@ if(isWPSC38 == '1'){
 	var ordersColumnModel = new Ext.grid.ColumnModel({	
 		columns:[editorGridSelectionModel, //checkbox for
 		{
-			header: 'Order Id',
+			header: getText('Order Id'),
 			id: 'id',
 			dataIndex: 'id',
-			tooltip: 'Order Id'
+			tooltip: getText('Order Id')
 		},{
-			header: 'Date / Time',
+			header: getText('Date / Time'),
 			id: 'date',
 			dataIndex: 'date',
-			tooltip: 'Date / Time',
+			tooltip: getText('Date / Time'),
 			width: 250
 		},{
-			header: 'Name',
+			header: getText('Name'), 
 			id: 'name',
 			dataIndex: 'name',
-			tooltip: 'Customer Name',
+			tooltip: getText('Customer Name'),
 			width: 350
 		},{
-			header: 'Amount',
+			header: getText('Amount'),
 			id: 'amount',
 			dataIndex: 'amount',
-			tooltip: 'Amount',
+			tooltip: getText('Amount'),
 			align: 'right',
 			renderer: amountRenderer,
 			width: 100
 		},{
-			header: 'Details',
+			header: getText('Details'),
 			id: 'details',
 			dataIndex: 'details',
-			tooltip: 'Details',
+			tooltip: getText('Details'),
 			width: 100
 		},{
-			header: 'Track Id',
+			header: getText('Track Id'), 
 			id: 'track_id',
 			dataIndex: 'track_id',
-			tooltip: 'Track Id',
+			tooltip: getText('Track Id'),
 			align: 'left',
 			editable: false,
 			editor: new fm.TextField({
@@ -1507,29 +1503,29 @@ if(isWPSC38 == '1'){
 			}),
 			width: 110
 		},{
-			header: 'Status',
+			header: getText('Status'),
 			id: 'order_status',
 			dataIndex: 'order_status',
-			tooltip: 'Order Status',
+			tooltip: getText('Order Status'),
 			width: 150,
 			editable: true,
 			editor: orderStatusCombo,
 			renderer: Ext.util.Format.comboRenderer(orderStatusCombo)
 		},{
-			header: 'Orders Notes',
+			header: getText('Orders Notes'),
 			id: 'notes',
 			dataIndex: 'notes',
-			tooltip: 'Orders Notes',
+			tooltip: getText('Orders Notes'),
 			width: 180,
 			editable: false,
 			editor: new fm.TextArea({				
 				autoHeight: true
 			})
 		},{   
-			header: 'Shipping First Name',
+			header: getText('Shipping First Name'),
 			id: 'shippingfirstname',
 			dataIndex: 'shippingfirstname',
-			tooltip: 'Shipping First Name',
+			tooltip: getText('Shipping First Name'),
 			hidden: true,
 			editable: false,
 			editor: new fm.TextField({
@@ -1538,10 +1534,10 @@ if(isWPSC38 == '1'){
 			}),
 			width: 200
 		},{   
-			header: 'Shipping Last Name',
+			header: getText('Shipping Last Name'),
 			id: 'shippinglastname',
 			dataIndex: 'shippinglastname',
-			tooltip: 'Shipping Last Name',
+			tooltip: getText('Shipping Last Name'),
 			hidden: true,
 			editable: false,
 			editor: new fm.TextField({
@@ -1550,10 +1546,10 @@ if(isWPSC38 == '1'){
 			}),
 			width: 200
 		},{   
-			header: 'Shipping Address',
+			header: getText('Shipping Address'),
 			id: 'shippingaddress',
 			dataIndex: 'shippingaddress',
-			tooltip: 'Shipping Address',
+			tooltip: getText('Shipping Address'),
 			hidden: true,
 			editable: false,
 			editor: new fm.TextField({
@@ -1562,10 +1558,10 @@ if(isWPSC38 == '1'){
 			}),
 			width: 200		
 		},{
-			header: 'Shipping Postal Code',
+			header: getText('Shipping Postal Code'),
 			id: 'shippingpostcode',
 			dataIndex: 'shippingpostcode',
-			tooltip: 'Shipping Postal Code',
+			tooltip: getText('Shipping Postal Code'),
 			hidden: true,
 			editable: false,
 			editor: new fm.TextField({
@@ -1574,10 +1570,10 @@ if(isWPSC38 == '1'){
 			}),
 			width: 200
 		},{   
-			header: 'Shipping City',
+			header: getText('Shipping City'), 
 			id: 'shippingcity',
 			dataIndex: 'shippingcity',
-			tooltip: 'Shipping City',
+			tooltip: getText('Shipping City'),
 			hidden: true,
 			editable: false,
 			editor: new fm.TextField({
@@ -1587,20 +1583,20 @@ if(isWPSC38 == '1'){
 			width: 200
 		},
 		{   
-			header: 'Shipping Region',
+			header: getText('Shipping Region'),
 			id: 'shippingstate',
 			dataIndex: 'shippingstate',
-			tooltip: 'Shipping Region',
+			tooltip: getText('Shipping Region'),
 			align: 'center',
 			hidden: true,
 //			editor: regionEditor,
 			width: 100		
 		},
 		{
-			header: 'Shipping Country',
+			header: getText('Shipping Country'),
 			id: 'shippingcountry',
 			dataIndex: 'shippingcountry',
-			tooltip: 'Shipping Country',
+			tooltip: getText('Shipping Country'),
 //			editor:countriesCombo,
 			hidden: true,
 			width: 120
@@ -1739,12 +1735,12 @@ SM.searchTextField = new Ext.form.TextField({
 	params: {
 		cmd: 'searchText'
 	},
-	emptyText: 'Search...',
+	emptyText: getText('Search') + '...', 
 	enableKeyEvents: true,
 	listeners: {
 		keyup: function () {
 			if ( fileExists != 1 ) {
-				Ext.notification.msg('Smart Manager', 'Search feature is available only in Pro version');
+				Ext.notification.msg('Smart Manager', getText('Search feature is available only in Pro version') );
 				return;
 			}			
 			//set a store depending on the active Module
@@ -1768,8 +1764,8 @@ SM.searchTextField = new Ext.form.TextField({
 					searchLogic();
 				}
 				Ext.Msg.show({
-					title: 'Confirm Save',
-					msg: 'Do you want to save the modified records?',
+					title: getText('Confirm Save'),
+					msg: getText('Do you want to save the modified records?'),
 					width: 400,
 					buttons: Ext.MessageBox.YESNO,
 					fn: saveModification,
@@ -1890,11 +1886,11 @@ weightUnitStore.loadData(weightUnits);
 // countries's store
 
 var mask = new Ext.LoadMask(Ext.getBody(), {
-	msg: "Please wait..."
+	msg: getText("Please wait") + "..." 
 });
 
 var batchMask = new Ext.LoadMask(Ext.getBody(), {
-	msg: "Please wait..."
+	msg: getText("Please wait") + "..."
 });
 
 //batch update window
@@ -1917,7 +1913,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				valueField: 'value',
 				mode: 'local',
 				cls: 'searchPanel',
-				emptyText: 'Select a field...',
+				emptyText: getText('Select a field') + '...',
 				triggerAction: 'all',
 				editable: false,				
 				selectOnFocus: true,
@@ -1939,7 +1935,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var comboWeightUnitCmp = toolbarParent.get(7);						
 						var comboRegionCmp = toolbarParent.get(9);
 						objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;;
-						regexError = 'Only numbers are allowed';
+						regexError = getText('Only numbers are allowed'); 
 						
 							if(SM['productsCols'][this.value] != undefined ){
 								var categoryActionType = SM['productsCols'][this.value].actionType;
@@ -1953,16 +1949,15 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								setTextfield.hide();
 								comboWeightUnitCmp.hide();
 								comboCategoriesActionCmp.hide();
-							} else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping') {								
+							}else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping') {								
 								setTextfield.hide();
 								comboWeightUnitCmp.hide();
 								comboCategoriesActionCmp.hide();
-							}else if (field_name == 'Weight' || field_name == 'Variations: Weight'||field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
+							}else if (field_name == 'Weight' || field_name == 'Variations: Weight' || field_name == 'Height' || field_name == 'Width' || field_name == 'Length' ) {
 								comboWeightUnitCmp.hide();
 								setTextfield.show();
 								comboCategoriesActionCmp.hide();
-							}
-							else if(field_name == 'Orders Status' || field_name.indexOf('Country') != -1){
+							}else if(field_name == 'Orders Status' || field_name.indexOf('Country') != -1){
 								if(field_name.indexOf('Country') != -1) {
 									actions_index = 'bigint';
 									weightUnitStore.loadData(countries);
@@ -1972,7 +1967,9 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								}
 								setTextfield.hide();
 								comboWeightUnitCmp.show();
-							} else {
+							}else if(field_type == 'YesNoActions'){
+								setTextfield.hide();
+							}else {
 								setTextfield.show();
 								if (field_type == 'blob' || field_type == 'modStrActions') {
 									objRegExp = '';
@@ -2017,7 +2014,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				valueField: 'value',
 				mode: 'local',
 				cls: 'searchPanel',
-				emptyText: 'Select an action...',
+				emptyText: getText('Select an action') + '...',
 				triggerAction: 'all',
 				editable: false,
 				selectOnFocus: true,
@@ -2094,7 +2091,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				valueField: 'id',
 				mode: 'local',
 				cls: 'searchPanel',
-				emptyText: 'Select a category...',
+				emptyText: getText('Select a category') + '...',
 				triggerAction: 'all',
 				editable: false,
 				forceSelection: false,
@@ -2123,7 +2120,18 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							actionStore.loadData(actionsData);
 							categoryStore.loadData(categories[comboFieldCmp.getValue()]);
 						}else{
-							categoryStore.loadData(categories["category-"+SM['productsCols'][selectedValue].colFilter]);
+							var category = categories["category-"+SM['productsCols'][selectedValue].colFilter];
+							if ( category instanceof Object ) {
+								var categoryData = [];
+								for ( var catId in category  ) {
+									if ( category[catId] != undefined ) {
+										categoryData.push(category[catId]);
+									}
+								}
+								categoryStore.loadData(categoryData);
+							} else {
+								categoryStore.loadData(category);
+							}
 					    }
 				    }
 				}
@@ -2139,7 +2147,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				regex: objRegExp,
 				regexText: regexError,
 				displayField: 'fullname',
-				emptyText: 'Enter the value...',
+				emptyText: getText('Enter the value') + '...',
 				cls: 'searchPanel',
 				hidden: false,
 				selectOnFocus: true
@@ -2161,7 +2169,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				displayField: 'name',
 				mode: 'local',
 				cls: 'searchPanel',
-				emptyText: 'Select a value...',
+				emptyText: getText('Select a value') + '...',
 				triggerAction: 'all',
 				editable: false,
 				forceSelection: true,
@@ -2174,18 +2182,21 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							var selectedFieldIndex = comboFieldCmp.selectedIndex;
 							var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
 							var comboRegionCmp = toolbarParent.get(9);
+							var textState = toolbarParent.get(11);
 							comboRegionCmp.reset();
 							
 							if(field_name.indexOf('Country') != -1) {
 								var selectCountryIndex = this.selectedIndex;
 								var countryId = this.store.data.items[selectCountryIndex].data['country_id'];
-
+								textState.reset();
 								if(regions[countryId]==undefined){
 									regionsStore.removeAll(false);
 									comboRegionCmp.hide();
+									textState.show();
 								}else{
 									regionsStore.loadData(regions[countryId]);
 									comboRegionCmp.show();
+									textState.hide();
 								}
 							}
 					}}
@@ -2193,7 +2204,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				xtype: 'combo',
 				forceSelection: false,
 				typeAhead: true,
-				editable: true,
+				editable: false,
 				allowBlank: false,
 				hidden: false,
 				width: 170,
@@ -2208,7 +2219,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				displayField: 'name',
 				mode: 'local',
 				cls: 'searchPanel',
-				emptyText: 'Select a value...',
+				emptyText: getText('Select a value') + '...', 
 				triggerAction: 'all',
 				selectOnFocus: true,
 				listeners: {
@@ -2227,10 +2238,23 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						}
 					}
 				}
+			},'',{
+				xtype: 'textfield',
+				width: 170,
+				allowBlank: false,
+				style: {
+					fontSize: '12px',
+					paddingLeft: '2px'
+				},
+				enableKeyEvents: true,
+				emptyText: 'Enter State/Region...',
+				cls: 'searchPanel',
+				hidden: true,
+				selectOnFocus: true
 			}, '->',
 			{
 				icon: imgURL + 'del_row.png',
-				tooltip: 'Delete Row',
+				tooltip: getText('Delete Row'),
 				handler: function () {
 					toolbarCount--;
 					var toolbarParent = this.findParentByType(batchUpdateToolbarInstance, true);
@@ -2247,8 +2271,8 @@ var batchUpdateToolbar = new Ext.Toolbar({
 	cls: 'batchtoolbar',
 	items: [new batchUpdateToolbarInstance(), '->',
 	{
-		text: 'Add Row',
-		tooltip: 'Add a new row',
+		text: getText('Add Row'), 
+		tooltip: getText('Add a new row'),
 		ref: 'addRowButton',
 		icon: imgURL + 'add_row.png',
 		handler: function () {
@@ -2259,7 +2283,7 @@ var batchUpdateToolbar = new Ext.Toolbar({
 		}
 	}]
 });
-batchUpdateToolbar.get(0).get(11).hide(); //hide delete row icon from first toolbar.
+batchUpdateToolbar.get(0).get(13).hide(); //hide delete row icon from first toolbar.
 
 var batchUpdatePanel = new Ext.Panel({
 	animCollapse: true,
@@ -2268,10 +2292,10 @@ var batchUpdatePanel = new Ext.Panel({
 	width: 900,
 	bbar: ['->',
 	{
-		text: 'Update',
+		text: getText('Update'),
 		id: 'updateButton',
 		ref: 'updateButton',
-		tooltip: 'Apply all changes',
+		tooltip: getText('Apply all changes'),
 		icon: imgURL + 'batch_update.png',
 		disabled: false,
 		listeners: { click: function () {
@@ -2307,7 +2331,7 @@ var batchRadioToolbar = new Ext.Toolbar({
 		{
 			xtype: 'tbtext',
 		    width: 90,
-		    text: 'Update...'
+		    text: getText('Update') + '...'
 		},new Ext.form.RadioGroup({
 			id: 'updateItemsOrStore' ,
 		    width: 250,
@@ -2322,7 +2346,7 @@ var batchRadioToolbar = new Ext.Toolbar({
 });
 
 batchUpdateWindow = new Ext.Window({
-	title: 'Batch Update - available only in Pro version',
+	title: getText('Batch Update - available only in Pro version'),
 	animEl: 'BU',
 	collapsible:true,
 	shadow : true,
@@ -2355,6 +2379,10 @@ batchUpdateWindow = new Ext.Window({
 
 			firstToolbar.items.items[9].reset();
 			firstToolbar.items.items[9].hide();
+			
+			firstToolbar.items.items[11].reset();
+			firstToolbar.items.items[11].hide();
+			
 			values = '';
 			ids = '';
 			batchUpdateWindow.hide();
@@ -2396,7 +2424,7 @@ var billingDetailsIframe = function(recordId){
 				this.setPosition( 250, 30 );
 			}
 		},
-		html: '<iframe src='+ ordersDetailsLink + '' + recordId +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'
+		html: '<iframe src='+ ordersDetailsLink + '' + recordId +' style="width:100%;height:100%;border:none;">< p>' + getText('Your browser does not support iframes.') + '</p></iframe>' 
 	});
 	billingDetailsWindow.show();
 };
@@ -2431,8 +2459,8 @@ var checkModifiedAndshowDetails = function(record,rowIndex){
 				showCustomerDetails(record,rowIndex);
 		};
 		Ext.Msg.show({
-			title: 'Confirm Save',
-			msg: 'Do you want to save the modified records?',
+			title: getText('Confirm Save'),
+			msg: getText('Do you want to save the modified records?'),
 			width: 400,
 			buttons: Ext.MessageBox.YESNO,
 			fn: saveModification,
@@ -2492,17 +2520,19 @@ var showCustomerDetails = function(record,rowIndex){
 				stateful: true,
 				getState: function(){ return { value: this.getValue()}; },
 				applyState: function(state) { this.setValue(state.value);},
-			 	boxLabel: 'Show Variations',
+			 	boxLabel: getText('Show Variations'),
 			 	listeners: {
 			 		check : function(checkbox, bool) {
-			 			if ( isWPSC37 == true ) {
-			 				Ext.notification.msg('Smart Manager', 'Show Variations feature is available only for WPeC 3.8+');
-			 			}else if(fileExists == 1){
-			 				SM.incVariation  = bool;
-			 				productsStore.setBaseParam('incVariation', SM.incVariation);
-			 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
-			 			}else{
-			 				Ext.notification.msg('Smart Manager', 'Show Variations feature is available only in Pro version');
+			 			if ( SM.activeModule == 'Products' ) {
+				 			if ( isWPSC37 == true ) {
+				 				Ext.notification.msg('Smart Manager', getText('Show Variations feature is available only for WPeC 3.8+') );
+				 			}else if(fileExists == 1){
+				 				SM.incVariation  = bool;
+				 				productsStore.setBaseParam('incVariation', SM.incVariation);
+				 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
+				 			}else{
+				 				Ext.notification.msg('Smart Manager', getText('Show Variations feature is available only in Pro version') );
+				 			}
 			 			}
 			 		}
 			 	}
@@ -2518,17 +2548,17 @@ var showCustomerDetails = function(record,rowIndex){
 							var dashboardComboStore = new Array();
 							for ( var i = 0; i < myJsonObj.length; i++) {
 								if ( myJsonObj[i].indexOf("_") != -1) {
-									dashboardComboStore.push(new Array(i, myJsonObj[i].slice(0,9)));
-									dashboardComboStore.push(new Array(i+1, myJsonObj[i].slice(10)));
+									dashboardComboStore.push( new Array( i, myJsonObj[i].slice( 0,9 ), getText( myJsonObj[i].slice( 0,9 ) ) ) );
+									dashboardComboStore.push( new Array( i+1, myJsonObj[i].slice( 10 ), getText( myJsonObj[i].slice( 10 ) ) ) );
 								} else {
-									dashboardComboStore.push(new Array(i, myJsonObj[i]));
+									dashboardComboStore.push( new Array( i, myJsonObj[i], getText( myJsonObj[i] ) ) );
 								}
 								
 							}
 							if ( dashboardComboStore < 1) {
 								Ext.Msg.show({
-									title: 'Access Denied',
-									msg: 'You don\'t have sufficient permission to view this page',
+									title: getText('Access Denied'),
+									msg: getText('You don\'t have sufficient permission to view this page'),
 									buttons: Ext.MessageBox.OK,
 									fn: function() {
 										location.href = 'index.php';
@@ -2542,7 +2572,7 @@ var showCustomerDetails = function(record,rowIndex){
 //								grid.stateId = SM.dashboardComboBox.value.toLowerCase()+'EditorGridPanelWpsc';
 											
 								SM.dashboardComboBox.store.loadData(dashboardComboStore);
-								showSelectedModule(SM.dashboardComboBox.value);	
+//								showSelectedModule(SM.dashboardComboBox.getValue());
 							}
 						}
 						,scope: SM.dashboardComboBox
@@ -2585,7 +2615,7 @@ var showCustomerDetails = function(record,rowIndex){
 							shadowOffset: 10,
 							stateEvents : ['show','bodyresize','maximize'],
 							stateful: true,
-							title: 'Products Details',
+							title: getText('Products Details'), 
 							width:500,
 							height: 600,						
 							minimizable: false,
@@ -2606,7 +2636,7 @@ var showCustomerDetails = function(record,rowIndex){
 									this.setPosition( 250, 30 );
 								}	
 							},
-							html: '<iframe src='+ productsDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>'
+							html: '<iframe src='+ productsDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;">< p >' + getText('Your browser does not support iframes.') + '</p></iframe>' 
 						});
 						// To disable Product's details window for product variations
 						if(record.get('post_parent') == 0){
@@ -2630,7 +2660,7 @@ var showCustomerDetails = function(record,rowIndex){
 								collapsible:true,
 								shadow : true,
 								shadowOffset: 10,
-								title: 'Manage your Product Images',
+								title: getText('Manage your Product Images'),
 								width: 700,
 								height: 400,						
 								minimizable: false,
@@ -2641,7 +2671,7 @@ var showCustomerDetails = function(record,rowIndex){
 								listeners: {
 									beforeshow: function() {
 										if ( fileExists != 1 ) 
-											this.setTitle( 'Manage your Product Images - Available only in Pro version' );
+											this.setTitle(  getText('Manage your Product Images - Available only in Pro version') );
 									},
 									maximize: function () {
 										this.setPosition( 0, 30 );
@@ -2669,7 +2699,7 @@ var showCustomerDetails = function(record,rowIndex){
 										Ext.Ajax.request(object);
 									}
 								},
-								html: ( fileExists == 1 ) ? '<iframe src="'+ site_url + '/wp-admin/media-upload.php?parent_page=wpsc-edit-products&post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;"><p>Your browser does not support iframes.</p></iframe>' : ''
+								html: ( fileExists == 1 ) ? '<iframe src="'+ site_url + '/wp-admin/media-upload.php?parent_page=wpsc-edit-products&am p;post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;">< p>' + getText('Your browser does not support iframes.') +'</p></iframe>' : ''
 							});
 							productsImageWindow.show('image');
 						}
@@ -2720,7 +2750,8 @@ var showCustomerDetails = function(record,rowIndex){
 		// This happens only for the first time when the page is rendered with the editorgrid panel.
 		// From here the flow of the code starts.
 		viewready: function(grid){
-			showSelectedModule(SM.dashboardComboBox.value);	
+			showSelectedModule( SM.dashboardComboBox.getValue() );
+            SM.dashboardComboBox.setValue( getText( SM.dashboardComboBox.getValue() ) );
 		},
 		// Fires when the grid is reconfigured with a new store and/or column model.
 		// state of the editor grid is captured and applied to back to the grid.
@@ -2748,10 +2779,10 @@ SM.typeColIndex   = productsColumnModel.findColumnIndex(SM.productsCols.post_par
 
 //For pro version check if the required file exists
 if(fileExists == 1){
-	batchUpdateWindow.title = 'Batch Update';
+	batchUpdateWindow.title = getText('Batch Update');
 }else{	
 	batchUpdateRecords = function () {
-		Ext.notification.msg('Smart Manager', 'Batch Update feature is available only in Pro version');
+		Ext.notification.msg('Smart Manager', getText('Batch Update feature is available only in Pro version') );
 	};
 	
 	//disable inline editing for products

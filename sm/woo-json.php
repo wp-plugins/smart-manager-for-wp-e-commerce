@@ -2,6 +2,7 @@
 if ( ! defined('ABSPATH') ) {
 	include_once ('../../../../wp-load.php');
 }
+load_textdomain( 'smart-manager', ABSPATH . 'wp-content/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
 
 $mem_limit = ini_get('memory_limit');
 if(intval(substr($mem_limit,0,strlen($mem_limit)-1)) < 64 ){
@@ -36,8 +37,10 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 	// Restricting LIMIT for export CSV
 	if ( $is_export === true ) {
 		$limit_string = "";
+		$image_size = "full";
 	} else {
 		$limit_string = "LIMIT $offset,$limit";
+		$image_size = "thumbnail";
 	}
 	
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
@@ -138,7 +141,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 		if ($num_rows <= 0) {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
-			$encoded ['msg'] = 'No Records Found';
+			$encoded ['msg'] = __('No Records Found', 'smart-manager'); 
 		} else {
 			
 			for ($i = 0; $i < $num_rows; $i++){
@@ -160,8 +163,8 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 					$records[$i]    = array_merge((array)$records[$i],(array)$unsez_data[$i]);
 				}
 				$records[$i] = array_merge((array)$records[$i],$prod_meta_key_values);
-				$thumbnail = isset( $records[$i]['_thumbnail_id'] ) ? wp_get_attachment_image_src( $records[$i]['_thumbnail_id'], 'admin-product-thumbnails' ) : '';
-				$records[$i]['thumbnail'] = ( $thumbnail[0] != '' ) ? $thumbnail[0] : '';
+				$thumbnail = isset( $records[$i]['_thumbnail_id'] ) ? wp_get_attachment_image_src( $records[$i]['_thumbnail_id'], $image_size ) : '';
+				$records[$i]['thumbnail'] = ( $thumbnail[0] != '' ) ? $thumbnail[0] : false;
 				if ( $show_variation === true && $records[$i]['post_parent'] != 0 ) {
 					$records[$i]['_regular_price'] = $records[$i]['_price'];
 					$records[$i]['post_title'] = $records[$i]['parent_name'] . " - " . $records[$i]['variation_name'];
@@ -198,7 +201,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 			
 			$group_by    = " GROUP BY posts.ID";
 					
-			$limit_query = " ORDER BY posts.ID DESC $limit_string ;";
+			$limit_query = " ORDER BY posts.ID DESC $limit_string";
 			
 		$query    	 = "$customers_query $where $group_by $search_condn $limit_query;";
 		$result   	 =  $wpdb->get_results ( $query, 'ARRAY_A' );
@@ -211,7 +214,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 		if ($num_records == 0) {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
-			$encoded ['msg'] = 'No Records Found';
+			$encoded ['msg'] = __('No Records Found','smart-manager');
 		} else {
 			foreach ( ( array ) $result as $data ) {
 				$meta_value = explode ( '###', $data ['meta_value'] );
@@ -310,7 +313,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 			if ($num_records == 0) {
 				$encoded ['totalCount'] = '';
 				$encoded ['items'] = '';
-				$encoded ['msg'] = 'No Records Found';
+				$encoded ['msg'] = __('No Records Found','smart-manager'); 
 			} else {			
 				foreach ( $results as $data) {
 					$meta_key = explode ( '###', $data ['meta_key'] );
@@ -471,27 +474,27 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 		
 		if ($result ['updated'] && $result ['inserted']) {
 			if ($result ['updateCnt'] == 1 && $result ['insertCnt'] == 1)
-				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Record Updated and <br><b>" . $result ['insertCnt'] . "</b> New Record Inserted Successfully ";
+				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __('Record Updated and', 'smart-manager') . "<br><b>" . $result ['insertCnt'] . "</b> " . __('New Record Inserted Successfully','smart-manager');
 			elseif ($result ['updateCnt'] == 1 && $result ['insertCnt'] != 1)
-				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Record Updated and <br><b>" . $result ['insertCnt'] . "</b> New Records Inserted Successfully ";
+				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __('Record Updated and', 'smart-manager') . "<br><b>" . $result ['insertCnt'] . "</b> " . __('New Records Inserted Successfully', 'smart-manager'); 
 			elseif ($result ['updateCnt'] != 1 && $result ['insertCnt'] == 1)
-				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Records Updated and <br><b>" . $result ['insertCnt'] . "</b> New Record Inserted Successfully ";
+				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __('Records Updated and', 'smart-manager') . "<br><b>" . $result ['insertCnt'] . "</b> " . __('New Record Inserted Successfully','smart-manager'); 
 			else
-				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Records Updated and <br><b>" . $result ['insertCnt'] . "</b> New Records Inserted Successfully ";
+				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __('Records Updated and', 'smart-manager') . "<br><b>" . $result ['insertCnt'] . "</b> " . __('New Records Inserted Successfully','smart-manager');
 		} else {
 			
 			if ($result ['updated'] == 1) {
 				if ($result ['updateCnt'] == 1) {
-					$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Record Updated Successfully";
+					$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __('Record Updated Successfully', 'smart-manager') ;
 				} else
-					$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Records Updated Successfully";
+					$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __('Records Updated Successfully', 'smart-manager') ;
 			}
 			
 			if ($result ['inserted'] == 1) {
 				if ($result ['insertCnt'] == 1)
-					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> New Record Inserted Successfully";
+					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> " . __('New Record Inserted Successfully', 'smart-manager');
 				else
-					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> New Records Inserted Successfully";
+					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> " . __('New Records Inserted Successfully','smart-manager');
 			}
 			
 		}
@@ -523,16 +526,16 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		
 		if ($result == true) {
 			if ($delCnt == 1) {
-				$encoded ['msg'] = $delCnt . " $activeModule deleted Successfully";
+				$encoded ['msg'] = $delCnt . " " . $activeModule . __('deleted Successfully','smart-manager');
 				$encoded ['delCnt'] = $delCnt;
 			} else {
-				$encoded ['msg'] = $delCnt . " " . $activeModule . "s deleted Successfully";
+				$encoded ['msg'] = $delCnt . " " . $activeModule . __('s deleted Successfully','smart-manager');
 				$encoded ['delCnt'] = $delCnt;
 			}
 		} elseif ($result == false) {
-			$encoded ['msg'] = $activeModule . "s were not deleted ";
+			$encoded ['msg'] = $activeModule . __('s were not deleted','smart-manager');
 		} else {
-			$encoded ['msg'] = $activeModule . "s removed from the grid";
+			$encoded ['msg'] = $activeModule . __('s removed from the grid','smart-manager');
 		}
 	echo json_encode ( $encoded );
 }
@@ -610,6 +613,5 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 	$thumbnail = ( $image[0] != '' ) ? $image[0] : '';
 	echo json_encode ( $thumbnail );
 }
-
 
 ?>
