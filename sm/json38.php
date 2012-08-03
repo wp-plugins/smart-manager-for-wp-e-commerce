@@ -6,6 +6,7 @@ include_once (ABSPATH . 'wp-includes/wp-db.php');
 include_once (ABSPATH . 'wp-includes/functions.php');
 include_once (ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-core/wpsc-functions.php');
 include_once (ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-includes/purchaselogs.class.php');
+load_textdomain( 'smart-manager', ABSPATH . 'wp-content/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
 
 //checking the memory limit allocated
 $mem_limit = ini_get('memory_limit');
@@ -52,8 +53,10 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 	
 	if ( $is_export === true ) {
 		$limit_string = "";
+		$image_size = "full";
 	} else {
 		$limit_string = "LIMIT $offset,$limit";
+		$image_size = "thumbnail";
 	}
 
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
@@ -108,6 +111,8 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 									   OR category LIKE '%$search_on%'
 									   ";
 			}
+		} else {
+			$search_condn = '';
 		}
 
 		$from_where = "FROM {$wpdb->prefix}posts as products
@@ -141,16 +146,17 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 		if ($num_rows <= 0) {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
-			$encoded ['msg'] = 'No Records Found';
+			$encoded ['msg'] = __( 'No Records Found', 'smart-manager' ); 
 		} else {
 			foreach ( $records as &$record ) {
 				$prod_meta_values = explode ( '###', $record->prod_othermeta_value );
 				$prod_meta_key    = explode ( '###', $record->prod_othermeta_key);
+				if ( count( $prod_meta_key ) != count( $prod_meta_values ) ) continue;
 				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );
 				$prod_meta_key_values ['prod_meta'] = $record->prod_meta;
 				$record->category = ( $record->post_parent == 0 ) ? $record->category : '';			// To hide category name from Product's variations
-				$thumbnail = isset( $prod_meta_key_values['_thumbnail_id'] ) ? wp_get_attachment_image_src( $prod_meta_key_values['_thumbnail_id'], 'admin-product-thumbnails' ) : '';
-				$record->thumbnail    = ( $thumbnail[0] != '' ) ? $thumbnail[0] : '';
+				$thumbnail = isset( $prod_meta_key_values['_thumbnail_id'] ) ? wp_get_attachment_image_src( $prod_meta_key_values['_thumbnail_id'], $image_size ) : '';
+				$record->thumbnail    = ( $thumbnail[0] != '' ) ? $thumbnail[0] : false;
 
 				foreach ( $prod_meta_key_values as $key => $value ) {
 					if (is_serialized ( $value )) {
@@ -285,7 +291,7 @@ elseif ($active_module == 'Orders') {
 		if ($num_records == 0) {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
-			$encoded ['msg'] = 'No Records Found';
+			$encoded ['msg'] = __( 'No Records Found', 'smart-manager' );
 		} else {			
 			$regions_ids = get_regions_ids();		
 			foreach ( $results as $data) {
@@ -303,7 +309,7 @@ elseif ($active_module == 'Orders') {
 					//if purchase log doesn't have state code pick up the state from submitted form data
 					if($data['shippingstate'] == ''){
 						$ship_state = $shipping_order_details['shippingstate'];
-						$data['shippingstate'] = (is_numeric($ship_state)) ? $regions_ids[$ship_state] : $ship_state;
+						$data['shippingstate'] = ( $regions_ids[$ship_state] != '' ) ? $regions_ids[$ship_state] : $ship_state;
 					}
 					unset($data ['order_details']);
 					$records [] = array_merge ( $shipping_order_details, $data );
@@ -371,6 +377,7 @@ elseif ($active_module == 'Orders') {
 		$limit_query = " ORDER BY purchlog_info.id $limit_string ;";
 		$query    	 = "$customers_query  $limit_query";
 		$result   	 =  $wpdb->get_results ( $query, 'ARRAY_A' );
+		
 		$num_rows 	 =  $wpdb->num_rows;
 		
 		//To get Total count
@@ -380,7 +387,7 @@ elseif ($active_module == 'Orders') {
 		if ($num_records == 0) {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
-			$encoded ['msg'] = 'No Records Found';
+			$encoded ['msg'] = __( 'No Records Found', 'smart-manager' );
 		} else {
 			$regions_ids = get_regions_ids();
 			foreach ( ( array ) $result as $data ) {
@@ -393,7 +400,7 @@ elseif ($active_module == 'Orders') {
 					
 					if($data['billingstate'] == ''){
 						$bill_state = $billing_user_details['billingstate'];
-						$data['billingstate'] = (is_numeric($bill_state)) ? $regions_ids[$bill_state] : $bill_state;
+						$data['billingstate'] = ( $regions_ids[$bill_state] != '' ) ? $regions_ids[$bill_state] : $bill_state;
 					}
 					
 					if (SMPRO == true) {
@@ -538,16 +545,16 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		
 		if ($result == true) {
 			if ($delCnt == 1) {
-				$encoded ['msg'] = $delCnt . " Product deleted Successfully";
+				$encoded ['msg'] = "<b>" . $delCnt . "</b> " . __( 'Product deleted Successfully', 'smart-manager' ); 
 				$encoded ['delCnt'] = $delCnt;
 			} else {
-				$encoded ['msg'] = $delCnt . " Products deleted Successfully";
+				$encoded ['msg'] = "<b>" . $delCnt . "</b> " . __( 'Products deleted Successfully', 'smart-manager' );
 				$encoded ['delCnt'] = $delCnt;
 			}
 		} elseif ($result == false) {
-			$encoded ['msg'] = "Products were not deleted ";
+			$encoded ['msg'] = __("Products were not deleted", 'smart-manager' );
 		} else {
-			$encoded ['msg'] = "Products removed from the grid";
+			$encoded ['msg'] = __( "Products removed from the grid", 'smart-manager' );
 		}
 	} else if ($active_module == 'Orders') {
 		$data = json_decode ( stripslashes ( $_POST ['data'] ) );
@@ -559,14 +566,14 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		if ($output) {
 			//			$encoded ['msg'] = strip_tags($output);
 			if ($delCnt == 1) {
-				$encoded ['msg'] = $delCnt . " Purchase Log deleted Successfully";
+				$encoded ['msg'] = "<b>" . $delCnt . "</b> " . __( 'Purchase Log deleted Successfully', 'smart-manager' ) ;
 				$encoded ['delCnt'] = $delCnt;
 			} else {
-				$encoded ['msg'] = $delCnt . " Purchase Logs deleted Successfully";
+				$encoded ['msg'] = "<b>" . $delCnt . "</b> " . __( 'Purchase Logs deleted Successfully', 'smart-manager' ) ;
 				$encoded ['delCnt'] = $delCnt;
 			}
 		} else
-			$encoded ['msg'] = "Purchase Logs removed from the grid";
+			$encoded ['msg'] = __( "Purchase Logs removed from the grid", 'smart-manager' ); 
 	}
 	echo json_encode ( $encoded );
 }
@@ -606,31 +613,31 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 	if ($result ['result']) {
 		if ($result ['updated'] && $result ['inserted']) {
 			if ($result ['updateCnt'] == 1 && $result ['insertCnt'] == 1)
-				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Record Updated and <br><b>" . $result ['insertCnt'] . "</b> New Record Inserted Successfully ";
+				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __( 'Record Updated and', 'smart-manager' ) . "<br><b>" . $result ['insertCnt'] . "</b> " . __( 'New Record Inserted Successfully', 'smart-manager' );
 			elseif ($result ['updateCnt'] == 1 && $result ['insertCnt'] != 1)
-				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Record Updated and <br><b>" . $result ['insertCnt'] . "</b> New Records Inserted Successfully ";
+				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __( 'Record Updated and', 'smart-manager' ) . "<br><b>" . $result ['insertCnt'] . "</b> " . __( 'New Records Inserted Successfully', 'smart-manager' );
 			elseif ($result ['updateCnt'] != 1 && $result ['insertCnt'] == 1)
-				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Records Updated and <br><b>" . $result ['insertCnt'] . "</b> New Record Inserted Successfully ";
+				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __( 'Records Updated and', 'smart-manager' ) . "<br><b>" . $result ['insertCnt'] . "</b> " . __( 'New Record Inserted Successfully', 'smart-manager' );
 			else
-				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Records Updated and <br><b>" . $result ['insertCnt'] . "</b> New Records Inserted Successfully ";
+				$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __( 'Records Updated and', 'smart-manager' ) . "<br><b>" . $result ['insertCnt'] . "</b> " . __( 'New Records Inserted Successfully', 'smart-manager' ); 
 		} else {
 			
 			if ($result ['updated'] == 1) {
 				if ($result ['updateCnt'] == 1) {
-					$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Record Updated Successfully";
+					$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __( 'Record Updated Successfully', 'smart-manager' );
 				} else
-					$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> Records Updated Successfully";
+					$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __( 'Records Updated Successfully', 'smart-manager' );
 			}
 			
 			if ($result ['inserted'] == 1) {
 				if ($result ['updateCnt'] == 1)
-					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> New Records Inserted Successfully";
+					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> " . __( 'New Records Inserted Successfully', 'smart-manager' ); 
 				else
-					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> New Records Inserted Successfully";
+					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> " . __(' New Records Inserted Successfully', 'smart-manager' );
 			}
 			
 		}
-	}	
+	}
 	echo json_encode ( $encoded );
 }
 
