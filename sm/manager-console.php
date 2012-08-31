@@ -33,7 +33,7 @@ if (WPSC_RUNNING === true) {
 	else
 		$orders_details_url = ADMIN_URL . "/index.php?page=wpsc-sales-logs&purchaselog_id=";
 
-	$weight_unit ['items']  = array (array ('id' => 0, 'name' => 'Pounds', 'value' => 'pound' ), array ('id' => 1, 'name' => 'Ounces', 'value' => 'ounce' ), array ('id' => 2, 'name' => 'Grams', 'value' => 'gram' ), array ('id' => 3, 'name' => 'Kilograms', 'value' => 'kilogram' ) );
+	$weight_unit ['items']  = array (array ('id' => 0, 'name' => __('Pounds', $sm_domain), 'value' => 'pound' ), array ('id' => 1, 'name' => __('Ounces', $sm_domain), 'value' => 'ounce' ), array ('id' => 2, 'name' => __('Grams', $sm_domain), 'value' => 'gram' ), array ('id' => 3, 'name' => __('Kilograms', $sm_domain), 'value' => 'kilogram' ) );
 	$weight_unit ['totalCount'] = count ( $weight_unit ['items'] );
 	$encodedWeightUnits = json_encode ( $weight_unit );
 	
@@ -410,6 +410,18 @@ if (WPSC_RUNNING === true) {
 	$products_cols['height']['colName']='_height';
 	$products_cols['width']['colName']='_width';
 	$products_cols['lengthCol']['colName']='_length';
+	
+	$products_cols['taxStatus']['name']=__( 'Tax Status', $sm_domain );
+	$products_cols['taxStatus']['actionType']='setStrActions';
+	$products_cols['taxStatus']['colName']='_tax_status';
+	$products_cols['taxStatus']['tableName']="{$wpdb->prefix}postmeta";
+	$products_cols['taxStatus']['updateColName']='meta_value';
+
+    $products_cols['visibility']['name']=__( 'Visibility', $sm_domain );
+    $products_cols['visibility']['actionType']='setStrActions';
+    $products_cols['visibility']['colName']='_visibility';
+    $products_cols['visibility']['tableName']="{$wpdb->prefix}postmeta";
+    $products_cols['visibility']['updateColName']='meta_value';
 
 } 
 
@@ -439,7 +451,7 @@ if (WPSC_RUNNING === true) {
 			          
 					FROM {$wpdb->prefix}term_taxonomy join  {$wpdb->prefix}terms on ({$wpdb->prefix}terms.term_id = {$wpdb->prefix}term_taxonomy.term_id)
 					left join {$wpdb->prefix}terms as parent_terms on (parent_terms.term_id = {$wpdb->prefix}term_taxonomy.parent)
-					where taxonomy = 'wpsc_product_category'
+					where taxonomy = 'wpsc_product_category' ORDER BY group_id ASC
 			        ";
 		 
 	}
@@ -451,7 +463,7 @@ if (WPSC_RUNNING === true) {
 		          
 				FROM {$wpdb->prefix}term_taxonomy join  {$wpdb->prefix}terms on ({$wpdb->prefix}terms.term_id = {$wpdb->prefix}term_taxonomy.term_id)
 				left join {$wpdb->prefix}terms as parent_terms on (parent_terms.term_id = {$wpdb->prefix}term_taxonomy.parent)
-				where taxonomy = 'product_cat'
+				where taxonomy = 'product_cat' ORDER BY group_id ASC
 		        ";
 		
 		$attribute_list_query = "SELECT attribute_label, attribute_name FROM {$wpdb->prefix}woocommerce_attribute_taxonomies";
@@ -486,7 +498,7 @@ while ( $data = mysql_fetch_assoc ( $result ) ) {
 
 if (WPSC_RUNNING === true && IS_WPSC38) {
 	
-	$query = "SELECT {$wpdb->prefix}term_taxonomy.term_taxonomy_id as category_id,
+	$query = "SELECT {$wpdb->prefix}term_taxonomy.term_id as category_id,
 			          {$wpdb->prefix}terms.name as category_name,
 			          {$wpdb->prefix}term_taxonomy.parent as group_id,
 			          IFNULL(parent_terms.name,'Sets') as group_name
@@ -607,7 +619,7 @@ if (WPSC_RUNNING === true) {
 	
 	var getText = function( oldText ) {
 	
-		var oldTextKey = oldText.replace( /[-.'?:%,()|/+\s]/g, '_' ).toLowerCase();
+		var oldTextKey = oldText.replace( /[-.'?:%&,()|/+\s]/g, '_' ).toLowerCase();
 		var lang 				= new Object;
 		lang.products			= '" . __('Products',$sm_domain) . "';
 		lang.customers			= '" . __('Customers',$sm_domain) . "';
@@ -662,7 +674,8 @@ if (WPSC_RUNNING === true) {
 		lang.select_an_action		= '" . __('Select an action',$sm_domain) . "';
 		lang.select_a_value		= '" . __('Select a value',$sm_domain) . "';
 		lang.enter_the_value		= '" . __('Enter the value',$sm_domain) . "';
-		lang.select_a_category	= '" . __('Select a category',$sm_domain) . "';
+		lang.select_a_value	= '" . __('Select a Value',$sm_domain) . "';
+		lang.select_a_visibility	= '" . __('Select a Visibility',$sm_domain) . "';
 		lang.enter_values		= '" . __('Enter values',$sm_domain) . "';
 		lang.important_			= '" . __('Important:',$sm_domain) . "';
 		lang.for_more_than_one_values__use_pipe_____as_delimiter	= '" . __('For more than one values, use pipe (|) as delimiter',$sm_domain) . "';
@@ -691,8 +704,11 @@ if (WPSC_RUNNING === true) {
 		lang.billing_country		= '" . __('Billing Country',$sm_domain) . "';
 		lang.total_purchased		= '" . __('Total Purchased',$sm_domain) . "';
 		lang.last_order			= '" . __('Last Order',$sm_domain) . "';
+		lang.last_order_total	= '" . __('Last Order Total',$sm_domain) . "';
 		lang.last_order_details	= '" . __('Last Order Details',$sm_domain) . "';
 		lang.phone_number		= '" . __('Phone Number',$sm_domain) . "';
+		lang.total_number_of_orders = '" . __('Total Number Of Orders',$sm_domain) . "';
+		lang.total_orders_amount	= '" . __('Total Orders Amount',$sm_domain) . "';
 		lang.filter_through_date_feature_is_available_only_in_pro_versionlast_name	= '" . __('Filter through Date feature is available only in Pro versionLast Name',$sm_domain) . "';
 		lang.order_id			= '" . __('Order Id',$sm_domain) . "';
 		lang.date___time			= '" . __('Date / Time',$sm_domain) . "';
@@ -744,7 +760,22 @@ if (WPSC_RUNNING === true) {
 		lang.height_unit				= '" . __('Height Unit',$sm_domain) . "';
 		lang.width_unit				= '" . __('Width Unit',$sm_domain) . "';
 		lang.length_unit				= '" . __('Length Unit',$sm_domain) . "';		
-		
+        lang.catalog___search	      		= '" . __('Catalog & Search',$sm_domain) . "';
+		lang.catalog				    = '" . __('Catalog',$sm_domain) . "';
+		lang.search				        = '" . __('Search',$sm_domain) . "';
+		lang.hidden			            = '" . __('Hidden',$sm_domain) . "';
+        lang.product_visibility			= '" . __('Product Visibility',$sm_domain) . "';
+        lang.visibility     			= '" . __('Visibility',$sm_domain) . "';
+        lang.taxable     			= '" . __('Taxable',$sm_domain) . "';
+        lang.shipping_only     			= '" . __('Shipping only',$sm_domain) . "';
+        lang.none     			= '" . __('None',$sm_domain) . "';
+        lang.pounds     			= '" . __('Pounds',$sm_domain) . "';
+        lang.ounces     			= '" . __('Ounces',$sm_domain) . "';
+        lang.grams     			= '" . __('Grams',$sm_domain) . "';
+        lang.kilograms     			= '" . __('Kilograms',$sm_domain) . "';
+        lang.sum_total_of_all_orders     			= '" . __('Sum Total Of All Orders',$sm_domain) . "';
+        lang.total_purchased     			= '" . __('Total Purchased',$sm_domain) . "';
+
 		newText = lang[oldTextKey];
 		return newText;
 	};

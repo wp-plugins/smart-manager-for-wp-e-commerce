@@ -43,7 +43,7 @@ var	categories         = new Array(), //an array for category combobox in batchu
 	editorGrid         = '',
 	showOrdersView     = '',
 	showCustomersView  = '',
-	weightUnitStore    = '',	
+	weightUnitStore    = '',
 	countriesStore     = '',
 	regionsStore       = '',
 	reloadRegionCombo  = '';
@@ -53,7 +53,7 @@ Ext.onReady(function () {
 	try{
 		//Stateful
 		Ext.state.Manager.setProvider(new Ext.state.CookieProvider({
-			expires: new Date(new Date().getTime()+(1000*60*60*24*30)), //30 days from now
+			expires: new Date(new Date().getTime()+(1000*60*60*24*30)) //30 days from now
 		}));
 		
 	// Tooltips
@@ -131,6 +131,11 @@ Ext.onReady(function () {
 	actions['category_actions'] 	  = [[0, getText('set to'),'SET_TO'],
 								   		 [1,getText('add to'),'ADD_TO'],
 								   		 [2,getText('remove from'),'REMOVE_FROM']];
+
+    dimensionUnits    = {'items': [{'id':0 , 'name':getText('inches'), 'value': 'in'},
+                                    {'id':1 , 'name':getText('cm'), 'value': 'cm'},
+                                    {'id':2 , 'name':getText('meter'), 'value': 'meter'}],
+                         'totalCount': 3 };
 	
 	//fm used as a short form for Ext.form
 	var fm 		     = Ext.form,
@@ -376,7 +381,7 @@ Ext.onReady(function () {
 		store: new Ext.data.ArrayStore({
 			id: 0,
 			fields: ['value','name'],
-			data: [['pound', 'Pounds'], ['ounce', 'Ounces'], ['gram', 'Grams'], ['kilogram', 'Kilograms']]
+			data: [['pound', getText('Pounds')], ['ounce', getText('Ounces')], ['gram', getText('Grams')], ['kilogram', getText('Kilograms')]]
 		}),
 		valueField: 'value',
 		displayField: 'name'
@@ -671,7 +676,9 @@ Ext.onReady(function () {
 			width: 50,
 			id: 'editLink',
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-				return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
+                if(record.get('post_parent') == 0) {
+                    return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
+                }
 			}
 		}],
 		listeners: {
@@ -806,7 +813,7 @@ var pagingToolbar = new Ext.PagingToolbar({
 				if(SM.activeModule == 'Products') {
 					var pageTotalRecord = editorGrid.getStore().getCount();		
 					var selectedRecords=editorGridSelectionModel.getCount();
-					if( selectedRecords >= pageTotalRecord){		
+					if( selectedRecords >= pageTotalRecord && SM.searchTextField.getValue() == '' ){
 						batchRadioToolbar.setVisible(true);
 					} else {	
 						batchRadioToolbar.setVisible(false);						
@@ -1169,7 +1176,6 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		store:regionsStore,
 		value: 'value',
 		valueField: 'name',
-		value: 'value',
 		displayField: 'name',
 		forceSelection: true
 	});
@@ -1263,10 +1269,10 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			width: 120
 		},
 		{
-			header: getText('Total Purchased'),
+			header: getText('Last Order Total'),
 			id: 'total_purchased', //@todo: change the id to Total_Purchased
-			dataIndex: 'Total_Purchased',
-			tooltip: getText('Total Purchased'),
+			dataIndex: '_order_total',
+			tooltip: getText('Last Order Total'),
 			align: 'right',
 			width: 150			
 		},{
@@ -1285,6 +1291,24 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 				allowNegative: false
 			}),
 			width: 180		
+		},{
+            header: getText('Total Number Of Orders'),
+            id: 'total_count',
+            dataIndex: 'count_orders',
+            tooltip: getText('Total Number Of Orders'),
+            editable: false,
+            align: 'left',
+            //flex:0.25,
+            width: 100
+        },{
+            header: getText('Total Purchased'),
+            id: 'sum_orders',
+            dataIndex: 'total_orders',
+            tooltip: getText('Sum Total Of All Orders'),
+            editable: false,
+            align: 'left',
+            //flex:0.25,
+            width: 100
 		}],
 		listeners: {
 			hiddenchange: function( ColumnModel,columnIndex, hidden ){
@@ -1297,8 +1321,10 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 	var totPurDataType = '';	
 	if (fileExists != 1) { 
 		totPurDataType = 'string';
-		customersColumnModel.columns[customersColumnModel.findColumnIndex('Total_Purchased')].align = 'center';
+		customersColumnModel.columns[customersColumnModel.findColumnIndex('_order_total')].align = 'center';
 		customersColumnModel.columns[customersColumnModel.findColumnIndex('Last_Order')].align = 'center';
+                customersColumnModel.columns[customersColumnModel.findColumnIndex('count_orders')].align = 'center';
+                customersColumnModel.columns[customersColumnModel.findColumnIndex('total_orders')].align = 'center';
 	}else{
 		totPurDataType = 'float';
 //		customersColumnModel.setRenderer(7,amountRenderer);		
@@ -1320,9 +1346,11 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		{name:'billingpostcode',type:'string'},
 		{name:'billingemail',type:'string'},
 		{name:'billingphone', type:'string'},	
-		{name:'Total_Purchased',type:totPurDataType},		
+		{name:'_order_total',type:totPurDataType},
 		{name:'Last_Order', type:'string'},		
-		{name:'Old_Email_Id', type: 'string'}
+		{name:'Old_Email_Id', type: 'string'},
+        {name:'count_orders',type:totPurDataType},
+        {name:'total_orders',type:totPurDataType}
 		]
 	});
 	
@@ -1617,6 +1645,7 @@ if(isWPSC38 == '1'){
 		fields:
 		[
 		{name:'id',type:'int'},
+		{name:'customer_id',type:'int'},
 		{name:'date',type:'string'},
 		{name:'name',type:'string'},
 		{name:'amount', type:'float'},
@@ -1943,7 +1972,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							if (field_type == 'category' || categoryActionType == 'category_actions') {
 								setTextfield.hide();
 								comboWeightUnitCmp.hide();
-								comboCategoriesActionCmp.show();
+                                                                comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
 							}else if (field_type == 'string') {
 								setTextfield.hide();
@@ -2044,7 +2073,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								actionStore.loadData(actionsData);
 							}else{
 //								// on swapping between the toolbars	
-								actionStore.loadData( actions[SM['productsCols'][selectedValue].actionType] );
+                                actionStore.loadData( actions[SM['productsCols'][selectedValue].actionType] );
 							}
 						},
 					beforeselect: function( combo, record, index ) {
@@ -2091,7 +2120,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				valueField: 'id',
 				mode: 'local',
 				cls: 'searchPanel',
-				emptyText: getText('Select a category') + '...',
+				emptyText: getText('Select a value') + '...',
 				triggerAction: 'all',
 				editable: false,
 				forceSelection: false,
@@ -2247,7 +2276,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 					paddingLeft: '2px'
 				},
 				enableKeyEvents: true,
-				emptyText: 'Enter State/Region...',
+				emptyText: getText('Enter State/Region') + '...',
 				cls: 'searchPanel',
 				hidden: true,
 				selectOnFocus: true
@@ -2590,7 +2619,7 @@ var showCustomerDetails = function(record,rowIndex){
 				var editLinkColumnIndex   	  = productsColumnModel.findColumnIndex('edit_url'),
 					editImageColumnIndex   	  = productsColumnModel.findColumnIndex(SM.productsCols.image.colName),
 					prodTypeColumnIndex       = productsColumnModel.findColumnIndex('type'),
-					totalPurchasedColumnIndex = customersColumnModel.findColumnIndex('Total_Purchased'),
+					totalPurchasedColumnIndex = customersColumnModel.findColumnIndex('_order_total'),
 					lastOrderColumnIndex      = customersColumnModel.findColumnIndex('Last_Order'),
 					nameLinkColumnIndex       = ordersColumnModel.findColumnIndex('name'),
 					orderDetailsColumnIndex   = ordersColumnModel.findColumnIndex('details');					

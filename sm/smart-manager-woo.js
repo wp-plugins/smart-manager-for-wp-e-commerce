@@ -50,7 +50,7 @@ Ext.onReady(function () {
 		if(wpsc_woo != 1){
 			//Stateful
 			Ext.state.Manager.setProvider(new Ext.state.CookieProvider({
-				expires: new Date(new Date().getTime()+(1000*60*60*24*30)), //30 days from now
+				expires: new Date(new Date().getTime()+(1000*60*60*24*30)) //30 days from now
 			}));
 		}
 		
@@ -103,7 +103,8 @@ Ext.onReady(function () {
 								   {'id': 1,'name': getText('add to'),'value': 'ADD_TO'},
 								   {'id': 2,'name': getText('remove from'),'value': 'REMOVE_FROM'}];
 
-	actions['modStrActions']   = [[ 0, getText('set to'), 'SET_TO'],
+
+    actions['modStrActions']   = [[ 0, getText('set to'), 'SET_TO'],
 	                              [ 1, getText('append'), 'APPEND'],
 	                              [ 2, getText('prepend'), 'PREPEND']];
 
@@ -229,6 +230,8 @@ Ext.onReady(function () {
 				listeners : {
 					click : function() {
 						productsColumnModel.getColumnById('publish').editor = newProductStatusCombo;
+                        productsColumnModel.getColumnById('visibility').editor = visibilityCombo;
+                        productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
 						if(fileExists == 1){
 							addProduct(productsStore, cnt_array, cnt, newCatName);
 						}else{
@@ -326,7 +329,7 @@ Ext.onReady(function () {
 	
 	//Renderer for dimension units
 	Ext.util.Format.comboRenderer = function(productStatusCombo){
-		return function(value){
+        return function(value){
 			var record = productStatusCombo.findRecord(productStatusCombo.valueField, value);
 			return record ? record.get(productStatusCombo.displayField) : productStatusCombo.valueNotFoundText;
 		}
@@ -385,6 +388,49 @@ Ext.onReady(function () {
 		valueField: 'value',
 		displayField: 'name'
 	});
+
+    // Visibility combo box
+    var visibilityCombo = new Ext.form.ComboBox({
+        typeAhead: true,
+        id: 'visibilityCombo',
+        triggerAction: 'all',
+        lazyRender:true,
+        editable: false,
+        mode: 'local',
+        store: new Ext.data.ArrayStore({
+            id: 0,
+            fields: ['value','name'],
+            data: [
+                    ['visible', 'Catalog & Search'],
+                    ['catalog', 'Catalog'],
+                    ['search', 'Search'],
+                    ['hidden', 'Hidden']
+                  ]
+        }),
+        valueField: 'value',
+        displayField: 'name'
+    });
+
+	// Visibility combo box
+    var taxStatusCombo = new Ext.form.ComboBox({
+        typeAhead: true,
+        id: 'taxStatusCombo',
+        triggerAction: 'all',
+        lazyRender:true,
+        editable: false,
+        mode: 'local',
+        store: new Ext.data.ArrayStore({
+            id: 0,
+            fields: ['value','name'],
+            data: [
+                    [ 'taxable', getText('Taxable') ],
+                    [ 'shipping', getText('Shipping only') ],
+                    [ 'none', getText('None') ]
+                  ]
+        }),
+        valueField: 'value',
+        displayField: 'name'
+    });
 
 	var productsColumnModel = new Ext.grid.ColumnModel({
 		columns: [editorGridSelectionModel,
@@ -449,6 +495,7 @@ Ext.onReady(function () {
             header: SM.productsCols.salePriceFrom.name,
             id: 'salePriceFrom',
 			sortable: true,
+            hidden: true,
 			tooltip: getText('Sale Price From'),
             dataIndex: SM.productsCols.salePriceFrom.colName,
             renderer: formatDate,
@@ -462,7 +509,8 @@ Ext.onReady(function () {
             header: SM.productsCols.salePriceTo.name,
             id: 'salePriceTo',
 			sortable: true,
-			tooltip: getText('Sale Price To'),
+            hidden: true,
+            tooltip: getText('Sale Price To'),
             dataIndex: SM.productsCols.salePriceTo.colName,
             renderer: formatDate,
             editor: new fm.DateField({
@@ -496,7 +544,7 @@ Ext.onReady(function () {
 			id: 'group',
 			sortable: true,
 			dataIndex: SM.productsCols.group.colName,
-			tooltip: getText('Category'),
+			tooltip: getText('Category')
 		},{
 			header: SM.productsCols.weight.name,
 			id: 'weight',
@@ -583,6 +631,22 @@ Ext.onReady(function () {
 				allowNegative: false
 			})
 		},{
+            header: SM.productsCols.visibility.name,
+            id: 'visibility',
+            sortable: true,
+            hidden: true,
+            dataIndex: SM.productsCols.visibility.colName,
+            tooltip: getText('Product Visibility'),
+            renderer: Ext.util.Format.comboRenderer(visibilityCombo)
+        },{
+			header: SM.productsCols.taxStatus.name,
+			id: 'taxStatus',
+			hidden: true,
+			sortable: true,
+			dataIndex: SM.productsCols.taxStatus.colName,
+			tooltip: getText('Tax Status'),
+            renderer: Ext.util.Format.comboRenderer(taxStatusCombo)
+		},{
 			header: getText('Edit'),
 			id: 'edit',
 			sortable: true,
@@ -591,7 +655,9 @@ Ext.onReady(function () {
 			width: 50,
 			id: 'editLink',
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-				return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
+                if(record.get('post_parent') == 0) {
+                    return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
+                }
 			}
 		}],
 		listeners: {
@@ -639,8 +705,10 @@ Ext.onReady(function () {
 				{name: SM.productsCols.width.colName,             type: 'float'},
 				{name: SM.productsCols.lengthCol.colName,         type: 'float'},
 				{name: SM.productsCols.post_parent.colName,	      type: 'int'},
-				{name: SM.productsCols.image.colName,	      	  type: 'string'}
-				]
+				{name: SM.productsCols.image.colName,	      	  type: 'string'},
+				{name: SM.productsCols.taxStatus.colName,	      type: 'string'},
+                {name: SM.productsCols.visibility.colName,        type: 'string'}
+                ]
 		
 	});	
 
@@ -667,7 +735,8 @@ Ext.onReady(function () {
 				editorGridSelectionModel.clearSelections();
 				pagingToolbar.saveButton.disable();
 				productsColumnModel.getColumnById('publish').editor = productStatusCombo;
-				
+                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;   // Tarun
+                productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
 			}
 		}
 	});
@@ -1139,6 +1208,21 @@ var categoryStore = new Ext.data.ArrayStore({
 	autoDestroy: false
 });
 
+var taxStatusStoreData = new Array();
+	taxStatusStoreData = [
+							[ 'taxable', getText('Taxable') ],
+							[ 'shipping', getText('Shipping only') ],
+							[ 'none', getText('None') ]
+						 ];
+
+var visibilityStoreData = new Array();
+    visibilityStoreData = [
+                            ['visible', getText('Catalog & Search')],
+                            ['catalog', getText('Catalog')],
+                            ['search', getText('Search')],
+                            ['hidden', getText('Hidden')]
+                          ];
+
 //Store for 'set to' from second combobox(actions combobox).
 var countriesStore = new Ext.data.Store({
 	reader: new Ext.data.JsonReader({
@@ -1172,8 +1256,6 @@ var mask = new Ext.LoadMask(Ext.getBody(), {
 var batchMask = new Ext.LoadMask(Ext.getBody(), {
 	msg: getText('Please wait') + "..."
 });
-
-
 
 //batch update window
 var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
@@ -1210,6 +1292,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						else
 							var field_type = this.store.reader.jsonData.items[selectedFieldIndex].type;
 						var field_name = this.store.reader.jsonData.items[selectedFieldIndex].name;
+						var colName = this.store.reader.jsonData.items[selectedFieldIndex].colName;
 						var actionsData = new Array();
 						var toolbarParent = this.findParentByType(batchUpdateToolbarInstance, true);
 						var comboCategoriesActionCmp = toolbarParent.get(7);
@@ -1217,7 +1300,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var comboActionCmp = toolbarParent.get(2);
 						var comboCountriesCmp = toolbarParent.get(4);
 						var selectedActionvalue = comboActionCmp.value;
-						var textField2Cmp      = toolbarParent.get(8);						
+						var textField2Cmp      = toolbarParent.get(8);
 						
 						toolbarParent.get(5).hide();			//to hide extra space on batchUpdateToolbar
 						
@@ -1227,7 +1310,13 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							if(SM['productsCols'][this.value] != undefined ){
 								var categoryActionType = SM['productsCols'][this.value].actionType;
 							}							
+                            setTextfield.emptyText="Enter the Value...";
 							if (field_type == 'category' || categoryActionType == 'category_actions') {
+								setTextfield.hide();
+								textField2Cmp.hide();
+								comboCategoriesActionCmp.show();
+								comboCategoriesActionCmp.reset();
+							} else if(colName == '_tax_status' || colName == '_visibility'){
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.show();
@@ -1257,6 +1346,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							} else if (field_name.indexOf('Country') != -1) {
 								actions_index = 'bigint';
 								setTextfield.hide();
+                                                                setTextfield.emptyText="Enter State/Region...";
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
 								comboCountriesCmp.show();
@@ -1387,6 +1477,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 												,method:'post'
 												,callback: function(options, success, response)	{
 													var myJsonObj = Ext.decode(response.responseText);
+													
 													if(true !== success){
 														Ext.notification.msg('Failed',response.responseText) ;
 														return;
@@ -1521,7 +1612,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				valueField: 'id',
 				mode: 'local',
 				cls: 'searchPanel',
-				emptyText: getText('Select a category') + '...',
+				emptyText: getText('Select a Value') + '...',
 				triggerAction: 'all',
 				editable: false,
 				forceSelection: false,
@@ -1535,21 +1626,28 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var selectedFieldIndex = comboFieldCmp.selectedIndex;
 						var selectedValue      = comboFieldCmp.value;
 						var field_name		   = toolbarParent.items.items[0].store.reader.jsonData.items[selectedFieldIndex].name;
+						var colName			   = toolbarParent.items.items[0].store.reader.jsonData.items[selectedFieldIndex].colName;
 						
 						if (SM.activeModule == 'Products') {
 							if ( selectedValue.substring( 0, 14 ) != 'groupAttribute' ){
-								var category = categories["category-"+SM['productsCols'][selectedValue].colFilter];
-								if ( category instanceof Object ) {
-									var categoryData = [];
-									for ( var catId in category  ) {
-										if ( category[catId] != undefined ) {
-											categoryData.push(category[catId]);
-										}
-									}
-									categoryStore.loadData(categoryData);
-								} else {
-									categoryStore.loadData(category);
-								}
+								if ( colName == '_tax_status' ) {
+                                    categoryStore.loadData( taxStatusStoreData );
+                                } else if ( field_name == 'Visibility' ) {
+                                    categoryStore.loadData( visibilityStoreData );
+                                } else {
+                                    var category = categories["category-"+SM['productsCols'][selectedValue].colFilter];
+                                    if ( category instanceof Object ) {
+                                        var categoryData = [];
+                                        for ( var catId in category  ) {
+                                            if ( category[catId] != undefined ) {
+                                                categoryData.push(category[catId]);
+                                            }
+                                        }
+                                        categoryStore.loadData(categoryData);
+                                    } else {
+                                        categoryStore.loadData(category);
+                                    }
+                                }
 							}
 						} else if(SM.activeModule == 'Orders' && field_name == 'Order Status') {
 							this.store = orderStatusStore;
@@ -1900,10 +1998,10 @@ var showCustomerDetails = function(record,rowIndex){
 			width: 120
 		},
 		{
-			header: getText('Total Purchased'),
+			header: getText('Last Order Total'),
 			id: 'total_purchased', //@todo: change the id to Total_Purchased
 			dataIndex: '_order_total',
-			tooltip: getText('Total Purchased'),
+			tooltip: getText('Last Order Total'),
 			align: 'right',
 			width: 150			
 		},{
@@ -1923,6 +2021,24 @@ var showCustomerDetails = function(record,rowIndex){
 				allowNegative: false
 			}),
 			width: 180		
+        },{     // Tarun
+            header: getText('Total Number Of Orders'),
+            id: 'total_count',
+            dataIndex: 'count_orders',
+            tooltip: getText('Total Number Of Orders'),
+            editable: false,
+            align: 'left',
+            //flex:0.25,
+            width: 100
+        },{
+            header: getText('Total Purchased'),
+            id: 'sum_orders',
+            dataIndex: 'total_orders',
+            tooltip: getText('Sum Total Of All Orders'),
+            editable: false,
+            align: 'left',
+            //flex:0.25,
+            width: 100
 		}],
 		listeners: {
 			hiddenchange: function( ColumnModel,columnIndex, hidden ){
@@ -1937,6 +2053,8 @@ var showCustomerDetails = function(record,rowIndex){
 		totPurDataType = 'string';
 		customersColumnModel.columns[customersColumnModel.findColumnIndex('_order_total')].align = 'center';
 		customersColumnModel.columns[customersColumnModel.findColumnIndex('last_order')].align = 'center';
+        customersColumnModel.columns[customersColumnModel.findColumnIndex('count_orders')].align = 'center';    // Tarun
+        customersColumnModel.columns[customersColumnModel.findColumnIndex('total_orders')].align = 'center';    // Tarun
 	}else{
 		totPurDataType = 'float';
 	}
@@ -1958,7 +2076,10 @@ var showCustomerDetails = function(record,rowIndex){
 		{name:'_billing_email',type:'string'},
 		{name:'_billing_phone', type:'string'},	
 		{name:'_order_total',type:totPurDataType},		
-		{name:'last_order', type:'string'}
+		{name:'last_order', type:'string'},
+        {name:'count_orders',type:totPurDataType},  // Tarun
+        {name:'total_orders',type:totPurDataType}   // Tarun
+
 		]
 	});
 	
@@ -2445,6 +2566,8 @@ var showCustomerDetails = function(record,rowIndex){
 					salePriceToColumnIndex    = productsColumnModel.findColumnIndex(SM.productsCols.salePriceTo.colName);
 					descColumnIndex        	  = productsColumnModel.findColumnIndex(SM.productsCols.desc.colName);
 					addDescColumnIndex        = productsColumnModel.findColumnIndex(SM.productsCols.addDesc.colName);
+                    visibilityColumnIndex     = productsColumnModel.findColumnIndex(SM.productsCols.visibility.colName);    // Tarun
+                    taxStatusColumnIndex      = productsColumnModel.findColumnIndex(SM.productsCols.taxStatus.colName);
 
 				if(SM.activeModule == 'Orders'){
 					if ( fileExists != 1 && ( columnIndex == orderDetailsColumnIndex || columnIndex == nameLinkColumnIndex ) ) {
@@ -2498,13 +2621,33 @@ var showCustomerDetails = function(record,rowIndex){
 						}
 					
 					// show Inherit option only for the product variations otherwise show only Published & Draft 	
-					}else if(columnIndex == publishColumnIndex || columnIndex == nameColumnIndex || columnIndex == salePriceFromColumnIndex || columnIndex == salePriceToColumnIndex || columnIndex == descColumnIndex || columnIndex == addDescColumnIndex){
+					}else if(columnIndex == publishColumnIndex || columnIndex == nameColumnIndex || columnIndex == salePriceFromColumnIndex || columnIndex == salePriceToColumnIndex || columnIndex == descColumnIndex || columnIndex == addDescColumnIndex || columnIndex == visibilityColumnIndex || columnIndex == taxStatusColumnIndex){
 						if(fileExists == 1){
 							if(record.get('post_parent') == 0){
 								productsColumnModel.setEditable(columnIndex,true);
 								productsColumnModel.getColumnById('publish').editor = newProductStatusCombo;
 							}else{
 								productsColumnModel.getColumnById('publish').editor = productStatusCombo;
+								productsColumnModel.setEditable(columnIndex,false);
+							}
+						}
+					} else if (columnIndex == visibilityColumnIndex){
+						if(fileExists == 1){
+							if(record.get('post_parent') == 0){
+								productsColumnModel.setEditable(columnIndex,true);
+                                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;   // Tarun
+							}else{
+                                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;   // Tarun
+								productsColumnModel.setEditable(columnIndex,false);
+							}
+						}
+					} else if (columnIndex == taxStatusColumnIndex){
+						if(fileExists == 1){
+							if(record.get('post_parent') == 0){
+								productsColumnModel.setEditable(columnIndex,true);
+                                productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
+							}else{
+                                productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
 								productsColumnModel.setEditable(columnIndex,false);
 							}
 						}
@@ -2515,7 +2658,7 @@ var showCustomerDetails = function(record,rowIndex){
 							shadowOffset: 10,
 							title: getText('Manage your Product Images'),
 							width: 700,
-							height: 400,						
+							height: 400,
 							minimizable: false,
 							maximizable: true,
 							maximized: false,
@@ -2523,7 +2666,7 @@ var showCustomerDetails = function(record,rowIndex){
 							animateTarget: 'image',
 							listeners: {
 								beforeshow: function() {
-									if ( fileExists != 1 ) 
+									if ( fileExists != 1 )
 										this.setTitle( getText('Manage your Product Images - Available only in Pro version') );
 								},
 								maximize: function () {
@@ -2635,7 +2778,7 @@ if(fileExists == 1){
 	
 	//disable inline editing for products
 	var productsColumnCount = productsColumnModel.getColumnCount();
-	for(var i=5; i<productsColumnCount; i++)
+	for(var i=6; i<productsColumnCount; i++)
 	productsColumnModel.setEditable(i,false);
 	
 	//disable inline editing for customers

@@ -152,7 +152,6 @@ elseif ($active_module == 'Orders') {
 			$result = $wpdb->get_results ( $query );
 
 			if (count($result) >= 1){
-//				while ($data = mysql_fetch_assoc($result))
 				foreach ( (array) $result as $obj ) {
 					$data = (array) $obj;
 					$regions[$data['id']] = $data['name'];
@@ -163,7 +162,6 @@ elseif ($active_module == 'Orders') {
 		$result = $wpdb->get_results ( $query );
 
 		if (count($result) >= 1){
-//			while ($data = mysql_fetch_assoc($result))
 			foreach ( (array) $result as $obj ) {
 				$data = (array) $obj;	
 				$countries[$data['isocode']] = $data['country'];
@@ -575,7 +573,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 }
 
 function update_products($_POST) {
-	global $table_prefix, $result;
+	global $table_prefix, $result, $wpdb;
 	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
 	$updateCnt = 1;
 	foreach ( $edited_object as $obj ) {
