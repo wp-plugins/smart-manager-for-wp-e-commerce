@@ -1,15 +1,13 @@
-=== Smart Manager for WP e-Commerce ===
-Contributors: niravmehta, ratnakar.dubey, rupali
+=== Smart Manager for e-Commerce ===
+Contributors: niravmehta, ratnakar.dubey, rupali, tarun
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
-Tested up to: 3.3
-Stable tag: 2.6
+Tested up to: 3.4.1
+Stable tag: 2.7
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
-
-Thousands of people are already raving about it. Download Smart Manager today!
 
 == Description ==
 Smart Manager is a unique, revolutionary tool that gives you the **power to efficiently manage products, 
@@ -97,6 +95,20 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 2.7 =
+* Updated: Massive speed boost for stores with 1000s of products
+* Updated: Improved product search. Can enclose keywords in double quotes for exact match now
+* Added: SKU in Orders export CSV
+* Added: Portuguese Brazilian translations
+* Added: 'Visibility' & 'Tax Status' fields in Products dashboard, with inline editing & Batch update (WooCommerce)
+* Added: 'Total No. of Orders' & 'Total Purchased' fields in Customers dashboard
+* Updated: Customers dashboard, will now display customers list based on WordPress User ID if available
+* Fixed: Auto-update from Network Admin in Wordpress Multisite
+* Fixed: Incorrect creation & removal of Product variation (WPeC)
+* Fixed: "Batch Update not Successful" when batch updating price (WPeC)
+* Fixed: Price Not Updating using inline editing (WooCommerce)
+* Fixed: Batch Update->Category: 'Add To' & 'Remove From' not working (WooCommerce)
 
 = 2.6 =
 * Added: Multilingual support for Danish & French languages
@@ -324,6 +336,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 2.7 =
+Major performance improvements, enhancements and fixes. Recommended upgrade.
 
 = 2.6 =
 Multilingual support, export CSV fixes and batch update enhancements. Recommended upgrade.
