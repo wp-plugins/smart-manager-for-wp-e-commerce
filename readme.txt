@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.4.1
-Stable tag: 2.7
+Stable tag: 2.7.1
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -95,6 +95,13 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 2.7.1 =
+* Updated: Massive speed boost for loading 1000s of customers & orders (up by more than 99%) (WPeC)
+* Fixed: Price not showing in Smart Manager (WPeC)
+* Fixed: Updation of Price & Sale Price (WooCommerce)
+* Fixed: Auto-loading of records after Batch update (WooCommerce)
+* Fixed: Small fixes like - comma between variation's term name & extra space between categories (WooCommerce)
 
 = 2.7 =
 * Updated: Massive speed boost for stores with 1000s of products
@@ -336,6 +343,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 2.7.1 =
+Further performance improvements, enhancements and fixes. Recommended upgrade.
 
 = 2.7 =
 Major performance improvements, enhancements and fixes. Recommended upgrade.
