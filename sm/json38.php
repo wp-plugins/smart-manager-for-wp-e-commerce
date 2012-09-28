@@ -119,11 +119,42 @@ function get_term_taxonomy_ids( $term_name ) {
     return $term_taxonomy_ids;
 }
 
+function get_log_ids( $result ) {
+    return $result['last_order_id'];
+}
+
+//
+function get_all_matched_purchase_log_ids( $search_on = '' ) {
+    global $wpdb;
+
+    $purchase_log_ids = array();
+    
+    $search_condn_checkout_form_query = "SELECT DISTINCT log_id
+                                                FROM " . WPSC_TABLE_SUBMITED_FORM_DATA . "
+                                                WHERE value LIKE '%$search_on%'
+                                        ";
+    
+    $checkout_form_purchase_log_ids = $wpdb->get_col( $search_condn_checkout_form_query );
+    
+    if ( !empty( $checkout_form_purchase_log_ids ) ) {
+        return " OR wtpl.id IN ( " . implode( ',', $checkout_form_purchase_log_ids ) . " )";
+    }
+    return '';
+}
+
 
 // Searching a product in the grid
 function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 	global $wpdb,$post_status,$parent_sort_id,$order_by;
 	
+        $regions_ids = get_regions_ids();		
+	$country_results = $wpdb->get_results( "SELECT isocode, country FROM " . WPSC_TABLE_CURRENCY_LIST, 'ARRAY_A' );
+        $country_data = array();
+        foreach ( $country_results as $country_result ) {
+            $country_data[$country_result['isocode']] = $country_result['country'];
+        }
+
+        
 	// getting the active module
 	$active_module = $_POST ['active_module'];
 
@@ -137,12 +168,13 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 		$image_size = "thumbnail";
 	}
 
-    $wpdb->query ( "SET SESSION group_concat_max_len=9999" );// To increase the max length of the Group Concat Functionality
+    $wpdb->query ( "SET SESSION group_concat_max_len=999999" );// To increase the max length of the Group Concat Functionality
 
     $view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
+    
 	if ($active_module == 'Products') { // <-products
 
-        variable_price_sync ();
+//        variable_price_sync ();
 
 		$wpsc_default_image = WP_PLUGIN_URL . '/wp-e-commerce/wpsc-theme/wpsc-images/noimage.png';
 		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] == 'true' && SMPRO == true) {
@@ -164,8 +196,8 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 					products.post_excerpt,
 					products.post_status,
 					products.post_parent,
-                                        GROUP_CONCAT(DISTINCT term_relationships.term_taxonomy_id order by term_relationships.term_taxonomy_id SEPARATOR ',') AS term_taxonomy_id,
-                                        GROUP_CONCAT(prod_othermeta.meta_key order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_key,
+                                        CAST(GROUP_CONCAT(DISTINCT term_relationships.term_taxonomy_id order by term_relationships.term_taxonomy_id SEPARATOR ',') AS CHAR(1000)) AS term_taxonomy_id,
+					GROUP_CONCAT(prod_othermeta.meta_key order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_key,
 					GROUP_CONCAT(prod_othermeta.meta_value order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_value
 					$parent_sort_id";
 
@@ -223,7 +255,7 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 		$from_where = "FROM {$wpdb->prefix}posts as products
 						LEFT JOIN {$wpdb->prefix}postmeta as prod_othermeta ON (prod_othermeta.post_id = products.id and
 						prod_othermeta.meta_key IN ('_wpsc_price', '_wpsc_special_price', '_wpsc_sku', '_wpsc_stock', '_thumbnail_id','_wpsc_product_metadata') )
-						
+                                                
                                                 LEFT JOIN {$wpdb->prefix}term_relationships AS term_relationships ON ( products.id = term_relationships.object_id )
 
 						WHERE products.post_status IN  $post_status
@@ -278,15 +310,14 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 								(in_array ( $meta_key, $view_columns )) ? $record->$meta_key = $meta_value : '';
 							}
 
-
                                                         if($record->post_parent == 0 && $show_variation==true){
-                                                            $record->_wpsc_price=' ';
-                                                            $record->_wpsc_special_price=' ';
-                                                                                }
+                                                            $record->_wpsc_price='';
+                                                            $record->_wpsc_special_price='';
+                                                        }
                                                         if($record->post_parent == 0 && $show_variation==false){
                                                             $parent_price=wpsc_product_variation_price_available($record->id);
                                                             $record->_wpsc_price=substr($parent_price,1,strlen($parent_price));
-                                                            $record->_wpsc_special_price==substr($parent_price,1,strlen($parent_price));
+                                                            $record->_wpsc_special_price=substr($parent_price,1,strlen($parent_price));
                                                         }
 						}
 
@@ -311,78 +342,8 @@ elseif ($active_module == 'Orders') {
 		get_packing_slip( $log_ids, $log_ids_arr );
 	}else{
 	
-	$select_query = "SELECT SQL_CALC_FOUND_ROWS wtpl.id as id, wtpl.user_ID as customer_id,
-						       GROUP_CONCAT( wtsfd.value 
-							   ORDER BY wtsfd.form_id
-							   SEPARATOR '###' ) AS order_details,
-
-							   GROUP_CONCAT(distinct wtcf.unique_name
-						       ORDER BY wtcf.id 
-							   SEPARATOR '###' ) AS shipping_unique_names,
-							   
-						       details,
-                                                       sku,
-                               products_name,
-                               product_id,
-					  	       date_format(FROM_UNIXTIME(wtpl.date),'%b %e %Y, %r') AS date,
-						  	   wtpl.date AS unixdate,
-							   wtpl.totalprice AS amount,
-							   wtpl.track_id, 			                 
-							   wtpl.processed  AS order_status,
-                               sessionid,
-                               wtpl.notes,
-                               country AS shippingcountry,
-                               wprt.name AS shippingstate
-                            
-						       FROM " . WPSC_TABLE_PURCHASE_LOGS . " AS wtpl
-						       LEFT JOIN " . WPSC_TABLE_SUBMITED_FORM_DATA . " as wtsfd 
-						       ON (wtpl.id = wtsfd.log_id) 
-						       
-						       RIGHT JOIN " . WPSC_TABLE_CHECKOUT_FORMS . " as wtcf   
-						       ON (wtsfd.form_id = wtcf.id AND wtcf.active = 1 
-						       AND unique_name IN ('billingfirstname' , 'billinglastname' , 'billingemail',
-						       			 		   'shippingfirstname', 'shippinglastname', 'shippingaddress',
-					                     		   'shippingcity'	  , 'shippingstate'	  , 'shippingcountry','shippingpostcode'))
-						       
-							   LEFT JOIN 
-						       (SELECT CONCAT(CAST(sum(quantity) AS CHAR) , ' items') AS details,
-                                                        GROUP_CONCAT( postmeta.meta_value ORDER BY cart_contents.prodid SEPARATOR '#') AS sku,
-                                                        GROUP_CONCAT( prodid ORDER BY cart_contents.prodid SEPARATOR '#') AS product_id,
-						       	GROUP_CONCAT( name ORDER BY cart_contents.prodid SEPARATOR '#') AS products_name,
-						    	cart_contents.purchaseid
-						    	FROM " . WPSC_TABLE_CART_CONTENTS . " AS cart_contents
-                                                        LEFT JOIN {$wpdb->prefix}postmeta AS postmeta ON ( postmeta.post_id = cart_contents.prodid AND postmeta.meta_key = '_wpsc_sku' )
-                                                        GROUP BY cart_contents.purchaseid) as quantity_details
-						        ON (wtpl.id = quantity_details.purchaseid)
-						       LEFT JOIN " . WPSC_TABLE_CURRENCY_LIST . " AS wpcc ON (wtpl.shipping_country = wpcc.isocode)
-		                       LEFT JOIN " . WPSC_TABLE_REGION_TAX." AS wprt ON (wtpl.shipping_region = wprt.id)";
-		
-
-		$group_by    = "GROUP BY wtpl.id";		
-		$limit_query = "ORDER BY id desc $limit_string ;";
-
 		if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 			$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
-			$search_condn = " HAVING id like '$search_on%'
-					          or sessionid like '$search_on%'
-							  OR date like '%$search_on%'
-							  OR amount like '$search_on%'
-							  OR wtpl.track_id like '%$search_on%' 
-							  OR CASE order_status
-								  WHEN 1 THEN 'Incomplete Sale'
-								  WHEN 2 THEN 'Order Received'
-								  WHEN 3 THEN 'Accepted Payment'
-								  WHEN 4 THEN 'Job Dispatched'
-								  WHEN 5 THEN 'Closed Order'
-								  ELSE 'Payment Declined'
-							     END like '%$search_on%'
-							 OR wtpl.notes like '%$search_on%'
-							 OR details like '%$search_on%'
-							 OR products_name like '%$search_on%' 
-							 OR sku like '%$search_on%' 
-							 OR shippingcountry like '%$search_on%'
-							 OR shippingstate like '%$search_on%'
-							 OR order_details LIKE '%$search_on%'";
 		}
 		
 		if (isset ( $_POST ['fromDate'] )) {
@@ -402,189 +363,346 @@ elseif ($active_module == 'Orders') {
 			}
 			$where = " WHERE wtpl.date BETWEEN '$from_date' AND '$to_date'";
 		}
-
-		//get the state id if the shipping state is numeric or blank
- 		$query    = "$select_query $where $group_by $search_condn $limit_query;";
-                $results  = $wpdb->get_results ( $query,'ARRAY_A');
+                
+                $product_details = "SELECT wtcc.prodid AS product_id,
+                                            CAST( if( products.post_parent > 0, CONCAT( SUBSTRING_INDEX( products.post_title, '(', 1 ), if( terms.variations IS NULL, '', '(' ), 
+                                                terms.variations, 
+                                                if( terms.variations IS NULL, '', ')' ),
+                                                if( postmeta.meta_value IS NULL, '', ' [' ),
+                                                postmeta.meta_value,
+                                                if( postmeta.meta_value IS NULL, '', ']' ) ), products.post_title
+                                            ) AS CHAR(1000000) ) AS product_details,
+                                            wtcc.name AS additional_product_name
+                                            FROM " . WPSC_TABLE_CART_CONTENTS . " AS wtcc
+                                                LEFT JOIN {$wpdb->prefix}posts AS products ON ( products.ID = wtcc.prodid )
+                                                LEFT JOIN {$wpdb->prefix}postmeta AS postmeta ON ( postmeta.post_id = wtcc.prodid AND postmeta.meta_key = '_wpsc_sku' )
+                                                LEFT JOIN {$wpdb->prefix}term_relationships AS term_relationships ON ( term_relationships.object_id = wtcc.prodid )
+                                                LEFT JOIN 
+                                                (SELECT term_relationships.object_id AS object_id,
+                                                    GROUP_CONCAT( DISTINCT terms.name ORDER BY terms.term_id SEPARATOR ',' ) AS variations
+                                                    FROM {$wpdb->prefix}term_relationships AS term_relationships
+                                                        LEFT JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy ON ( term_taxonomy.term_taxonomy_id = term_relationships.term_taxonomy_id )
+                                                        LEFT JOIN {$wpdb->prefix}terms AS terms ON ( terms.term_id = term_taxonomy.term_id )
+                                                    WHERE term_taxonomy.taxonomy = 'wpsc-variation'
+                                                    GROUP BY object_id
+                                                ) AS terms ON ( terms.object_id = wtcc.prodid )
 		
-		//To get the total count
-		$orders_count_result = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
-		$num_records = $orders_count_result[0]['count'];
+                                            GROUP BY product_id
+                                    ";
+                $results = $wpdb->get_results( $product_details, 'ARRAY_A' );
 				
+                $product_details_results = array();
+                foreach ( $results as $result ) {
+                    $product_details_results[$result['product_id']] = ( !empty( $result['product_details'] ) ) ? $result['product_details'] : $result['additional_product_name'];
+                }
+                
+                if ( !empty( $search_on ) ) {
+                    
+                    $search_condn_region_country_query = "SELECT CONCAT(wtcl.isocode, '###', wtrt.code)
+                                                                FROM " .  WPSC_TABLE_CURRENCY_LIST. " AS wtcl
+                                                                    LEFT JOIN " . WPSC_TABLE_REGION_TAX . " AS wtrt ON ( wtrt.country_id = wtcl.id )
+                                                                WHERE wtcl.country LIKE '%$search_on%'
+                                                                    OR wtcl.continent LIKE '%$search_on%'
+                                                                    OR wtrt.name LIKE '%$search_on%'
+                                                        ";
+                    $region_country_search_ons = $wpdb->get_col( $search_condn_region_country_query );
+                    
+                    if ( !empty( $region_country_search_ons ) ) {
+                        $search_on_region_country .= " (";
+                        foreach ( $region_country_search_ons as $region_country_search_on ) {
+                            $search_on_region_country .= "meta_values LIKE '%$region_country_search_on%' OR "; 
+                        }
+                        $search_on_region_country = trim( $search_on_region_country , ' OR ' );
+		} else {			
+                        $search_condn_checkout_form_details_query = " meta_values LIKE '%$search_on%' ";
+                        $search_on_region_country = '';
+                    }
+                } else {
+                    $search_on_region_country = '';
+                    $search_condn_checkout_form_details_query = '';
+                }
+			
+                $having = ( !empty( $search_condn_checkout_form_details_query ) || !empty( $search_on_region_country ) ) ? " HAVING " . $search_condn_checkout_form_details_query . $search_on_region_country : '';
+                                
+                $checkout_form_details_select_query = "SELECT wtsfd.log_id AS purchase_log_id,
+                                                        GROUP_CONCAT( wtcf.unique_name ORDER BY wtcf.id SEPARATOR '###' ) AS meta_keys,
+                                                        GROUP_CONCAT( wtsfd.value ORDER BY wtsfd.form_id SEPARATOR '###' ) AS meta_values";
+
+
+                $checkout_form_details_from_query = " FROM " . WPSC_TABLE_SUBMITED_FORM_DATA . " AS wtsfd
+                                                            LEFT JOIN " . WPSC_TABLE_CHECKOUT_FORMS . " as wtcf   
+                                                            ON (wtsfd.form_id = wtcf.id)
+                                                            WHERE wtcf.active = 1 
+                                                                AND wtcf.unique_name IN ('billingfirstname', 'billinglastname', 'billingemail',
+                                                                                         'shippingfirstname', 'shippinglastname', 'shippingaddress',
+                                                                                         'shippingcity', 'shippingstate', 'shippingcountry', 'shippingpostcode')
+                                                ";
+                
+                $results = $wpdb->get_results( $checkout_form_details_select_query . $checkout_form_details_from_query . " GROUP BY purchase_log_id" . $having, 'ARRAY_A' );
+                $matched_checkout_form_details = false;
+                if ( empty( $results ) ) {
+                    $results = $wpdb->get_results( $checkout_form_details_select_query . $checkout_form_details_from_query . " GROUP BY purchase_log_id", 'ARRAY_A' );
+                } else {
+                    $matched_checkout_form_details = true;
+                                        }
+                
+                $checkout_form_details = array();
+                foreach ( $results as $result ) {
+                    $checkout_form_details[$result['purchase_log_id']] = array();
+                    $checkout_form_details[$result['purchase_log_id']]['meta_keys'] = $result['meta_keys'];
+                    $checkout_form_details[$result['purchase_log_id']]['meta_values'] = $result['meta_values'];
+                                        }
+                                        
+                
+                $purchase_logs_select_query = "SELECT wtpl.id, 
+                                                wtpl.totalprice AS amount, 
+                                                wtpl.processed AS order_status, 
+                                                wtpl.user_ID AS customer_id, 
+                                                date_format(FROM_UNIXTIME(wtpl.date),'%b %e %Y, %r') AS date,
+                                                wtpl.date AS unixdate,
+                                                wtpl.notes,
+                                                wtpl.track_id,
+                                                GROUP_CONCAT( CAST(wtcc.prodid AS CHAR) ORDER BY wtcc.id SEPARATOR ',' ) AS product_ids,
+                                                CONCAT( CAST(SUM(wtcc.quantity) AS CHAR(100)), ' items') AS details";
+                                                
+                 $purchase_logs_from_query = " FROM " . WPSC_TABLE_PURCHASE_LOGS . " AS wtpl
+                                                    LEFT JOIN " . WPSC_TABLE_CART_CONTENTS . " AS wtcc ON ( wtcc.purchaseid = wtpl.id )
+                                        ";
+                
+                if ( !empty( $search_on ) ) {
+                
+                    $search_condn_purchase_log_ids = get_all_matched_purchase_log_ids( $search_on, $checkout_form_details_from_query );
+                    
+                    $variation_search_query = "SELECT DISTINCT tr.object_id
+                                                    FROM {$wpdb->prefix}term_relationships AS tr
+                                                        LEFT JOIN {$wpdb->prefix}term_taxonomy AS tt ON ( tt.term_taxonomy_id = tr.term_taxonomy_id )
+                                                        LEFT JOIN {$wpdb->prefix}terms AS t ON ( t.term_id = tt.term_id )
+                                                    WHERE tt.taxonomy = 'wpsc-variation'
+                                                        AND t.name LIKE '%$search_on%'
+
+                                                ";
+                    $object_ids = $wpdb->get_col( $variation_search_query );
+                    
+                    $variation_search_ids = ( !empty( $object_ids ) ) ? " OR wtcc.prodid IN ( " . implode( ',', $object_ids ) . " )" : '';
+                    
+                    $search_condn_purchase_logs = " AND ( wtpl.id LIKE '%$search_on%'
+                                                          OR totalprice LIKE '%$search_on%'
+                                                          OR notes LIKE '%$search_on%'
+                                                          OR date LIKE '%$search_on%'
+                                                          OR wtpl.track_id LIKE '%$search_on%'
+                                                          OR CASE wtpl.processed
+								  WHEN 1 THEN 'Incomplete Sale'
+								  WHEN 2 THEN 'Order Received'
+								  WHEN 3 THEN 'Accepted Payment'
+								  WHEN 4 THEN 'Job Dispatched'
+								  WHEN 5 THEN 'Closed Order'
+								  ELSE 'Payment Declined'
+							     END like '%$search_on%'
+                                                          OR wtcc.name LIKE '%$search_on%'
+                                                          $variation_search_ids
+                                                         )
+                                                    $search_condn_purchase_log_ids
+                                                    ";
+                
+                } else {
+                    $search_condn_purchase_logs = '';
+                                    }
+                
+                $query = $purchase_logs_select_query . $purchase_logs_from_query . $where . $search_condn_purchase_logs . " GROUP BY wtpl.id ORDER BY wtpl.id DESC $limit_string";
+                $results = $wpdb->get_results( $query, 'ARRAY_A' );
+                if ( !$is_export ) {
+                    $orders_count_result = $wpdb->get_results ( substr( $query, 0, strpos( $query, 'LIMIT' ) ),'ARRAY_A');
+                    $num_records = count( $orders_count_result ); 
+                } else {
+                    $num_records = count( $results ); 
+                                }
+                                
+		//To get the total count
 		if ($num_records == 0) {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
 			$encoded ['msg'] = __( 'No Records Found', 'smart-manager' );
 		} else {			
-			$regions_ids = get_regions_ids();		
-			
-                        foreach ( $results as $data) {
-				$order_details = explode ( '###', $data ['order_details'] );
-				$product_names = explode ( '#', $data ['products_name'] );
-				$product_ids = explode ( '#', $data ['product_id'] );
-				$skus = explode ( '#', $data ['sku'] );
                                 
-                                if ( count($product_names) == count($product_ids) ) {
-                                    for ( $i = 0; $i < count( $product_ids ); $i++ ) {
-                                        $parent_id = wp_get_post_parent_id ( $product_ids[$i] );
-                                        if ( $parent_id > 0 ) {
-                                            $terms = wp_get_object_terms( $product_ids[$i], 'wpsc-variation', array( 'fields' => 'names', 'orderby' => 'name', 'order' => 'ASC' ) );
-                                            $product_names[$i] = substr( $product_names[$i], 0, strpos($product_names[$i], '(') ) . '(' . implode( ', ', $terms ) . ')';
-                                        }
-                                        if ( !empty( $skus[$i] ) ) {
-                                            $product_names[$i] .= '[' . $skus[$i] . ']';
-                                        }
-                                    }
-                                }
-                                
-                                $data ['products_name'] = implode( '#' , $product_names );
-                                
-                                $shipping_unique_names = explode ( '###', $data ['shipping_unique_names'] );
+                        foreach ( $results as $data ) {
+                            if ( $matched_checkout_form_details && !isset( $checkout_form_details[$data['id']] ) ) continue;
 				
-				if(count($order_details) == count($shipping_unique_names)){
-					$shipping_order_details = array_combine ( $shipping_unique_names, $order_details );
+                            $checkout_form_details_keys = explode( '###', $checkout_form_details[$data['id']]['meta_keys'] );
+                            $checkout_form_details_values = explode( '###', $checkout_form_details[$data['id']]['meta_values'] );
 
-                    $name_emailid [0] = "<font class=blue>". $shipping_order_details['billingfirstname']."</font>";
-					$name_emailid [1] = "<font class=blue>". $shipping_order_details['billinglastname']."</font>";
-					$name_emailid [2] = "(".$shipping_order_details['billingemail'].")"; //email comes at 7th position.
+                            if ( count( $checkout_form_details_keys ) == count( $checkout_form_details_values ) ) {
+                                $checkout_form_data = array_combine( $checkout_form_details_keys, $checkout_form_details_values );
+                                
+                                $name_emailid [0] = "<font class=blue>". $checkout_form_data['billingfirstname']."</font>";
+                                $name_emailid [1] = "<font class=blue>". $checkout_form_data['billinglastname']."</font>";
+                                $name_emailid [2] = "(".$checkout_form_data['billingemail'].")"; //email comes at 7th position.
 					$data['name'] 	  = implode ( ' ', $name_emailid ); //in front end,splitting is done with this space.
 
-					//if purchase log doesn't have state code pick up the state from submitted form data
-					if($data['shippingstate'] == ''){
-						$ship_state = $shipping_order_details['shippingstate'];
-						$data['shippingstate'] = ( $regions_ids[$ship_state] != '' ) ? $regions_ids[$ship_state] : $ship_state;
+                                $prod_ids = explode( ',', $data['product_ids'] );
+                            
+                                $products_name = '';
+                                foreach ( $prod_ids as $prod_id ) {
+                                    $products_name .= $product_details_results[$prod_id] . ', ';
 					}
-					unset($data ['order_details']);
-					$records [] = array_merge ( $shipping_order_details, $data );
+                                $data['products_name'] = trim( $products_name, ', ' );
+                                
+                                if( !empty( $checkout_form_data['shippingstate'] ) ) {
+                                    $ship_state = $checkout_form_data['shippingstate'];
+                                    $checkout_form_data['shippingstate'] = ( $regions_ids[$ship_state] != '' ) ? $regions_ids[$ship_state] : $ship_state;
 				}
+                                
+                                if( !empty( $checkout_form_data['shippingcountry'] ) ) {
+                                    $ship_country = $checkout_form_data['shippingcountry'];
+                                    $checkout_form_data['shippingcountry'] = ( $country_data[$ship_country] != '' ) ? $country_data[$ship_country] : $ship_country;
 			}
-			unset($order_details);
-			unset($shipping_unique_names);
-			unset($shipping_order_details);
-			unset($results);
+                                
+                                $records[] = ( !empty( $checkout_form_data ) ) ? array_merge ( $checkout_form_data, $data ) : $data;
+                            
 		}
+                            
+                            unset( $data );
+                            unset( $checkout_form_details_keys );
+                            unset( $checkout_form_details_values );
+                            unset( $checkout_form_data );
+                            
 	}
 	
-	} else {
+                }
+	}
+
+    	} else {
+    
 		//BOF Customer's module
-		if (SMPRO == true) {
-			$customers_query = customers_query ( $_POST ['searchText'] );
-		} else {
-			$customers_query = "SELECT SQl_CALC_FOUND_ROWS purchlog_info.id, 
-					  GROUP_CONCAT(wwsfd.value ORDER BY form_id SEPARATOR  '###' ) AS user_details, 
-					  GROUP_CONCAT( wwcf.unique_name ORDER BY wwcf.id SEPARATOR  '###' ) AS unique_names,	
-					  email,
-					  country AS billingcountry,
-					  wprt.name as billingstate
-			 	   
-                      FROM (SELECT wwpl.id,
-					             billing_country,
-					             billing_region,
-					             value as email,
-						     wwpl.user_ID as customer_id
-					             
-					             FROM ". WPSC_TABLE_PURCHASE_LOGS ." AS wwpl
-					             LEFT JOIN ". WPSC_TABLE_SUBMITED_FORM_DATA ."  AS emails 
-					             on (wwpl.id = emails.log_id) 
-					             
-					             INNER JOIN ". WPSC_TABLE_CHECKOUT_FORMS ." AS email_name 
-					             on (email_name.id = emails.form_id 
-					     			 AND unique_name = 'billingemail'
-					                 AND email_name.active = 1)
-					             
-					             GROUP BY if( customer_id = 0, email, customer_id )
-					             ORDER BY DATE DESC) AS purchlog_info 
-                      
-                     INNER JOIN ". WPSC_TABLE_SUBMITED_FORM_DATA ." as wwsfd on (purchlog_info.id = wwsfd.log_id)
-
-                     INNER JOIN ". WPSC_TABLE_CHECKOUT_FORMS ." AS wwcf 
-					 ON ( wwsfd.form_id = wwcf.id  
-					      AND unique_name IN ('billingfirstname','billinglastname','billingaddress',
-					                     'billingcity','billingstate','billingcountry','billingpostcode',
-									     'billingemail','billingphone')
-						  AND wwcf.active = 1 ) 					
-
-					 LEFT JOIN  ". WPSC_TABLE_CURRENCY_LIST ."  ON (purchlog_info.billing_country = isocode)
-					 LEFT JOIN " . WPSC_TABLE_REGION_TAX." AS wprt ON (purchlog_info.billing_region = wprt.id) 
-					 GROUP BY purchlog_info.id \n";
-			
-			if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
-				$search_text = $wpdb->_real_escape ( $_POST ['searchText'] );
-				$customers_query .= " HAVING id  LIKE '$search_text%'
-				          OR email LIKE '%$search_text%'
-				          OR user_details LIKE '%$search_text%'
-	    				  OR billingcountry   LIKE '$search_text%'
-	    				  OR billingstate LIKE '$search_text%'";
-			}
+                if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
+                    $search_on = $wpdb->_real_escape ( trim( $_POST ['searchText'] ) );
 		}
-		
-		$limit_query = " ORDER BY purchlog_info.id $limit_string ;";
-		$query    	 = "$customers_query  $limit_query";
-		$result   	 =  $wpdb->get_results ( $query, 'ARRAY_A' );
-		
-		$num_rows 	 =  $wpdb->num_rows;
-		
-		//To get Total count
-		$customers_count_result = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
-		$num_records = $customers_count_result[0]['count'];
+                
+                if ( !empty( $search_on ) ) {
+                    $searched_region = $wpdb->get_col( "SELECT code FROM " . WPSC_TABLE_REGION_TAX . " WHERE name LIKE '%$search_on%'" );
+                    $searched_country = $wpdb->get_col( "SELECT isocode FROM " . WPSC_TABLE_CURRENCY_LIST . " WHERE country LIKE '%$search_on%' OR continent LIKE '%$search_on%'" );
+                    $found_country_region = array_merge( $searched_region, $searched_country );
+                    $found_country_region_having = '';
+                    foreach ( $found_country_region as $country_region ) {
+                        $found_country_region_having .= " OR meta_values LIKE '%$country_region%'";
+                    }
+                }
+                
+                $customer_details_query_select = "SELECT wtsfd.log_id AS log_id,
+                                                            GROUP_CONCAT( wtcf.unique_name ORDER BY wtcf.id SEPARATOR '###' ) AS meta_keys,
+                                                            GROUP_CONCAT( wtsfd.value ORDER BY wtsfd.form_id SEPARATOR '###' ) AS meta_values
 
-		if ($num_records == 0) {
+                                                        FROM " . WPSC_TABLE_SUBMITED_FORM_DATA . " AS wtsfd
+                                                            RIGHT JOIN " . WPSC_TABLE_CHECKOUT_FORMS . " AS wtcf ON ( wtcf.id = wtsfd.form_id AND wtcf.active = 1 AND wtcf.unique_name IN ('billingfirstname','billinglastname','billingaddress',
+                                                                                                    'billingcity','billingstate','billingcountry','billingpostcode',
+                                                                                                    'billingemail','billingphone') )
+                                                        GROUP BY log_id";
+                
+                if ( !empty( $search_on ) ) {
+                    $customer_details_query_having = " HAVING meta_values LIKE '%$search_on%'
+                                                              $found_country_region_having
+                                                     ";
+                } else {
+                    $customer_details_query_having = '';
+                }
+                
+                $full_customer_details_query = $customer_details_query_select . $customer_details_query_having;
+                                                        
+                $customer_details_results = $wpdb->get_results( $full_customer_details_query, 'ARRAY_A' );
+                                                 
+                $customer_detail_data = array();
+                foreach ( $customer_details_results as $customer_details_result ) {
+                    $meta_keys = explode( '###', $customer_details_result['meta_keys'] );
+                    $meta_values = explode( '###', $customer_details_result['meta_values'] );
+                    if ( count( $meta_keys ) == count( $meta_values ) ) {
+                        $customer_detail_data[$customer_details_result['log_id']] = array_combine( $meta_keys, $meta_values );
+                    }
+                }
+                
+                $log_ids = array_keys( $customer_detail_data );
+                
+                $email_form_id = $wpdb->get_var("SELECT id FROM " .WPSC_TABLE_CHECKOUT_FORMS . " WHERE unique_name = 'billingemail'");
+                
+                $customer_query_select = "SELECT if( wtpl.user_ID = 0, '', wtpl.user_ID) AS id,
+                                                    MAX(wtpl.id) AS last_order_id,
+                                                    DATE_FORMAT( FROM_UNIXTIME( wtpl.date ),'%b %e %Y' ) AS Last_Order,
+                                                    COUNT(wtpl.id) AS count_orders,
+                                                    SUM(wtpl.totalprice) AS total_orders,
+                                                    wtpl.totalprice AS _order_total,
+                                                    customer_email.value AS email ";
+                                                    
+                $customer_query_from = " FROM " . WPSC_TABLE_PURCHASE_LOGS . " AS wtpl
+                                                 LEFT JOIN " . WPSC_TABLE_SUBMITED_FORM_DATA . " AS customer_email ON ( customer_email.log_id = wtpl.id AND customer_email.form_id = $email_form_id ) ";
+                
+                if ( !empty( $log_ids ) ) {
+                    $customer_query_where = " WHERE wtpl.id IN ( " . implode( ',', $log_ids ) . " ) ";
+                    $customer_query_having = "";
+                } else {
+                    $customer_query_where = '';
+                    $customer_query_having = " HAVING   id LIKE '$search_on%'
+                                                        OR last_order_id LIKE '$search_on%'
+                                                        OR Last_Order LIKE '$search_on%'
+                                                        OR count_orders LIKE '$search_on%'
+                                                        OR total_orders LIKE '$search_on%'
+                                                        OR _order_total LIKE '$search_on%'
+                                                        OR email LIKE '%$search_on%'
+                                             ";
+                }
+                                                 
+                $customer_query_group_by = " GROUP BY if( wtpl.user_ID = 0, email, wtpl.user_ID )";
+                
+                $customer_query_order_by = " ORDER BY wtpl.user_ID DESC $limit_string";
+                
+                $full_customer_query = $customer_query_select . $customer_query_from . $customer_query_where . $customer_query_group_by . $customer_query_having . $customer_query_order_by;
+                
+                $results = $wpdb->get_results( $full_customer_query, 'ARRAY_A' );
+                
+                if ( !$is_export ) {
+                    $customers_count_result = $wpdb->get_results ( substr( $full_customer_query, 0, strpos( $full_customer_query, 'LIMIT' ) ),'ARRAY_A');
+                    $num_records = count( $customers_count_result ); 
+                } else {
+                    $num_records = count( $results );
+                }
+//                die('die');
+                if ($num_records == 0) {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
 			$encoded ['msg'] = __( 'No Records Found', 'smart-manager' );
 		} else {
-			$regions_ids = get_regions_ids();
-			foreach ( ( array ) $result as $data ) {
-				$user_details = explode ( '###', $data ['user_details'] );
-				$unique_names = explode ( '###', $data ['unique_names'] );
 				
-                //Exploding the last_order_amt to get the amount of the last order placed
-                $temp=explode ( '###', $data ['Last_Order_Amt'] );
-                $last_order_amt = $temp[sizeof($temp)-1];
+			foreach ( $results as $result ) {
 
-                //Exploding the last_order_amt to get the date of the last order placed
-                $temp=explode ( '###', $data ['DATE'] );
-                $last_order_date = $temp[sizeof($temp)-1];
-
-
-				//note: while merging the array, $data as to be the second arg
-				if (count ( $unique_names ) == count ( $user_details )) {
-					$billing_user_details = array_combine ( $unique_names, $user_details );
+					if ( empty( $customer_detail_data[$result['last_order_id']] ) ) {
+                                            $num_records--;
+                                            continue;
+                                        }
+                                        $billing_user_details = $customer_detail_data[$result['last_order_id']];
+                                        $billing_user_details['billingstate'] = ( !empty( $regions_ids[$billing_user_details['billingstate']] ) ) ? $regions_ids[$billing_user_details['billingstate']] : $billing_user_details['billingstate'];
+                                        $billing_user_details['billingcountry'] = ( !empty( $country_data[$billing_user_details['billingcountry']] ) ) ? $country_data[$billing_user_details['billingcountry']] : $billing_user_details['billingcountry'];
 					
-					if($data['billingstate'] == ''){
-						$bill_state = $billing_user_details['billingstate'];
-						$data['billingstate'] = ( $regions_ids[$bill_state] != '' ) ? $regions_ids[$bill_state] : $bill_state;
-					}
-					
-					if (SMPRO == true) {
-                        $data['Last_Order'] = $last_order_date;
-						$data['_order_total'] = $last_order_amt;
-                        $data['count_orders']= $data ['Total_Orders'];
-                        $data['total_orders']= $data ['Total_Purchased'];
-
-					}else{
-                        $data['Last_Order'] = 'Pro only';
-                        $data['_order_total'] = 'Pro only';
-                        $data['count_orders']= 'Pro only';
-                        $data['total_orders']= 'Pro only';
+                                        if (SMPRO == false) {
+                                            $result['Last_Order'] = 'Pro only';
+                                            $result['_order_total'] = 'Pro only';
+                                            $result['count_orders']= 'Pro only';
+                                            $result['total_orders']= 'Pro only';
 					}
 					//NOTE: storing old email id in an extra column in record so useful to indentify record with emailid during updates.
-					$data ['Old_Email_Id'] = $billing_user_details ['billingemail'];
-					$records [] = array_merge ( $billing_user_details, $data );
-				}
-			}
-			unset($result);
-			unset($user_details);
-			unset($unique_names);
-			unset($billing_user_details);
-		}
-	}
+                                        $result ['Old_Email_Id'] = $billing_user_details ['billingemail'];
+                                        $records[] = ( !empty( $billing_user_details ) ) ? array_merge ( $billing_user_details, $result ) : $result;
+
+                           unset($result);
+                           unset($meta_keys);
+                           unset($meta_values);
+                           unset($billing_user_details);
+                        }
+                }
+	
+        }
 	
         if (!isset($_POST['label']) && $_POST['label'] != 'getPurchaseLogs'){
 		$encoded ['items'] = $records;
 		$encoded ['totalCount'] = $num_records;
-		unset($records);		
-		return $encoded;
+		unset($records);
+                return $encoded;
 	}
 }
 
@@ -601,6 +719,7 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 	$sm_domain = 'smart-manager';
         $columns_header = array();
 	$active_module = $_GET ['active_module'];
+        
 	switch ( $active_module ) {
 		
 		case 'Products':
@@ -636,12 +755,12 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 				$columns_header['billingcity'] 			= __('City', $sm_domain);
 				$columns_header['billingstate'] 		= __('State / Region', $sm_domain);
 				$columns_header['billingcountry'] 		= __('Country', $sm_domain);
-				$columns_header['Last_Order_Amt'] 		= __('Last Order Total', $sm_domain);
-				$columns_header['Last_Order_Date'] 		= __('Last Order Date', $sm_domain);
-				$columns_header['Total_Purchased'] 		= __('Total Purchased Till Date (By Customer)', $sm_domain);
 				$columns_header['billingphone'] 		= __('Phone / Mobile', $sm_domain);
+                                $columns_header['_order_total'] 		= __('Last Order Total', $sm_domain);
+				$columns_header['Last_Order'] 		= __('Last Order Date', $sm_domain);
                 $columns_header['count_orders']          = __('Total Number Of Orders', $sm_domain);
-                $columns_header['total_orders'] 		 = __('Total Purchased', $sm_domain);
+                                $columns_header['total_orders'] 		= __('Total Purchased Till Date (By Customer)', $sm_domain);
+				
 			break;
 			
 		case 'Orders':
@@ -668,6 +787,7 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 	if ( $active_module == 'Products' ) {
 		$_GET['viewCols'] = json_encode( array_keys( $columns_header ) );
 	}
+        
 	$encoded = get_data_wpsc_38 ( $_GET, $offset, $limit, true );
 	$data = $encoded ['items'];
 	unset($encoded);

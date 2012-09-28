@@ -18,10 +18,11 @@ $blog_info = get_bloginfo ( 'url' );
 
 //creating the products links
 if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
-	$str_products_url = htmlspecialchars_decode ( (wpsc_edit_the_product_link ( '', '', '', $id = '' )) );
-	$regex_pattern = "/<a class=\'(.*)\' href=\'(.*)\'>(.*)<\/a>/";
-	preg_match_all ( $regex_pattern, $str_products_url, $matches );
-	$products_details_url = "{$matches[2][0]}";
+//	$str_products_url = htmlspecialchars_decode ( (wpsc_edit_the_product_link ( '', '', '', $id = '' )) );
+//	$regex_pattern = "/<a class=\'(.*)\' href=\'(.*)\'>(.*)<\/a>/";
+//	preg_match_all ( $regex_pattern, $str_products_url, $matches );
+//	$products_details_url = "{$matches[2][0]}";
+        $products_details_url = $site_url.'/wp-admin/post.php?post=';
 } else if (WOO_RUNNING === true) {
 
 	$products_details_url = $site_url.'/wp-admin/post.php?action=edit&post='.$product_id;
@@ -888,8 +889,11 @@ if (WPSC_RUNNING === true) {
 		prodFieldsStoreData.totalCount = ++i;
 	},this);
 	
-	for(var prodcol in SM.productsCols) 
-		productsViewCols.push(SM.productsCols[prodcol]['colName']);
+	for(var prodcol in SM.productsCols) { 
+            if ( productsViewCols.indexOf( SM.productsCols[prodcol]['colName'] ) < 0 ) {
+                productsViewCols.push(SM.productsCols[prodcol]['colName']);
+            }
+        }
 	
 	</script>";
 		
