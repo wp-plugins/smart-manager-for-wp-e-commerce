@@ -47,16 +47,12 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 		$image_size = "thumbnail";
 	}
 	
-	$wpdb->query ( "SET SESSION group_concat_max_len=9999" );// To increase the max length of the Group Concat Functionality
+	$wpdb->query ( "SET SESSION group_concat_max_len=999999" );// To increase the max length of the Group Concat Functionality
 	
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
 	if ($active_module == 'Products') { // <-products
 
-        $tax_status = array(
-								'taxable' => __('Taxable','smart-manager'),
-								'shipping' => __('Shipping only','smart-manager'),
-								'none' => __('None','smart-manager')
-							);
+        
 
 		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] === 'true' && SMPRO == true) {
 			$show_variation = true;
@@ -89,13 +85,31 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
             $attributes[$attributes_term['slug']] = $attributes_term['term_name'];
         }
 
+        //Query to get the term_taxonomy_id for all the product categories
+        $query_terms = "SELECT terms.name, wt.term_taxonomy_id FROM {$wpdb->prefix}term_taxonomy AS wt
+                        JOIN {$wpdb->prefix}terms AS terms ON (wt.term_id = terms.term_id)
+                        WHERE wt.taxonomy like 'product_cat'";
+        $results = $wpdb->get_results( $query_terms, 'ARRAY_A' );
+        
+        if ( !empty( $results ) ) {
+            for ($i=0;$i<sizeof($results);$i++) {
+                $term_taxonomy_id [$i] = $results [$i]['term_taxonomy_id'];
+                $term_taxonomy[$results [$i]['term_taxonomy_id']] = $results [$i]['name']; 
+            }
+
+            //Imploding the term_taxonomy_id to be used in the main query of the products module
+            $term_taxonomy_id_query = "AND wtr.term_taxonomy_id IN (" . implode (",",$term_taxonomy_id) . ")";
+        } else {
+            $term_taxonomy_id_query = '';
+        }
+        
         $select = "SELECT SQL_CALC_FOUND_ROWS products.id,
 					products.post_title,
 					products.post_content,
 					products.post_excerpt,
 					products.post_status,
 					products.post_parent,
-					category,
+					GROUP_CONCAT(distinct wtr.term_taxonomy_id order by wtr.object_id SEPARATOR '###') AS term_taxonomy_id,
 					GROUP_CONCAT(prod_othermeta.meta_key order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_key,
 					GROUP_CONCAT(prod_othermeta.meta_value order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_value
 					$parent_sort_id";
@@ -109,11 +123,14 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
             $count_all_double_quote = substr_count( $search_on, '"' );
             if ( $count_all_double_quote > 0 ) {
                 $search_ons = array_filter( array_map( 'trim', explode( $wpdb->_real_escape( '"' ), $search_on ) ) );
+                $search_on  = implode(",", $search_ons);
+                
             } else {
                 $search_on = $wpdb->_real_escape( $search_on );
                 $search_ons = explode( ' ', $search_on );
             }
 
+            //Query for getting the slug name for the term name typed in the search box of the products module
             $query_terms = "SELECT slug FROM {$wpdb->prefix}terms WHERE name LIKE '%$search_on%' AND name IN ('" .implode("','",$attributes) . "');";
             $records_slug = $wpdb->get_col ( $query_terms );
             $rows = $wpdb->num_rows;
@@ -124,9 +141,25 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                     $search_ons = $records_slug;
             }
             
-            if ( is_array( $search_ons ) && ! empty( $search_ons ) ) {
+            //Query to get the term_taxonomy_id for the category name typed in the search text box of the products module
+            $query_category = "SELECT wt.term_taxonomy_id FROM {$wpdb->prefix}term_taxonomy AS wt
+                    JOIN {$wpdb->prefix}terms AS terms ON (wt.term_id = terms.term_id)
+                    WHERE wt.taxonomy like 'product_cat'
+                    AND terms.name LIKE '%$search_on%'";
+            $results_category = $wpdb->get_col( $query_category );
+            $rows_category = $wpdb->num_rows;
                 
+            //Condition for handling the search functionality for the category names
+            if ($rows_category > 0) {
 				$search_condn = " HAVING ";
+                for ($i=0;$i<sizeof($results_category);$i++) {
+                    $search_condn .= " term_taxonomy_id LIKE '%$results_category[$i]%'";
+                    $search_condn .= " OR";
+                }
+                $search_condn = substr( $search_condn, 0, -2 );
+            }
+            elseif ( is_array( $search_ons ) && ! empty( $search_ons ) ) {
+            			$search_condn = " HAVING ";
 				foreach ( $search_ons as $search_on ) {
                                     
                                     if( $rows == 1 && $search_text != $search_ons ) {
@@ -142,7 +175,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 						               OR post_excerpt LIKE '%$search_on%'
 						               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
 									   OR prod_othermeta_value LIKE '%$search_on%'
-									   OR category LIKE '%$search_on%'
+									  
 							           ";
 					
 					
@@ -173,17 +206,12 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 		} 
 
 		$from = "FROM {$wpdb->prefix}posts as products
-						LEFT JOIN {$wpdb->prefix}postmeta as prod_othermeta ON (prod_othermeta.post_id = products.id and
+						JOIN {$wpdb->prefix}postmeta as prod_othermeta ON (prod_othermeta.post_id = products.id and
 						prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price','_thumbnail_id','_tax_status','_min_variation_regular_price','_min_variation_sale_price','_visibility','" . implode( "','", $variation ) . "') )
 						
-						LEFT JOIN
-						(SELECT GROUP_CONCAT(wt.name ORDER BY wt.name) as category, wtr.object_id
-						FROM  {$wpdb->prefix}term_relationships AS wtr  	 
-						JOIN {$wpdb->prefix}term_taxonomy AS wtt ON (wtr.term_taxonomy_id = wtt.term_taxonomy_id and taxonomy = 'product_cat')
+						LEFT JOIN {$wpdb->prefix}term_relationships as wtr ON (products.id = wtr.object_id
+                                                            $term_taxonomy_id_query)";
 												
-						JOIN {$wpdb->prefix}terms AS wt ON (wtt.term_id = wt.term_id)
-						group by wtr.object_id) as prod_categories on (products.id = prod_categories.object_id OR products.post_parent = prod_categories.object_id)";
-						
 		$where	= " WHERE products.post_status IN $post_status
 						AND products.post_type IN $post_type";
 
@@ -212,6 +240,22 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 				unset ( $records[$i]['prod_othermeta_key'] );
 				$prod_meta_key_values = array_combine ( $prod_meta_key, $prod_meta_values );
                 $product_type = wp_get_object_terms( $records[$i]['id'], 'product_type', array('fields' => 'slugs') );
+        
+                                // Code to get the Category Name from the term_taxonomy_id
+                                $category_id = explode ( '###', $records[$i]['term_taxonomy_id'] );
+                                $category_names = "";
+                                unset ( $records[$i]['term_taxonomy_id'] );  
+                                
+                                for ($j=0;$j<sizeof($category_id);$j++) {
+                                    if(isset($term_taxonomy[$category_id[$j]])) {
+                                        $category_names .=$term_taxonomy[$category_id[$j]].', ';
+                                    }
+                                }
+                                if ($category_names !="") {
+                                    $category_names = substr( $category_names, 0, -2 );
+                                    $records[$i]['category'] = $category_names;
+                                }
+                
                 $records[$i]['category'] = ( ( $records[$i]['post_parent'] > 0 && $product_type[0] == 'simple' ) || ( $records[$i]['post_parent'] == 0 ) ) ? $records[$i]['category'] : '';			// To hide category name from Product's variations
 
                 if(isset($prod_meta_key_values['_sale_price_dates_from']) && !empty($prod_meta_key_values['_sale_price_dates_from']))
@@ -230,17 +274,21 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                         $variation_names = '';
                         
                         foreach ( $variation as $slug ) {
-                            $variation_names .= ( isset( $attributes[$prod_meta_key_values[$slug]] ) && !empty( $attributes[$prod_meta_key_values[$slug]] ) ) ? $attributes[$prod_meta_key_values[$slug]] : ucfirst( $prod_meta_key_values[$slug] ) . ', ';
+                            $variation_names .= ( isset( $attributes[$prod_meta_key_values[$slug]] ) && !empty( $attributes[$prod_meta_key_values[$slug]] ) ) ? $attributes[$prod_meta_key_values[$slug]]. ', ' : ucfirst( $prod_meta_key_values[$slug] ) . ', ';
                         }
                         
                         $records[$i]['post_title'] = get_the_title( $records[$i]['post_parent'] ) . " - " . trim( $variation_names, ", " );
-                    } else {
+                    } 
+                                    else if ( $records[$i]['post_parent'] == 0 && $product_type[0] == 'variable') {
                         $records[$i]['_regular_price'] = "";
                         $records[$i]['_sale_price'] = "";
                     }
                 } elseif ( $show_variation === false && SMPRO ) {
+                                    if ( $product_type[0] == 'variable') {
                     $records[$i]['_regular_price'] = $records[$i]['_min_variation_regular_price'];
                     $records[$i]['_sale_price'] = $records[$i]['_min_variation_sale_price'];
+                    }
+                    
                 } else {
                     $records[$i]['_regular_price'] = $records[$i]['_regular_price'];
                     $records[$i]['_sale_price'] = $records[$i]['_sale_price'];
@@ -256,48 +304,89 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 				$search_condn = customers_query ( $_POST ['searchText'] );
 			}
 
-                        
             //Query for getting the max of post id for all the Guest Customers          
-            $query_max_id="SELECT max(post_ID) as id
-                           FROM {$wpdb->prefix}postmeta
+            $query_max_id="SELECT GROUP_CONCAT(distinct postmeta1.post_ID 
+                                ORDER BY postmeta1.post_ID SEPARATOR ',' ) AS all_id,
+                           GROUP_CONCAT(postmeta2.meta_value 
+                                ORDER BY postmeta2.post_ID DESC SEPARATOR ',' ) AS order_total,     
+                           MAX(postmeta1.post_ID) as max_id,
+                           count(postmeta1.post_id) as count,
+                           sum(postmeta2.meta_value) as total
+                        
+                           FROM {$wpdb->prefix}postmeta AS postmeta1
                                JOIN {$wpdb->prefix}term_relationships AS term_relationships 
-                                                        ON term_relationships.object_id = post_ID 
+                                                        ON term_relationships.object_id = postmeta1.post_ID 
                                         JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy 
                                                         ON term_taxonomy.term_taxonomy_id = term_relationships.term_taxonomy_id 
                                         JOIN {$wpdb->prefix}terms AS terms 
                                                         ON term_taxonomy.term_id = terms.term_id 
+                               INNER JOIN {$wpdb->prefix}postmeta AS postmeta2
+                                   ON (postmeta2.post_ID = postmeta1.post_ID AND postmeta2.meta_key IN ('_order_total'))
 
-                           WHERE meta_key IN ('_billing_email')
-                           AND terms.name IN ('completed','processing')
-                           AND post_ID IN (SELECT post_ID FROM {$wpdb->prefix}postmeta
+                           WHERE postmeta1.meta_key IN ('_billing_email')
+                           AND terms.name IN ('completed','processing','on-hold','pending')
+                           AND postmeta1.post_ID IN (SELECT post_ID FROM {$wpdb->prefix}postmeta
                             WHERE meta_key ='_customer_user' AND meta_value=0)
-                           GROUp BY meta_value
-                           ORDER BY id desc";
+                           GROUP BY postmeta1.meta_value
+                           ORDER BY max_id desc";
 
-            $result_max_id   =  $wpdb->get_col ( $query_max_id );
+            $result_max_id   =  $wpdb->get_results ( $query_max_id, 'ARRAY_A' );
             
             //Query for getting the max of post id for all the Registered Customers
-            $query_max_user="SELECT max(post_ID) as id
-                           FROM {$wpdb->prefix}postmeta
+            $query_max_user="SELECT GROUP_CONCAT(distinct postmeta1.post_ID 
+                                ORDER BY postmeta1.post_ID SEPARATOR ',' ) AS all_id,
+                           GROUP_CONCAT(postmeta2.meta_value 
+                                ORDER BY postmeta2.post_ID DESC SEPARATOR ',' ) AS order_total,     
+                           MAX(postmeta1.post_ID) as max_id,
+                           count(postmeta1.post_id) as count,
+                           sum(postmeta2.meta_value) as total
+                           
+                           FROM {$wpdb->prefix}postmeta AS postmeta1
                                JOIN {$wpdb->prefix}term_relationships AS term_relationships 
-                                                        ON term_relationships.object_id = post_ID 
+                                                        ON term_relationships.object_id = postmeta1.post_ID 
                                         JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy 
                                                         ON term_taxonomy.term_taxonomy_id = term_relationships.term_taxonomy_id 
                                         JOIN {$wpdb->prefix}terms AS terms 
                                                         ON term_taxonomy.term_id = terms.term_id 
+                               INNER JOIN {$wpdb->prefix}postmeta AS postmeta2
+                                   ON (postmeta2.post_ID = postmeta1.post_ID AND postmeta2.meta_key IN ('_order_total'))
                                                         
-                           WHERE meta_key IN ('_customer_user')
-                           AND meta_value>0
-                           AND terms.name IN ('completed','processing')
-                           GROUp BY meta_value";
+                           WHERE postmeta1.meta_key IN ('_customer_user')
+                           AND terms.name IN ('completed','processing','on-hold','pending')
+                           AND postmeta1.post_ID IN (SELECT post_ID FROM {$wpdb->prefix}postmeta
+                                    WHERE meta_key ='_customer_user' AND meta_value>0)                           
+                           GROUP BY postmeta1.meta_value
+                           ORDER BY max_id";
 
-            $result_max_user   =  $wpdb->get_col ( $query_max_user );
+            $result_max_user   =  $wpdb->get_results ( $query_max_user , 'ARRAY_A' );
             
-            for ( $i=0,$j=sizeof($result_max_id);$i<sizeof($result_max_user);$i++,$j++ ){
-                $result_max_id[$j] = $result_max_user[$i];
+            //Code for generating the total orders, count of orders , max ids and last order total arrays
+            for ($i=0;$i<sizeof($result_max_id);$i++) {
+                $max_ids[$i] = $result_max_id[$i]['max_id'];
+                $order_count[$i] = $result_max_id[$i]['count'];
+                $order_total[$i] = $result_max_id[$i]['total'];
+                
+                //Code for getting the last Order Total
+                $temp = explode (",",$result_max_id[$i]['order_total']);
+                $last_order_total[$i] = $temp[0];
+                
             }
 
-            $max_id = implode(",",$result_max_id);
+            $j=sizeof($max_ids);
+            $k=sizeof($order_count);
+            $l=sizeof($order_total);
+            $m=sizeof($last_order_total);
+            
+            for ( $i=0;$i<sizeof($result_max_user);$i++,$j++,$k++,$l++,$m++ ) {
+                $max_ids[$j]      = $result_max_user[$i]['max_id'];
+                $order_count[$k] = $result_max_user[$i]['count'];
+                $order_total[$l] = $result_max_user[$i]['total'];
+                
+                $temp = explode (",",$result_max_user[$i]['order_total']);
+                $last_order_total[$m] = $temp[0];
+            }
+            
+            $max_id = implode(",",$max_ids);
             
             $customers_query = "SELECT SQL_CALC_FOUND_ROWS
                                      DISTINCT(GROUP_CONCAT( postmeta.meta_value
@@ -410,92 +499,19 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                 }
             }
 
-            //Query for getting all the post ids for the Registered Users using the user id
-            if(!(is_null($user_id))){
-                $id    = implode(",",$user_id);
-                $query_id = "SELECT meta_value, GROUP_CONCAT( post_id ORDER BY meta_value
-							SEPARATOR ',' ) AS id
-                            FROM `{$wpdb->prefix}postmeta`
-                                JOIN {$wpdb->prefix}term_relationships AS term_relationships 
-                                                ON term_relationships.object_id = post_ID 
-                                JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy 
-                                                ON term_taxonomy.term_taxonomy_id = term_relationships.term_taxonomy_id 
-                                JOIN {$wpdb->prefix}terms AS terms 
-                                                ON term_taxonomy.term_id = terms.term_id 
-                            WHERE meta_value in ($id)
-                            AND meta_key='_customer_user'
-                            AND terms.name IN ('completed','processing')
-                            GROUP BY meta_value
-                            ORDER BY post_id ";
-
-
-                $result_id =  $wpdb->get_results ( $query_id, 'ARRAY_A' );
-            }
-            
-            //Query for getting all the post ids for the Guest Users using the email id
-            if ( !( is_null( $user_email ) ) ) {
-                $email = implode(",",$user_email);
-                
-                $query_post_id = "SELECT meta_value, GROUP_CONCAT( post_id ORDER BY meta_value
-							SEPARATOR ',' ) AS id
-                            FROM `{$wpdb->prefix}postmeta`
-                                JOIN {$wpdb->prefix}term_relationships AS term_relationships 
-                                                ON term_relationships.object_id = post_ID 
-                                JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy 
-                                                ON term_taxonomy.term_taxonomy_id = term_relationships.term_taxonomy_id 
-                                JOIN {$wpdb->prefix}terms AS terms 
-                                                ON term_taxonomy.term_id = terms.term_id
-                            WHERE meta_value in ($email)
-                            AND meta_key='_billing_email'
-                            AND terms.name IN ('completed','processing')
-                            GROUP BY meta_value
-                            ORDER BY id desc ";
-
-            $result_post_id =  $wpdb->get_results ( $query_post_id, 'ARRAY_A' );
-            }
-
-            for ( $i=0,$j=sizeof($result_post_id);$i<sizeof($result_id);$i++,$j++ ) {
-                $result_post_id[$j] = $result_id[$i];
-            }
-            
-            $result_total = array();
-            $max_post=array();
-
-            for ( $i=0;$i<sizeof($result_post_id);$i++ ) {
-                $temp_id=$result_post_id[$i]['id'];
-                $query_total="SELECT max(post_id) as max_postid, count(post_id) as count_orders, sum(meta_value) as total_orders
-                          FROM `{$wpdb->prefix}postmeta`
-                          WHERE meta_key = '_order_total'
-                          AND post_id in ($temp_id)
-                          ORDER BY max_postid desc";
-
-                $result_total[$i]=$wpdb->get_results ( $query_total, 'ARRAY_A' );
-                $max_post[$i]=$result_total[$i][0]['max_postid'];
-            }
-
-            $max_post_id=implode(",",$max_post);
-
-            $query_order_total="SELECT meta_value As order_total , post_id
-                                FROM `{$wpdb->prefix}postmeta`
-                                WHERE meta_key = '_order_total'
-                                AND post_id in ($max_post_id)
-                                GROUP BY post_id
-                                ORDER BY FIND_IN_SET(post_id,'$max_post_id');";
-
-            $result_order_total =  $wpdb->get_results ( $query_order_total, 'ARRAY_A' );
-
-
             for ( $i=0; $i<sizeof($postmeta);$i++ ) {
 
-                $postmeta [$i] ['id']=$result_total[$i][0] ['max_postid'];
-                $postmeta [$i] ['count_orders']=$result_total[$i][0] ['count_orders'];
-                $postmeta [$i] ['total_orders']=$result_total[$i][0] ['total_orders'];
-
-                $result [$i] ['_order_total']=$result_order_total[$i] ['order_total'];
+                $postmeta [$i] ['id']           = $max_ids[$i];
+                
+                $result [$i] ['_order_total']   = $last_order_total[$i];
 
                 if (SMPRO == true) {
+                    $postmeta [$i] ['count_orders'] = $order_count[$i];
+                    $postmeta [$i] ['total_orders'] = $order_total[$i];
                     $result [$i] ['last_order'] = $result [$i] ['date']/* . ', ' . $data ['Last_Order_Amt']*/;
                 }else{
+                    $postmeta [$i] ['count_orders'] = 'Pro only';
+                    $postmeta [$i] ['total_orders'] = 'Pro only';
                     $result [$i] ['_order_total'] = 'Pro only';
                     $result [$i] ['last_order'] = 'Pro only';
                 }
@@ -569,27 +585,87 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                                 $result_user    = $wpdb->get_col ( $query_user);
                                 $num_rows       = $wpdb->num_rows;
                                 
+                                //Query to get the post_id of the products whose sku code matches with the one type in the search text box of the Orders Module
+                                $query_sku  = "SELECT post_id FROM {$wpdb->prefix}postmeta
+                                              WHERE meta_key = '_sku'
+                                                 AND meta_value like '%$search_on%'";
+                                $result_sku = $wpdb->get_col ($query_sku);
+                                $rows_sku       = $wpdb->num_rows;
+
+                                //Code for handling the Search functionality of the Orders Module using the SKU code of the product
+                                if ($rows_sku > 0) {
+                                    
+                                    //Query for getting all the distinct attribute meta key names
+                                    $query_variation = "SELECT DISTINCT meta_key as variation
+                                                        FROM {$wpdb->prefix}postmeta
+                                                        WHERE meta_key like 'attribute_%'";
+                                    $variation = $wpdb->get_col ($query_variation);
+
+                                    //Query to get all the product title's as displayed in the products module along wih the post_id and SKU code in an array
+                                    $query_product = "SELECT posts.id, posts.post_title, posts.post_parent, 
+                                                                GROUP_CONCAT( postmeta.meta_value 
+                                                                    ORDER BY postmeta.meta_id
+                                                                    SEPARATOR ',' ) AS meta_value
+                                                      FROM {$wpdb->prefix}posts AS posts
+                                                            JOIN {$wpdb->prefix}postmeta AS postmeta
+                                                                ON (posts.ID = postmeta.post_id
+                                                                        AND postmeta.meta_key IN ('_sku','" .implode("','",$variation) . "'))
+                                                      GROUP BY posts.id";
+                                    $result_product = $wpdb->get_results ($query_product , 'ARRAY_A');
+
+                                    //Code to store all the products title in an array with the post_id as the array index
+                                    for ($i=0;$i<sizeof($result_product);$i++) {
+                                          $product_title[$result_product[$i]['id']]['post_title'] = $result_product[$i]['post_title'];
+                                          $product_title[$result_product[$i]['id']]['variation_title'] = $result_product[$i]['meta_value'];
+                                          $product_title[$result_product[$i]['id']]['post_parent'] = $result_product[$i]['post_parent'];
+                                    }
+
+                                    $post_title = array();
+                                    $variation_title = array();
+                                    $search_condn = "HAVING";
+                                    
+                                    for ($i=0;$i<sizeof($result_sku);$i++) {
+                                        $product_type = wp_get_object_terms( $result_sku[$i], 'product_type', array('fields' => 'slugs') ); // Getting the type of the product
+                                        
+                                        //Code to prepare the search condition for the search using SKU Code
+                                        if ($product_title[$result_sku[$i]]['post_parent'] == 0) {
+                                            $post_title [$i] = $product_title[$result_sku[$i]]['post_title'];
+                                            $search_condn .= " meta_value like '%s:4:\"name\"%\"$post_title[$i]\"%' ";
+                                            $search_condn .= "OR";
+                                        }
+                                        elseif ($product_title[$result_sku[$i]]['post_parent'] > 0) {
+                                            $temp = explode(",", $product_title[$result_sku[$i]]['variation_title']);
+                                            $post_title [$i] = $product_title[$product_title[$result_sku[$i]]['post_parent']]['post_title'];
+                                            $search_condn .= " meta_value like '%s:4:\"name\"%\"$post_title[$i]\"%' ";
+                                            $search_condn .= "AND (";
+                                                for ($j=1;$j<sizeof($temp);$j++) {
+                                                    $search_condn .= " meta_value like '%s:10:\"meta_value\"%\"$temp[$j]\"%' ";
+                                                    $search_condn .= "OR";
+                                                }
+                                            $search_condn = substr( $search_condn, 0, -2 ) . ")";
+                                            $search_condn .= "OR";        
+                                        }     
+                                    }
+                                    $variation_title = array_unique($variation_title);
+                                    $search_condn = substr( $search_condn, 0, -2 );
+                                }
+                                
                                 //Code for handling the Email Search condition for Registered users
-                                if($num_rows > 0){
+                                elseif($num_rows > 0){
                                     $query_email = "SELECT DISTINCT(meta_value) FROM {$wpdb->prefix}postmeta 
                                                     WHERE meta_key = '_billing_email'
                                                         AND post_id IN (SELECT post_id FROM {$wpdb->prefix}postmeta 
                                                                             WHERE meta_key = '_customer_user'
                                                                                 AND meta_value IN (" .implode(",",$result_user) . "))";
                                     $result_email  = $wpdb->get_col ( $query_email );
-                                    
                                     $search_condn = "HAVING";
-                                    
                                     for ( $i=0;$i<sizeof($result_email);$i++ ){
                                         $search_condn .= " meta_value like '%$result_email[$i]%' ";
                                         $search_condn .= "OR";
                                     }
-                                    
                                     $search_condn = substr( $search_condn, 0, -2 );
-                                    
                                 }
                                 else{
-                                
 				$search_condn = " HAVING id like '$search_on%'
 								  OR date like '%$search_on%'
 								  OR order_status like '%$search_on%'

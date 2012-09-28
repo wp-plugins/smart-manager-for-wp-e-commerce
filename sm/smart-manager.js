@@ -1258,7 +1258,6 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			id: 'billingstate',
 			dataIndex: 'billingstate',
 			tooltip: getText('Billing Region'),
-			align: 'center',
 			width: 100
 		},
 		{
@@ -1372,7 +1371,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		editorGridSelectionModel.clearSelections();
 		pagingToolbar.saveButton.disable();
 	});
-	
+
 	showCustomersView = function(emailId){
 		try{
 			//initial steps when store: customers is loaded
@@ -1832,8 +1831,8 @@ var searchLogic = function () {
 				result = result.trim();
 				result = SM.escapeCharacters(result);
 			var myJsonObj = Ext.decode(result);
-			
-			if (true !== success) {
+                        
+                        if (true !== success) {
 				Ext.notification.msg('Failed',response.responseText);
 				return;
 			}
@@ -2665,7 +2664,7 @@ var showCustomerDetails = function(record,rowIndex){
 									this.setPosition( 250, 30 );
 								}	
 							},
-							html: '<iframe src='+ productsDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;">< p >' + getText('Your browser does not support iframes.') + '</p></iframe>' 
+							html: '<iframe src='+ productsDetailsLink + record.id +'&action=edit style="width:100%;height:100%;border:none;">< p >' + getText('Your browser does not support iframes.') + '</p></iframe>' 
 						});
 						// To disable Product's details window for product variations
 						if(record.get('post_parent') == 0){
@@ -2728,7 +2727,7 @@ var showCustomerDetails = function(record,rowIndex){
 										Ext.Ajax.request(object);
 									}
 								},
-								html: ( fileExists == 1 ) ? '<iframe src="'+ site_url + '/wp-admin/media-upload.php?parent_page=wpsc-edit-products&am p;post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;">< p>' + getText('Your browser does not support iframes.') +'</p></iframe>' : ''
+								html: ( fileExists == 1 ) ? '<iframe src="'+ site_url + '/wp-admin/media-upload.php?parent_page=wpsc-edit-products&post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;">< p>' + getText('Your browser does not support iframes.') +'</p></iframe>' : ''
 							});
 							productsImageWindow.show('image');
 						}
@@ -2739,7 +2738,7 @@ var showCustomerDetails = function(record,rowIndex){
 						if(columnIndex == totalPurchasedColumnIndex){
 							checkModifiedAndshowDetails(record,rowIndex);
 						}else if(columnIndex == lastOrderColumnIndex){
-							billingDetailsIframe(record.json.id);
+							billingDetailsIframe(record.json.last_order_id);
 						}
 					}
 				}

@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 2.7
+Version: 2.7.1
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012 Store Apps All rights reserved.
@@ -19,12 +19,16 @@ register_deactivation_hook ( __FILE__, 'smart_deactivate' );
  */
 
 function smart_activate() {
+    $index_queries = generate_db_index_queries();
+    process_db_indexes( $index_queries['add'] );
 }
 
 /**
  * Registers a plugin function to be run when the plugin is deactivated.
  */
 function smart_deactivate() {
+    $index_queries = generate_db_index_queries();
+    process_db_indexes( $index_queries['remove'] );
 }
 
 function smart_get_latest_version() {
@@ -49,7 +53,7 @@ function smart_is_pro_updated() {
  * Throw an error on admin page when WP e-Commerece plugin is not activated.
  */
 //if (is_admin ()) {
-	include ABSPATH . 'wp-includes/pluggable.php';
+	require_once( ABSPATH . 'wp-includes/pluggable.php' );      // Sometimes conflict with SB-Welcome Email Editor
 	require_once( ABSPATH . WPINC . '/default-constants.php' );
 	$plugin = plugin_basename ( __FILE__ );
 	define ( 'SM_PLUGIN_DIR',dirname($plugin));
@@ -80,18 +84,18 @@ function smart_is_pro_updated() {
 	add_action ( 'admin_init', 'smart_admin_init' );
 	
 	function smart_admin_init() {
-		$plugin_info = get_plugins ();
+                $plugin_info = get_plugins ();
 		$sm_plugin_info = $plugin_info [SM_PLUGIN_FILE];
 		$ext_version = '3.3.1';
 		load_plugin_textdomain( 'smart-manager', false, dirname( plugin_basename( __FILE__ ) ).'/languages' );
-		if (is_plugin_active ( 'woocommerce/woocommerce.php' ) && is_plugin_active ( 'wp-e-commerce/wp-shopping-cart.php' )) {
+                if (is_plugin_active ( 'woocommerce/woocommerce.php' ) && is_plugin_active ( 'wp-e-commerce/wp-shopping-cart.php' )) {
 			define('WPSC_WOO_ACTIVATED',true);
 		} elseif (is_plugin_active ( 'wp-e-commerce/wp-shopping-cart.php' )) {
 			define('WPSC_ACTIVATED',true);
 		} elseif (is_plugin_active ( 'woocommerce/woocommerce.php' )) {
 			define('WOO_ACTIVATED', true);
 		}
-		wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
+                wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
 		wp_register_script ( 'sm_ext_all', plugins_url ( '/ext/ext-all.js', __FILE__ ), array ('sm_ext_base' ), $ext_version );
 		if ( ( isset($_GET['post_type']) && $_GET['post_type'] == 'wpsc-product' ) || ( isset($_GET['page']) && $_GET['page'] == 'smart-manager-wpsc' ) ) {
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager.js', __FILE__ ), array ('sm_ext_all'), $sm_plugin_info ['Version'] );
@@ -101,8 +105,8 @@ function smart_is_pro_updated() {
 			define ( 'IS_WPSC37', version_compare ( WPSC_VERSION, '3.8', '<' ) );
 			define ( 'IS_WPSC38', version_compare ( WPSC_VERSION, '3.8', '>=' ) );
 			if ( IS_WPSC38 ) {		// WPEC 3.8.7 OR 3.8.8
-				define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.8', '<' ));
-				define('IS_WPSC388', version_compare ( WPSC_VERSION, '3.8.8', '>=' ));
+				define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.7', '<=' ));
+				define('IS_WPSC388', version_compare ( WPSC_VERSION, '3.8.7', '>' ));
 			}
 		} else if ( ( isset($_GET['post_type']) && $_GET['post_type'] == 'product' ) || ( isset($_GET['page']) && $_GET['page'] == 'smart-manager-woo' ) ) {
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager-woo.js', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
@@ -125,13 +129,66 @@ function smart_is_pro_updated() {
 			// this allows you to add something to the end of the row of information displayed for your plugin - 
 			// like the existing after_plugin_row filter, but specific to your plugin, 
 			// so it only runs once instead of after each row of the plugin display
-			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'smart_plugin_row', '', 1 );
+			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'smart_plugin_row' );
 			do_action  ( 'after_plugin_row_' . plugin_basename ( __FILE__ ));
 			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'show_registration_upgrade');
 			add_action ( 'in_plugin_update_message-' . plugin_basename ( __FILE__ ), 'smart_update_notice' );
 		}
 	}
 	
+        function generate_db_index_queries() {
+            global $wpdb;
+            
+            $index_queries = array(
+                'add'       => array(),
+                'remove'    => array()
+            );
+            
+            $index_queries['add'][]       = "ALTER TABLE {$wpdb->prefix}posts
+                                                ADD KEY `sm_idx_post_parent` ( `post_parent` ),
+                                                ADD KEY `sm_idx_post_date` ( `post_date` )";
+            $index_queries['remove'][]    = "ALTER TABLE {$wpdb->prefix}posts
+                                                DROP KEY `sm_idx_post_parent`,
+                                                DROP KEY `sm_idx_post_date`";
+                                                
+            if ( is_plugin_active ( 'wp-e-commerce/wp-shopping-cart.php' ) ) {
+                
+                $index_queries['add'][]       = "ALTER TABLE {$wpdb->prefix}wpsc_cart_contents 
+                                                    ADD KEY `sm_idx_cart_contents_purchaseid`( `purchaseid` ),
+                                                    ADD KEY `sm_idx_cart_contents_prodid`( `prodid` ),
+                                                    ADD KEY `sm_idx_cart_contents_name`( `name` )";
+                $index_queries['remove'][]    = "ALTER TABLE {$wpdb->prefix}wpsc_cart_contents 
+                                                    DROP KEY `sm_idx_cart_contents_purchaseid`,
+                                                    DROP KEY `sm_idx_cart_contents_prodid`,
+                                                    DROP KEY `sm_idx_cart_contents_name`";
+                
+                $index_queries['add'][]       = "ALTER TABLE {$wpdb->prefix}wpsc_purchase_logs 
+                                                    ADD KEY `sm_idx_purchase_logs_userid` ( `user_ID` ),
+                                                    ADD KEY `sm_idx_purchase_logs_date` ( `date` )";
+                $index_queries['remove'][]    = "ALTER TABLE {$wpdb->prefix}wpsc_purchase_logs 
+                                                    DROP KEY `sm_idx_purchase_logs_userid`,
+                                                    DROP KEY `sm_idx_purchase_logs_date`";
+                
+                $index_queries['add'][]       = "ALTER TABLE {$wpdb->prefix}wpsc_submited_form_data 
+                                                    ADD KEY `sm_idx_submited_form_data_log_id` ( `log_id` ),
+                                                    ADD KEY `sm_idx_submited_form_data_value` ( `value` )";
+                $index_queries['remove'][]    = "ALTER TABLE {$wpdb->prefix}wpsc_submited_form_data 
+                                                    DROP KEY `sm_idx_submited_form_data_log_id`,
+                                                    DROP KEY `sm_idx_submited_form_data_value`";
+                
+            }
+            
+            return $index_queries;
+        }
+        
+        function process_db_indexes( $queries ) {
+            global $wpdb;
+            
+            foreach ( $queries as $query ) {
+                $wpdb->query( $query );
+            }
+        }
+        
 	function smart_admin_notices() {
 		if (! is_plugin_active ( 'woocommerce/woocommerce.php' ) && ! is_plugin_active ( 'wp-e-commerce/wp-shopping-cart.php' )) {
 			echo '<div id="notice" class="error"><p>';
@@ -153,7 +210,7 @@ function smart_is_pro_updated() {
 	
 	function smart_woo_add_modules_admin_pages() {
 		global $wpdb, $current_user;
-		$current_user = wp_get_current_user();
+		$current_user = wp_get_current_user();      // Sometimes conflict with SB-Welcome Email Editor
 		$page = add_submenu_page ('edit.php?post_type=product', 'Smart Manager', 'Smart Manager', $current_user->roles[0], 'smart-manager-woo', 'smart_show_console' );
 	    
 		if ( $_GET ['action'] != 'sm-settings') { // not be include for settings page
@@ -165,7 +222,7 @@ function smart_is_pro_updated() {
 
 	function smart_wpsc_add_modules_admin_pages($page_hooks, $base_page) {
 		global $wpdb, $current_user;
-		$current_user = wp_get_current_user();
+		$current_user = wp_get_current_user();      // Sometimes conflict with SB-Welcome Email Editor
 		$page = add_submenu_page ( $base_page, 'Smart Manager', 'Smart Manager', $current_user->roles[0], 'smart-manager-wpsc', 'smart_show_console' );
 		
 		if ( $_GET ['action'] != 'sm-settings' ) { // not be include for settings page
@@ -179,7 +236,7 @@ function smart_is_pro_updated() {
 	
 	function smart_add_menu_access() {
 		global $wpdb, $current_user;
-		$current_user = wp_get_current_user();
+		$current_user = wp_get_current_user();      // Sometimes conflict with SB-Welcome Email Editor
 		$query = "SELECT option_value FROM {$wpdb->prefix}options WHERE option_name = 'sm_".$current_user->roles[0]."_dashboard'";
 		$results = $wpdb->get_results ($query);
 		if (!empty($results[0]->option_value) || $current_user->roles[0] == 'administrator') {
@@ -368,7 +425,7 @@ if (SMPRO === true) {
 		$plugins = get_site_transient ( 'update_plugins' );
 		$link = $plugins->response [SM_PLUGIN_FILE]->package;
 		
-		echo $man_download_link = __('Or','smart-manager') .  "<a href='$link'>" . __( 'click here to download the latest version.','smart-manager' ) . "</a>" ;
+		echo $man_download_link = ' ' .__('Or','smart-manager') . ' ' . "<a href='$link'>" . __( 'click here to download the latest version.','smart-manager' ) . "</a>" ;
 	
 	}
 	
