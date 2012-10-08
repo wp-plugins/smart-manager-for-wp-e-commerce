@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 2.7.1
+Version: 2.7.2
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012 Store Apps All rights reserved.
@@ -130,9 +130,10 @@ function smart_is_pro_updated() {
 			// like the existing after_plugin_row filter, but specific to your plugin, 
 			// so it only runs once instead of after each row of the plugin display
 			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'smart_plugin_row' );
-			do_action  ( 'after_plugin_row_' . plugin_basename ( __FILE__ ));
+//			do_action  ( 'after_plugin_row_' . plugin_basename ( __FILE__ ));
 			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'show_registration_upgrade');
 			add_action ( 'in_plugin_update_message-' . plugin_basename ( __FILE__ ), 'smart_update_notice' );
+			add_action ( 'all_admin_notices', 'smart_update_overwrite' );
 		}
 	}
 	
@@ -422,10 +423,17 @@ if (SMPRO === true) {
 	}
 	
 	function smart_update_notice() {
-		$plugins = get_site_transient ( 'update_plugins' );
-		$link = $plugins->response [SM_PLUGIN_FILE]->package;
+		if ( !function_exists( 'sm_get_download_url_from_db' ) ) return;
+                $download_details = sm_get_download_url_from_db();
+//                $plugins = get_site_transient ( 'update_plugins' );
+		$link = $download_details['results'][0]->option_value;                        //$plugins->response [SM_PLUGIN_FILE]->package;
 		
-		echo $man_download_link = ' ' .__('Or','smart-manager') . ' ' . "<a href='$link'>" . __( 'click here to download the latest version.','smart-manager' ) . "</a>" ;
+                if ( !empty( $link ) ) {
+                    $current  = get_site_transient ( 'update_plugins' );
+                    $r1 	  = smart_plugin_reset_upgrade_link ( $current, $link );
+                    set_site_transient ( 'update_plugins', $r1 );
+                    echo $man_download_link = ' ' .__('Or','smart-manager') . ' ' . "<a href='$link'>" . __( 'click here to download the latest version.','smart-manager' ) . "</a>" ;
+                }
 	
 	}
 	

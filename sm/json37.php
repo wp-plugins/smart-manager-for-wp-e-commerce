@@ -452,6 +452,7 @@ elseif ($active_module == 'Orders') {
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	$encoded = get_data_wpsc_37 ( $_POST, $offset, $limit );
+        ob_clean();
 	echo json_encode ( $encoded );
 	unset($encoded);
 }
@@ -525,7 +526,7 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 				$columns_header['shippingcountry'] 			= 'Shippping Country';
 			break;
 	}
-	
+	ob_clean();
 	echo export_csv_wpsc_37 ( $active_module, $columns_header, $data );
 	exit;
 }
@@ -569,7 +570,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		} else
 			$encoded ['msg'] = __( "Purchase Logs removed from the grid" . 'smart-manager'); 
 	}
-	echo json_encode ( $encoded );
+	ob_clean();
+        echo json_encode ( $encoded );
 }
 
 function update_products($_POST) {
@@ -631,7 +633,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 			}
 		}
 	}
-	echo json_encode ( $encoded );	
+	ob_clean();
+        echo json_encode ( $encoded );	
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
@@ -642,7 +645,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 	} else {
 		$results = get_dashboard_combo_store();
 	}
-	echo json_encode ( $results );
+	ob_clean();
+        echo json_encode ( $results );
 }
 
 ?>

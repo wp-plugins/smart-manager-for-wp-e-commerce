@@ -757,7 +757,8 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	$encoded = get_data_woo ( $_POST, $offset, $limit );
-	echo json_encode ( $encoded );
+	ob_clean();
+        echo json_encode ( $encoded );
 	unset($encoded);
 }
 
@@ -839,7 +840,8 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
 	header("Pragma: no-cache");
 	header("Expires: 0");
 		
-	echo $file_data['file_content'];
+	ob_clean();
+        echo $file_data['file_content'];
 		
 	exit;
 }
@@ -898,7 +900,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 			}
 			
 		}
-	echo json_encode ( $encoded );
+	ob_clean();
+        echo json_encode ( $encoded );
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
@@ -937,7 +940,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		} else {
 			$encoded ['msg'] = $activeModule . __('s removed from the grid','smart-manager');
 		}
-	echo json_encode ( $encoded );
+	ob_clean();
+        echo json_encode ( $encoded );
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
@@ -948,7 +952,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 	} else {
 		$results = get_dashboard_combo_store();
 	}
-	echo json_encode ( $results );
+	ob_clean();
+        echo json_encode ( $results );
 }
 
 function get_term_taxonomy_id($term_name) {					// for woocommerce orders
@@ -988,7 +993,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getTerms'){
 		$term_count++;
 	}
 	
-	echo json_encode ( $terms_combo_store );
+	ob_clean();
+        echo json_encode ( $terms_combo_store );
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRegion') {
@@ -1003,7 +1009,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRegion') {
 	} else {
 		$regions = '';
 	}
-	echo json_encode ( $regions );
+	ob_clean();
+        echo json_encode ( $regions );
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
@@ -1011,7 +1018,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 	$post_thumbnail_id = get_post_thumbnail_id( $_POST ['id'] );
 	$image = isset( $post_thumbnail_id ) ? wp_get_attachment_image_src( $post_thumbnail_id, 'admin-product-thumbnails' ) : '';
 	$thumbnail = ( $image[0] != '' ) ? $image[0] : '';
-	echo json_encode ( $thumbnail );
+	ob_clean();
+        echo json_encode ( $thumbnail );
 }
 
 ?>
