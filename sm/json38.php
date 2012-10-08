@@ -4,7 +4,7 @@ if ( ! defined('ABSPATH') ) {
 }
 include_once (ABSPATH . 'wp-includes/wp-db.php');
 include_once (ABSPATH . 'wp-includes/functions.php');
-include_once (ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-admin/admin.php');
+//include_once (ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-admin/admin.php');
 include_once (ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-core/wpsc-functions.php');
 include_once (ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-includes/purchaselogs.class.php');
 load_textdomain( 'smart-manager', ABSPATH . 'wp-content/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
@@ -310,14 +310,14 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 								(in_array ( $meta_key, $view_columns )) ? $record->$meta_key = $meta_value : '';
 							}
 
-                                                        if($record->post_parent == 0 && $show_variation==true){
-                                                            $record->_wpsc_price='';
-                                                            $record->_wpsc_special_price='';
-                                                        }
-                                                        if($record->post_parent == 0 && $show_variation==false){
-                                                            $parent_price=wpsc_product_variation_price_available($record->id);
-                                                            $record->_wpsc_price=substr($parent_price,1,strlen($parent_price));
-                                                            $record->_wpsc_special_price=substr($parent_price,1,strlen($parent_price));
+                                                        if( $record->post_parent == 0 && wpsc_product_has_children( $record->id ) ) {
+                                                            if ( $show_variation == true ) {
+                                                                $record->_wpsc_price = $record->_wpsc_special_price = '';
+                                                            } elseif ( $show_variation == false ) {
+                                                                $parent_price = wpsc_product_variation_price_available( $record->id );
+                                                                $record->_wpsc_price = substr( $parent_price, 1, strlen( $parent_price ) );
+                                                                $record->_wpsc_special_price = substr( $parent_price, 1, strlen( $parent_price ) );
+                                                            }
                                                         }
 						}
 
@@ -662,7 +662,7 @@ elseif ($active_module == 'Orders') {
                 } else {
                     $num_records = count( $results );
                 }
-//                die('die');
+
                 if ($num_records == 0) {
 			$encoded ['totalCount'] = '';
 			$encoded ['items'] = '';
@@ -709,7 +709,8 @@ elseif ($active_module == 'Orders') {
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	$encoded = get_data_wpsc_38 ( $_POST, $offset, $limit );
-	echo json_encode ( $encoded );
+	ob_clean();
+        echo json_encode ( $encoded );
 	unset($encoded);
 }
 
@@ -800,7 +801,8 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 	header("Pragma: no-cache");
 	header("Expires: 0");
 		
-	echo $file_data['file_content'];
+	ob_clean();
+        echo $file_data['file_content'];
 		
 	exit;
 }
@@ -857,7 +859,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		} else
 			$encoded ['msg'] = __( "Purchase Logs removed from the grid", 'smart-manager' ); 
 	}
-	echo json_encode ( $encoded );
+	ob_clean();
+        echo json_encode ( $encoded );
 }
 
 //update products for lite version.
@@ -941,7 +944,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 			
 		}
 	}
-	echo json_encode ( $encoded );
+	ob_clean();
+        echo json_encode ( $encoded );
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
@@ -952,7 +956,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 	} else {
 		$results = get_dashboard_combo_store();
 	}
-	echo json_encode ( $results );
+	ob_clean();
+        echo json_encode ( $results );
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
@@ -960,7 +965,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 	$post_thumbnail_id = get_post_thumbnail_id( $_POST ['id'] );
 	$image = isset( $post_thumbnail_id ) ? wp_get_attachment_image_src( $post_thumbnail_id, 'admin-product-thumbnails' ) : '';
 	$thumbnail = ( $image[0] != '' ) ? $image[0] : '';
-	echo json_encode ( $thumbnail );
+	ob_clean();
+        echo json_encode ( $thumbnail );
 }
 
 ?>
