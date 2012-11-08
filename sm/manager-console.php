@@ -18,10 +18,6 @@ $blog_info = get_bloginfo ( 'url' );
 
 //creating the products links
 if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
-//	$str_products_url = htmlspecialchars_decode ( (wpsc_edit_the_product_link ( '', '', '', $id = '' )) );
-//	$regex_pattern = "/<a class=\'(.*)\' href=\'(.*)\'>(.*)<\/a>/";
-//	preg_match_all ( $regex_pattern, $str_products_url, $matches );
-//	$products_details_url = "{$matches[2][0]}";
         $products_details_url = $site_url.'/wp-admin/post.php?post=';
 } else if (WOO_RUNNING === true) {
 
@@ -627,6 +623,9 @@ if (WPSC_RUNNING === true) {
 		lang.orders				= '" . __('Orders',$sm_domain) . "';
 		lang.add_product        = '" . __('Add Product',$sm_domain) . "';
 		lang.add_a_new_product  = '" . __('Add a new product',$sm_domain) . "';
+                lang.duplicate_product        = '" . __('Duplicate Product',$sm_domain) . "';
+                lang.selected_products        = '" . __('Selected Products',$sm_domain) . "';
+                lang.duplicate_store        = '" . __('Duplicate Store',$sm_domain) . "';
 		lang.smart_manager     	= '" . __('Smart Manager',$sm_domain) . "';
 		lang.add_product_feature_is_available_only_in_pro_version  = '" . __('Add product feature is available only in Pro version',$sm_domain) . "';
 		lang.print		        = '" . __('Print',$sm_domain) . "';
@@ -660,8 +659,13 @@ if (WPSC_RUNNING === true) {
 		lang.export_csv		    = '" . __('Export CSV',$sm_domain) . "';
 		lang.download_csv_file	= '" . __('Download CSV file',$sm_domain) . "';
 		lang.export_csv_feature_is_available_only_in_pro_version	= '" . __('Export CSV feature is available only in Pro version',$sm_domain) . "';
+                lang.duplicate_product_feature_is_available_only_in_pro_version	= '" . __('Duplicate Product feature is available only in Pro version',$sm_domain) . "';
+                lang.duplicate_store_feature_is_available_only_in_pro_version	= '" . __('Duplicate Store feature is available only in Pro version',$sm_domain) . "';
 		lang.are_you_sure_you_want_to_delete_the_selected_record_	= '" . __('Are you sure you want to delete the selected record?',$sm_domain) . "';
 		lang.are_you_sure_you_want_to_delete_the_selected_records_	= '" . __('Are you sure you want to delete the selected records?',$sm_domain) . "';
+                lang.are_you_sure_you_want_to_duplicate_the_selected_product_	= '" . __('Are you sure you want to duplicate the selected product?',$sm_domain) . "';
+		lang.are_you_sure_you_want_to_duplicate_the_selected_products_	= '" . __('Are you sure you want to duplicate the selected products?',$sm_domain) . "';
+		lang.are_you_sure_you_want_to_duplicate_the_entire_store_	= '" . __('Are you sure you want to duplicate the entire store?',$sm_domain) . "';
 		lang.confirm_file_delete = '" . __('Confirm File Delete',$sm_domain) . "';
 		lang.list_is_empty		= '" . __('list is empty',$sm_domain) . "';
 		lang.confirm_save		= '" . __('Confirm Save',$sm_domain) . "';
@@ -730,6 +734,7 @@ if (WPSC_RUNNING === true) {
 		lang.shipping_city		= '" . __('Shipping City',$sm_domain) . "';
 		lang.shipping_region		= '" . __('Shipping Region',$sm_domain) . "';
 		lang.shipping_country	= '" . __('Shipping Country',$sm_domain) . "';
+                lang.customer_phone_number	= '" . __('Customer Phone Number',$sm_domain) . "';
 		lang.show_variations_feature_is_available_only_in_pro_version	= '" . __('Show Variations feature is available only in Pro version',$sm_domain) . "';
 		lang.show_variations_feature_is_available_only_for_wpec_3_8_		= '" . __('Show Variations feature is available only for WPeC 3.8+',$sm_domain) . "';
 		lang.show_variations	= '" . __('Show Variations',$sm_domain) . "';
@@ -765,6 +770,14 @@ if (WPSC_RUNNING === true) {
 		lang.catalog				    = '" . __('Catalog',$sm_domain) . "';
 		lang.search				        = '" . __('Search',$sm_domain) . "';
 		lang.hidden			            = '" . __('Hidden',$sm_domain) . "';
+		lang.pending			            = '" . __('Pending',$sm_domain) . "';
+		lang.failed			            = '" . __('Failed',$sm_domain) . "';
+		lang.on_hold			            = '" . __('On Hold',$sm_domain) . "';
+		lang.processing			            = '" . __('Processing',$sm_domain) . "';
+		lang.completed			            = '" . __('Completed',$sm_domain) . "';
+		lang.refunded			            = '" . __('Refunded',$sm_domain) . "';
+		lang.cancelled			            = '" . __('Cancelled',$sm_domain) . "';
+                    
         lang.product_visibility			= '" . __('Product Visibility',$sm_domain) . "';
         lang.visibility     			= '" . __('Visibility',$sm_domain) . "';
         lang.taxable     			= '" . __('Taxable',$sm_domain) . "';

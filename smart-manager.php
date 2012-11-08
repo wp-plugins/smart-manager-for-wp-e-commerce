@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 2.7.2
+Version: 2.8
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012 Store Apps All rights reserved.
@@ -105,8 +105,8 @@ function smart_is_pro_updated() {
 			define ( 'IS_WPSC37', version_compare ( WPSC_VERSION, '3.8', '<' ) );
 			define ( 'IS_WPSC38', version_compare ( WPSC_VERSION, '3.8', '>=' ) );
 			if ( IS_WPSC38 ) {		// WPEC 3.8.7 OR 3.8.8
-				define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.7', '<=' ));
-				define('IS_WPSC388', version_compare ( WPSC_VERSION, '3.8.7', '>' ));
+				define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.7.6.2', '<=' ));
+				define('IS_WPSC388', version_compare ( WPSC_VERSION, '3.8.7.6.2', '>' ));
 			}
 		} else if ( ( isset($_GET['post_type']) && $_GET['post_type'] == 'product' ) || ( isset($_GET['page']) && $_GET['page'] == 'smart-manager-woo' ) ) {
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager-woo.js', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
@@ -130,7 +130,6 @@ function smart_is_pro_updated() {
 			// like the existing after_plugin_row filter, but specific to your plugin, 
 			// so it only runs once instead of after each row of the plugin display
 			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'smart_plugin_row' );
-//			do_action  ( 'after_plugin_row_' . plugin_basename ( __FILE__ ));
 			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'show_registration_upgrade');
 			add_action ( 'in_plugin_update_message-' . plugin_basename ( __FILE__ ), 'smart_update_notice' );
 			add_action ( 'all_admin_notices', 'smart_update_overwrite' );
@@ -425,7 +424,6 @@ if (SMPRO === true) {
 	function smart_update_notice() {
 		if ( !function_exists( 'sm_get_download_url_from_db' ) ) return;
                 $download_details = sm_get_download_url_from_db();
-//                $plugins = get_site_transient ( 'update_plugins' );
 		$link = $download_details['results'][0]->option_value;                        //$plugins->response [SM_PLUGIN_FILE]->package;
 		
                 if ( !empty( $link ) ) {

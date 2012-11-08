@@ -1,7 +1,9 @@
 <?php 
+ob_start();
 if ( ! defined('ABSPATH') ) {
     include_once ('../../../../wp-load.php');
 }
+include_once (ABSPATH . 'wp-content/plugins/woocommerce/admin/includes/duplicate_product.php');
 load_textdomain( 'smart-manager', ABSPATH . 'wp-content/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
 
 $mem_limit = ini_get('memory_limit');
@@ -11,6 +13,8 @@ if(intval(substr($mem_limit,0,strlen($mem_limit)-1)) < 64 ){
 
 $result = array ();
 $encoded = array ();
+$data_dup;
+$count_dup=0;
 
 $offset = (isset ( $_POST ['start'] )) ? $_POST ['start'] : 0;
 $limit = (isset ( $_POST ['limit'] )) ? $_POST ['limit'] : 100;
@@ -33,6 +37,8 @@ $active_module = $_POST ['active_module'];
 function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 	global $wpdb, $woocommerce, $post_status, $parent_sort_id, $order_by, $post_type, $variation_name, $from_variation, $parent_name, $attributes;
 	
+        $products = array();
+        
 	// getting the active module
 	$active_module = $_POST ['active_module'];
 	
@@ -52,6 +58,11 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
 	if ($active_module == 'Products') { // <-products
 
+        $tax_status = array(
+                                    'taxable' => __('Taxable','smart-manager'),
+                                    'shipping' => __('Shipping only','smart-manager'),
+                                    'none' => __('None','smart-manager')
+                            );
         
 
 		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] === 'true' && SMPRO == true) {
@@ -90,6 +101,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                         JOIN {$wpdb->prefix}terms AS terms ON (wt.term_id = terms.term_id)
                         WHERE wt.taxonomy like 'product_cat'";
         $results = $wpdb->get_results( $query_terms, 'ARRAY_A' );
+        $rows_terms = $wpdb->num_rows;
         
         if ( !empty( $results ) ) {
             for ($i=0;$i<sizeof($results);$i++) {
@@ -101,6 +113,20 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
             $term_taxonomy_id_query = "AND wtr.term_taxonomy_id IN (" . implode (",",$term_taxonomy_id) . ")";
         } else {
             $term_taxonomy_id_query = '';
+        }
+        
+        //Code to get the ids of all the products whose post_status is thrash
+        $query_trash = "SELECT ID FROM {$wpdb->prefix}posts 
+                        WHERE post_status = 'trash'
+                            AND post_type IN ('product')";
+        $results_trash = $wpdb->get_col( $query_trash );
+        $rows_trash = $wpdb->num_rows;
+        
+        if ($rows_trash > 0) {
+            $trash_id = " AND products.post_parent NOT IN (" .implode(",",$results_trash). ")";
+        }
+        else {
+            $trash_id = "";
         }
         
         $select = "SELECT SQL_CALC_FOUND_ROWS products.id,
@@ -117,8 +143,12 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
         //Used as an alternative to the SQL_CALC_FOUND_ROWS function of MYSQL Database
         $select_count = "SELECT COUNT(*) as count"; // To get the count of the number of rows generated from the above select query
 
+        $search = "";
+        
         if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
             $search_on = trim ( $_POST ['searchText'] );
+
+            $search = "";
 
             $count_all_double_quote = substr_count( $search_on, '"' );
             if ( $count_all_double_quote > 0 ) {
@@ -149,6 +179,20 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
             $results_category = $wpdb->get_col( $query_category );
             $rows_category = $wpdb->num_rows;
                 
+            $query_status = "SELECT ID FROM {$wpdb->prefix}posts 
+                        WHERE post_type IN ('product')
+                            AND post_status LIKE '%$search_on%'";
+            $results_status = $wpdb->get_col( $query_status );
+            $rows_status = $wpdb->num_rows;
+
+            if ($rows_status > 0) {
+                $search_status = " OR products.ID IN (" .implode(",",$results_status). ") OR products.post_parent IN (" .implode(",",$results_status). ")";
+            }
+            else {
+                $search_status = "";
+            }
+            
+            
             //Condition for handling the search functionality for the category names
             if ($rows_category > 0) {
 				$search_condn = " HAVING ";
@@ -170,12 +214,12 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                                     }
                                     
                                     else {
-					$search_condn .= " concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
+                                $search_condn .= " (concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
 						               OR post_content LIKE '%$search_on%'
 						               OR post_excerpt LIKE '%$search_on%'
-						               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
-									   OR prod_othermeta_value LIKE '%$search_on%'
-									  
+						               
+                                                                   OR prod_othermeta_value LIKE '%$search_on%')
+                                                               $search_status
 							           ";
 					
 					
@@ -197,9 +241,10 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 				$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
 					               OR post_content LIKE '%$search_on%'
 					               OR post_excerpt LIKE '%$search_on%'
-					               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
+					               
 								   OR prod_othermeta_value LIKE '%$search_on%'
 								   OR category LIKE '%$search_on%'
+                                                        $search_status
 						           ";
 			}
         }
@@ -213,7 +258,9 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                                                             $term_taxonomy_id_query)";
 												
 		$where	= " WHERE products.post_status IN $post_status
-						AND products.post_type IN $post_type";
+						AND products.post_type IN $post_type
+                                                $trash_id
+                                                $search";
 
 		$group_by = " GROUP BY products.id ";
 
@@ -270,6 +317,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 
                 if ( $show_variation === true && SMPRO ) {
                     if ( $records[$i]['post_parent'] != 0 ) {
+                        $records[$i]['post_status'] = get_post_status($records[$i]['post_parent']);
                         $records[$i]['_regular_price'] = $records[$i]['_price'];
                         $variation_names = '';
                         
@@ -283,6 +331,10 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                         $records[$i]['_regular_price'] = "";
                         $records[$i]['_sale_price'] = "";
                     }
+
+                                    $products[$records[$i]['id']]['post_title'] = $records[$i]['post_title'];
+                                    $products[$records[$i]['id']]['variation'] = $variation_names;
+
                 } elseif ( $show_variation === false && SMPRO ) {
                                     if ( $product_type[0] == 'variable') {
                     $records[$i]['_regular_price'] = $records[$i]['_min_variation_regular_price'];
@@ -304,71 +356,94 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 				$search_condn = customers_query ( $_POST ['searchText'] );
 			}
 
+                        
+                        
+                 $query_terms = "SELECT id FROM {$wpdb->prefix}posts AS posts
+                            JOIN {$wpdb->prefix}term_relationships AS term_relationships 
+                                                        ON term_relationships.object_id = posts.ID 
+                                        JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy 
+                                                        ON term_taxonomy.term_taxonomy_id = term_relationships.term_taxonomy_id 
+                                        JOIN {$wpdb->prefix}terms AS terms 
+                                                        ON term_taxonomy.term_id = terms.term_id
+                        WHERE terms.name IN ('completed','processing','on-hold','pending')
+                            AND posts.post_status IN ('publish')";
+              
+                $terms_post = implode(",",$wpdb->get_col($query_terms));
+                
+                
             //Query for getting the max of post id for all the Guest Customers          
+                
+                $query_post_guest = "SELECT post_ID FROM {$wpdb->prefix}postmeta
+                                WHERE meta_key ='_customer_user' AND meta_value=0
+                                    AND post_id IN ($terms_post)";
+                $post_id_guest = $wpdb->get_col($query_post_guest); 
+                $num_guest 	 =  $wpdb->num_rows;
+                        
+            
+              if($num_guest > 0) {
             $query_max_id="SELECT GROUP_CONCAT(distinct postmeta1.post_ID 
-                                ORDER BY postmeta1.post_ID SEPARATOR ',' ) AS all_id,
+                                    ORDER BY posts.post_date DESC SEPARATOR ',' ) AS all_id,
                            GROUP_CONCAT(postmeta2.meta_value 
-                                ORDER BY postmeta2.post_ID DESC SEPARATOR ',' ) AS order_total,     
-                           MAX(postmeta1.post_ID) as max_id,
+                                         ORDER BY posts.post_date DESC SEPARATOR ',' ) AS order_total,     
+                                    date_format(max(posts.post_date),'%b %e %Y, %r') AS date,
                            count(postmeta1.post_id) as count,
                            sum(postmeta2.meta_value) as total
                         
                            FROM {$wpdb->prefix}postmeta AS postmeta1
-                               JOIN {$wpdb->prefix}term_relationships AS term_relationships 
-                                                        ON term_relationships.object_id = postmeta1.post_ID 
-                                        JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy 
-                                                        ON term_taxonomy.term_taxonomy_id = term_relationships.term_taxonomy_id 
-                                        JOIN {$wpdb->prefix}terms AS terms 
-                                                        ON term_taxonomy.term_id = terms.term_id 
+                                        JOIN {$wpdb->prefix}posts AS posts ON (posts.ID = postmeta1.post_id)
                                INNER JOIN {$wpdb->prefix}postmeta AS postmeta2
                                    ON (postmeta2.post_ID = postmeta1.post_ID AND postmeta2.meta_key IN ('_order_total'))
 
                            WHERE postmeta1.meta_key IN ('_billing_email')
-                           AND terms.name IN ('completed','processing','on-hold','pending')
-                           AND postmeta1.post_ID IN (SELECT post_ID FROM {$wpdb->prefix}postmeta
-                            WHERE meta_key ='_customer_user' AND meta_value=0)
+                                    AND postmeta1.post_ID IN (". implode(",",$post_id_guest) . ")                           
                            GROUP BY postmeta1.meta_value
-                           ORDER BY max_id desc";
+                               ORDER BY date desc";
 
             $result_max_id   =  $wpdb->get_results ( $query_max_id, 'ARRAY_A' );
+              }
             
             //Query for getting the max of post id for all the Registered Customers
+            $query_post_user = "SELECT post_ID FROM {$wpdb->prefix}postmeta
+                                WHERE meta_key ='_customer_user' AND meta_value>0
+                                AND post_id IN ($terms_post)";
+            $post_id_user = $wpdb->get_col($query_post_user);                        
+            $num_user 	 =  $wpdb->num_rows;            
+
+            
+            if($num_user > 0) {
             $query_max_user="SELECT GROUP_CONCAT(distinct postmeta1.post_ID 
-                                ORDER BY postmeta1.post_ID SEPARATOR ',' ) AS all_id,
+                                    ORDER BY posts.post_date DESC SEPARATOR ',' ) AS all_id,
                            GROUP_CONCAT(postmeta2.meta_value 
-                                ORDER BY postmeta2.post_ID DESC SEPARATOR ',' ) AS order_total,     
-                           MAX(postmeta1.post_ID) as max_id,
+                                         ORDER BY posts.post_date DESC SEPARATOR ',' ) AS order_total,     
+                                    date_format(max(posts.post_date),'%b %e %Y, %r') AS date,
                            count(postmeta1.post_id) as count,
                            sum(postmeta2.meta_value) as total
                            
                            FROM {$wpdb->prefix}postmeta AS postmeta1
-                               JOIN {$wpdb->prefix}term_relationships AS term_relationships 
-                                                        ON term_relationships.object_id = postmeta1.post_ID 
-                                        JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy 
-                                                        ON term_taxonomy.term_taxonomy_id = term_relationships.term_taxonomy_id 
-                                        JOIN {$wpdb->prefix}terms AS terms 
-                                                        ON term_taxonomy.term_id = terms.term_id 
+                                    JOIN {$wpdb->prefix}posts AS posts ON (posts.ID = postmeta1.post_id)
                                INNER JOIN {$wpdb->prefix}postmeta AS postmeta2
                                    ON (postmeta2.post_ID = postmeta1.post_ID AND postmeta2.meta_key IN ('_order_total'))
                                                         
                            WHERE postmeta1.meta_key IN ('_customer_user')
-                           AND terms.name IN ('completed','processing','on-hold','pending')
-                           AND postmeta1.post_ID IN (SELECT post_ID FROM {$wpdb->prefix}postmeta
-                                    WHERE meta_key ='_customer_user' AND meta_value>0)                           
+                                     AND postmeta1.post_ID IN (" . implode(",",$post_id_user) . ")                           
                            GROUP BY postmeta1.meta_value
-                           ORDER BY max_id";
+                                ORDER BY date";
 
             $result_max_user   =  $wpdb->get_results ( $query_max_user , 'ARRAY_A' );
+            }
             
             //Code for generating the total orders, count of orders , max ids and last order total arrays
             for ($i=0;$i<sizeof($result_max_id);$i++) {
-                $max_ids[$i] = $result_max_id[$i]['max_id'];
-                $order_count[$i] = $result_max_id[$i]['count'];
-                $order_total[$i] = $result_max_id[$i]['total'];
+                
+                $temp = explode (",",$result_max_id[$i]['all_id']);
+                $max_ids[$i] = $temp[0];
+                
+                $order_count[$max_ids[$i]] = $result_max_id[$i]['count'];
+                $order_total[$max_ids[$i]] = $result_max_id[$i]['total'];
                 
                 //Code for getting the last Order Total
                 $temp = explode (",",$result_max_id[$i]['order_total']);
-                $last_order_total[$i] = $temp[0];
+                $last_order_total[$max_ids[$i]] = $temp[0];
                 
             }
 
@@ -378,12 +453,15 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
             $m=sizeof($last_order_total);
             
             for ( $i=0;$i<sizeof($result_max_user);$i++,$j++,$k++,$l++,$m++ ) {
-                $max_ids[$j]      = $result_max_user[$i]['max_id'];
-                $order_count[$k] = $result_max_user[$i]['count'];
-                $order_total[$l] = $result_max_user[$i]['total'];
+                
+                $temp = explode (",",$result_max_user[$i]['all_id']);
+                $max_ids[$j] = $temp[0];
+                $order_count[$max_ids[$j]] = $result_max_user[$i]['count'];
+                $order_total[$max_ids[$j]] = $result_max_user[$i]['total'];
                 
                 $temp = explode (",",$result_max_user[$i]['order_total']);
-                $last_order_total[$m] = $temp[0];
+                $last_order_total[$max_ids[$j]] = $temp[0];
+                
             }
             
             $max_id = implode(",",$max_ids);
@@ -393,7 +471,8 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                                      ORDER BY postmeta.meta_id SEPARATOR '###' ) )AS meta_value,
                                      GROUP_CONCAT(distinct postmeta.meta_key
                                      ORDER BY postmeta.meta_id SEPARATOR '###' ) AS meta_key,
-                                     date_format(max(posts.post_date),'%b %e %Y, %r') AS date
+                                     date_format(max(posts.post_date),'%b %e %Y, %r') AS date,
+                                     posts.ID AS id
 
                                     FROM {$wpdb->prefix}posts AS posts
                                             RIGHT JOIN {$wpdb->prefix}postmeta AS postmeta
@@ -452,13 +531,12 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                     //Query for getting th Registered Users data from wp_usermeta and wp_users table
                     if(!(is_null($user))){
                         $user_ids = implode(",",$user);
-
                         $query_users = "SELECT users.ID,users.user_email,
                                               GROUP_CONCAT( usermeta.meta_value ORDER BY usermeta.umeta_id SEPARATOR '###' ) AS meta_value,
                                              GROUP_CONCAT(distinct usermeta.meta_key
                                              ORDER BY usermeta.umeta_id SEPARATOR '###_' ) AS meta_key
-                                             FROM {$wpdb->prefix}users AS users
-                                                   JOIN {$wpdb->prefix}usermeta AS usermeta
+                                             FROM $wpdb->users AS users
+                                                   JOIN $wpdb->usermeta AS usermeta
                                                             ON (users.ID = usermeta.user_id AND usermeta.meta_key IN
                                                             ('billing_first_name' , 'billing_last_name' , 'billing_email',
                                                             'billing_address_1', 'billing_address_2', 'billing_city', 'billing_state',
@@ -481,7 +559,8 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                         //note: while merging the array, $data as to be the second arg
                         if (count ( $meta_key ) == count ( $meta_value )) {
                             $postmeta[$j] = array_combine ( $meta_key, $meta_value );
-                            $postmeta[$j]['_customer_user']=$result_users [$i]['ID'];
+                            $postmeta[$j]['_customer_user'] = $result_users [$i]['ID'];
+                            $postmeta[$j]['_billing_email'] = $result_users [$i]['user_email'];
                         }
 
                         unset($meta_value);
@@ -503,11 +582,11 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 
                 $postmeta [$i] ['id']           = $max_ids[$i];
                 
-                $result [$i] ['_order_total']   = $last_order_total[$i];
 
                 if (SMPRO == true) {
-                    $postmeta [$i] ['count_orders'] = $order_count[$i];
-                    $postmeta [$i] ['total_orders'] = $order_total[$i];
+                    $result [$i] ['_order_total']   = $last_order_total[$result [$i] ['id']];
+                    $postmeta [$i] ['count_orders'] = $order_count[$result [$i] ['id']];
+                    $postmeta [$i] ['total_orders'] = $order_total[$result [$i] ['id']];
                     $result [$i] ['last_order'] = $result [$i] ['date']/* . ', ' . $data ['Last_Order_Amt']*/;
                 }else{
                     $postmeta [$i] ['count_orders'] = 'Pro only';
@@ -536,6 +615,23 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 
 	} elseif ($active_module == 'Orders') {
             
+                //Code to get all the term_names along with the term_taxonomy_id in an array
+                $query_terms = "SELECT terms.name,term_taxonomy.term_taxonomy_id 
+                                FROM {$wpdb->prefix}term_taxonomy AS term_taxonomy
+                                    JOIN {$wpdb->prefix}terms AS terms ON terms.term_id = term_taxonomy.term_id
+                                WHERE taxonomy LIKE 'shop_order_status'";
+              
+                $terms = $wpdb->get_results ( $query_terms,'ARRAY_A');
+                
+                
+                
+                for ($i=0;$i<sizeof($terms);$i++) {
+                    $terms_name[$terms[$i]['term_taxonomy_id']] = $terms[$i]['name'];
+                    $terms_id[$i] = $terms[$i]['term_taxonomy_id'];
+                }
+                
+                $terms_post = implode(",",$terms_id);
+                
 		$select_query = "SELECT SQL_CALC_FOUND_ROWS posts.ID as id,
 								date_format(posts.post_date,'%b %e %Y, %r') AS date,
 								GROUP_CONCAT( postmeta.meta_value 
@@ -544,28 +640,25 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 								GROUP_CONCAT(distinct postmeta.meta_key
 								ORDER BY postmeta.meta_id 
 								SEPARATOR '###' ) AS meta_key,
-								terms.name AS order_status
+								term_relationships.term_taxonomy_id AS term_taxonomy_id
 							
 							FROM {$wpdb->prefix}posts AS posts 
 									JOIN {$wpdb->prefix}term_relationships AS term_relationships 
 											ON term_relationships.object_id = posts.ID 
-									JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy 
-											ON term_taxonomy.term_taxonomy_id = term_relationships.term_taxonomy_id 
-									JOIN {$wpdb->prefix}terms AS terms 
-											ON term_taxonomy.term_id = terms.term_id 
 									RIGHT JOIN {$wpdb->prefix}postmeta AS postmeta 
 											ON (posts.ID = postmeta.post_id AND postmeta.meta_key IN 
 																				('_billing_first_name' , '_billing_last_name' , '_billing_email',
 																				'_shipping_first_name', '_shipping_last_name', '_shipping_address_1', '_shipping_address_2',
 																				'_shipping_city', '_shipping_state', '_shipping_country','_shipping_postcode',
 																				'_shipping_method', '_payment_method', '_order_items', '_order_total',
-																				'_shipping_method_title', '_payment_method_title','_customer_user'))";
+																				'_shipping_method_title', '_payment_method_title','_customer_user','_billing_phone'))";
 			
 			$group_by    = " GROUP BY posts.ID";
 			$limit_query = " ORDER BY posts.ID DESC $limit_string ;";
 			
 			$where = " WHERE posts.post_type LIKE 'shop_order' 
-							AND posts.post_status IN ('publish','draft','auto-draft')";
+					AND posts.post_status IN ('publish','draft','auto-draft')
+                                        AND term_relationships.term_taxonomy_id IN ($terms_post)";
 			
 			if (isset ( $_POST ['fromDate'] )) {
 				$from_date = date('Y-m-d H:i:s',(int)strtotime($_POST ['fromDate']));
@@ -580,10 +673,50 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 				$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
                         
                                 //Query for getting the user_id based on the email enetered in the Search Box
-                                $query_user     = "SELECT id FROM {$wpdb->prefix}users 
+                                $query_user_email     = "SELECT id FROM {$wpdb->prefix}users 
                                                     WHERE user_email like '%$search_on%'";
-                                $result_user    = $wpdb->get_col ( $query_user);
-                                $num_rows       = $wpdb->num_rows;
+                                $result_user_email    = $wpdb->get_col ( $query_user_email);
+                                $num_rows_email       = $wpdb->num_rows;
+                                
+                                if($num_rows_email == 0){
+                                    $query_user_email     = "SELECT DISTINCT p2.meta_value 
+                                                             FROM {$wpdb->prefix}postmeta AS p1, {$wpdb->prefix}postmeta AS p2  
+                                                             WHERE p1.post_id = p2.post_id 
+                                                                AND p1.meta_key = '_billing_email'
+                                                                AND p2.meta_key = '_customer_user'
+                                                                AND p2.meta_value > 0
+                                                                AND p1.meta_value like '%$search_on%'";
+                                    $result_user_email    = $wpdb->get_col ( $query_user_email);
+                                    $num_rows_email1      = $wpdb->num_rows;
+                                }
+                                
+                                
+                                
+                                //Query for getting the user_id based on the Customer phone number enetered in the Search Box
+                                $query_user_phone     = "SELECT user_id FROM {$wpdb->prefix}usermeta 
+                                                         WHERE meta_key='billing_phone' 
+                                                            AND meta_value like '%$search_on%'";
+                                $result_user_phone    = $wpdb->get_col ( $query_user_phone);
+                                $num_rows_phone       = $wpdb->num_rows;
+                                
+                                if($num_rows_phone == 0){
+                                    $query_user_phone     = "SELECT DISTINCT p2.meta_value 
+                                                             FROM {$wpdb->prefix}postmeta AS p1, {$wpdb->prefix}postmeta AS p2  
+                                                             WHERE p1.post_id = p2.post_id 
+                                                                AND p1.meta_key = '_billing_phone'
+                                                                AND p2.meta_key = '_customer_user'
+                                                                AND p2.meta_value > 0
+                                                                AND p1.meta_value like '%$search_on%'";
+                                    $result_user_phone    = $wpdb->get_col ( $query_user_phone);
+                                    $num_rows_phone1      = $wpdb->num_rows;
+                                }
+                                
+                                
+                                $query_terms = "SELECT term_taxonomy_id FROM {$wpdb->prefix}term_taxonomy
+                                                WHERE term_id IN (SELECT term_id FROM {$wpdb->prefix}terms
+                                                                    WHERE name like '%$search_on%')";
+                                $result_terms = implode(",",$wpdb->get_col ( $query_terms ));
+                                $num_terms    = $wpdb->num_rows;
                                 
                                 //Query to get the post_id of the products whose sku code matches with the one type in the search text box of the Orders Module
                                 $query_sku  = "SELECT post_id FROM {$wpdb->prefix}postmeta
@@ -651,24 +784,84 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                                 }
                                 
                                 //Code for handling the Email Search condition for Registered users
-                                elseif($num_rows > 0){
-                                    $query_email = "SELECT DISTINCT(meta_value) FROM {$wpdb->prefix}postmeta 
-                                                    WHERE meta_key = '_billing_email'
-                                                        AND post_id IN (SELECT post_id FROM {$wpdb->prefix}postmeta 
-                                                                            WHERE meta_key = '_customer_user'
-                                                                                AND meta_value IN (" .implode(",",$result_user) . "))";
+                                elseif ($num_rows_email > 0) {
+                                    
+                                    // Query to bring the matching email of the Guest uers
+                                    $query = "SELECT DISTINCT p1.meta_value 
+                                                             FROM {$wpdb->prefix}postmeta AS p1, {$wpdb->prefix}postmeta AS p2  
+                                                             WHERE p1.post_id = p2.post_id 
+                                                                AND p1.meta_key = '_billing_email'
+                                                                AND p2.meta_key = '_customer_user'
+                                                                AND p2.meta_value = 0
+                                                                AND p1.meta_value like '%$search_on%'";
+                                    $result_email_guest  = $wpdb->get_col ( $query );
+                                    $rows_email_guest    = $wpdb->num_rows;
+                                    
+                                    $query_email = "SELECT DISTINCT(p1.meta_value)
+                                                    FROM {$wpdb->prefix}postmeta AS p1, {$wpdb->prefix}postmeta AS p2 
+                                                    WHERE p1.post_id = p2.post_id 
+                                                                AND p1.meta_key = '_billing_email'
+                                                                AND p2.meta_key = '_customer_user'
+                                                                AND p2.meta_value IN (" .implode(",",$result_user_email) . ")";
                                     $result_email  = $wpdb->get_col ( $query_email );
+                                    
+                                    if($rows_email_guest > 0) {
+                                        for ($i=0,$j=sizeof($result_email);$i<sizeof($result_email_guest);$i++,$j++) {
+                                            $result_email[$j] = $result_email_guest[$i];
+                                        }
+                                    }
+                                    
                                     $search_condn = "HAVING";
-                                    for ( $i=0;$i<sizeof($result_email);$i++ ){
+                                    for ( $i=0;$i<sizeof($result_email);$i++ ) {
                                         $search_condn .= " meta_value like '%$result_email[$i]%' ";
                                         $search_condn .= "OR";
                                     }
                                     $search_condn = substr( $search_condn, 0, -2 );
                                 }
+                                //Code for handling the Customer Phone number Search condition for Registered users
+                                elseif($num_rows_phone > 0){
+                                    
+                                    // Query to bring the matching Phone No. of the Guest uers
+                                    $query = "SELECT DISTINCT p1.meta_value 
+                                                             FROM {$wpdb->prefix}postmeta AS p1, {$wpdb->prefix}postmeta AS p2  
+                                                             WHERE p1.post_id = p2.post_id 
+                                                                AND p1.meta_key = '_billing_phone'
+                                                                AND p2.meta_key = '_customer_user'
+                                                                AND p2.meta_value = 0
+                                                                AND p1.meta_value like '%$search_on%'";
+                                    $result_phone_guest  = $wpdb->get_col ( $query );
+                                    $rows_phone_guest    = $wpdb->num_rows;
+                                    
+                                    $query_phone = "SELECT DISTINCT(p1.meta_value)
+                                                    FROM {$wpdb->prefix}postmeta AS p1, {$wpdb->prefix}postmeta AS p2 
+                                                    WHERE p1.post_id = p2.post_id 
+                                                                AND p1.meta_key = '_billing_email'
+                                                                AND p2.meta_key = '_customer_user'
+                                                                AND p2.meta_value IN (" .implode(",",$result_user_phone) . ")";
+                                    $result_phone  = $wpdb->get_col ( $query_phone );
+                                    
+                                    if($rows_phone_guest > 0) {
+                                        for ($i=0,$j=sizeof($result_phone);$i<sizeof($result_phone_guest);$i++,$j++) {
+                                            $result_phone[$j] = $result_phone_guest[$i];
+                                        }
+                                    }
+                                    
+                                    $search_condn = "HAVING";
+                                    for ( $i=0;$i<sizeof($result_phone);$i++ ){
+                                        $search_condn .= " meta_value like '%$result_phone[$i]%' ";
+                                        $search_condn .= "OR";
+                                    }
+                                    $search_condn = substr( $search_condn, 0, -2 );
+                                }
+                                elseif ($num_rows_email1 > 0 || $num_rows_phone1 > 0 ) {
+                                    $search_condn = " HAVING id = 0";
+                                }
+                                elseif ($num_terms > 0) {
+                                    $search_condn = " HAVING term_taxonomy_id IN ($result_terms)";
+                                }
                                 else{
 				$search_condn = " HAVING id like '$search_on%'
 								  OR date like '%$search_on%'
-								  OR order_status like '%$search_on%'
 								 OR meta_value like '%$search_on%'";
 			}
 			
@@ -682,7 +875,11 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 			$num_records = $orders_count_result[0]['count'];
 					
                         //Query to get the email id from the wp_users table for the Registered Customers
-                        $query_users  = "SELECT ID,user_email FROM {$wpdb->prefix}users GROUP BY ID";
+                        $query_users  = "SELECT users.ID,users.user_email,usermeta.meta_value
+                                         FROM {$wpdb->prefix}users AS users, {$wpdb->prefix}usermeta AS usermeta
+                                         WHERE usermeta.user_id = users.id 
+                                            AND usermeta.meta_key = 'billing_phone'
+                                         GROUP BY users.ID";
                         $result_users =  $wpdb->get_results ( $query_users, 'ARRAY_A' );
                         
 			if ($num_records == 0) {
@@ -702,6 +899,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                                                     for ( $index=0;$index<sizeof($result_users);$index++ ) {
                                                         if ( $postmeta['_customer_user'] == $result_users[$index]['ID'] ){
                                                             $postmeta['_billing_email'] = $result_users[$index]['user_email'];
+                                                            $postmeta['_billing_phone'] = $result_users[$index]['meta_value'];
                                                             break;
                                                         }
                                                     }
@@ -725,6 +923,10 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 						} else {
 							$data['details'] = 'Details';
 						}
+                                                
+                                                //Code to get the Order_Status using the $terms_name array
+                                                $data ['order_status'] = $terms_name[$data ['term_taxonomy_id']];
+                                                
 						$name_emailid [0] = "<font class=blue>". $postmeta['_billing_first_name']."</font>";
 						$name_emailid [1] = "<font class=blue>". $postmeta['_billing_last_name']."</font>";
 						$name_emailid [2] = "(".$postmeta['_billing_email'].")"; //email comes at 7th position.
@@ -736,9 +938,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 						$postmeta ['_payment_method'] = isset($postmeta ['_payment_method_title']) ? $postmeta ['_payment_method_title'] : $postmeta ['_payment_method'];
 						$postmeta ['_shipping_state'] = isset($woocommerce->countries->states[$postmeta ['_shipping_country']][$postmeta ['_shipping_state']]) ? $woocommerce->countries->states[$postmeta ['_shipping_country']][$postmeta ['_shipping_state']] : $postmeta ['_shipping_state'];
 						$postmeta ['_shipping_country'] = isset($woocommerce->countries->countries[$postmeta ['_shipping_country']]) ? $woocommerce->countries->countries[$postmeta ['_shipping_country']] : $postmeta ['_shipping_country'];
-//						if ($postmeta['_payment_method'] != '' || $postmeta['_payment_method'] != null) {
 							$records [] = array_merge ( $postmeta, $data );	
-//						}
 					}
 				}
 				
@@ -817,6 +1017,7 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
 				$columns_header['_billing_first_name'] 		= __('Billing First Name', $sm_domain);
 				$columns_header['_billing_last_name'] 		= __('Billing Last Name', $sm_domain);
 				$columns_header['_billing_email'] 			= __('Billing E-mail ID', $sm_domain);
+                                $columns_header['_billing_phone'] 			= __('Billing Phone Number', $sm_domain);
 				$columns_header['_order_total'] 			= __('Order Total', $sm_domain);
 				$columns_header['products_name'] 			= __('Order Items (Product Name[SKU](Qty))', $sm_domain);
 				$columns_header['_payment_method_title'] 	= __('Payment Method', $sm_domain);
@@ -849,6 +1050,11 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
 //update products for lite version.
 function update_products_woo($_POST) {
 	global $result, $wpdb;
+        
+        //For encoding the string in UTF-8 Format
+        $charset = "EUC-JP, ASCII, UTF-8, ISO-8859-1, JIS, SJIS";
+        $_POST['edited'] = mb_convert_encoding(stripslashes($_POST['edited']),"UTF-8",$charset);
+        
 	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
 	$updateCnt = 1;
 	foreach ( $edited_object as $obj ) {
@@ -869,6 +1075,10 @@ function update_products_woo($_POST) {
 // For insert updating product in woo.
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 		
+                //For encoding the string in UTF-8 Format
+                $charset = "EUC-JP, ASCII, UTF-8, ISO-8859-1, JIS, SJIS";
+                $_POST['edited'] = mb_convert_encoding(stripslashes($_POST['edited']),"UTF-8",$charset);
+    
 		if (SMPRO == true)
 			$result = woo_insert_update_data ( $_POST );
 		else
@@ -904,6 +1114,136 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
         echo json_encode ( $encoded );
 }
 
+
+
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
+    $dupCnt = 0;
+    $activeModule = substr( $_POST ['active_module'], 0, -1 );
+    $data_temp = json_decode ( stripslashes ( $_POST ['data'] ) );
+
+    // Function to Duplicate the Product
+    function duplicate_product ($strtCnt, $dupCnt, $data, $msg, $count, $per, $perval) {
+        $post_data = array();
+
+        for ($i = $strtCnt; $i < $dupCnt; $i ++) {
+            $post_id = $data [$i];
+            $post = get_post ( $post_id );
+            if ($post->post_parent == 0) {
+                $post_data [] = woocommerce_create_duplicate_from_product($post,0,'publish');
+            }
+            else{
+                $post_data [] = $data [$i];
+            }
+        }
+        $duplicate_count = count ( $post_data );
+
+        if ($duplicate_count == $count) {
+            $result = true;
+        }
+        else{
+            $result = false;
+        }
+        
+        if ($result == true) {
+                $encoded ['msg'] = $msg;
+                $encoded ['dupCnt'] = $dupCnt;
+                $encoded ['nxtreq'] = $_POST ['part'];
+                $encoded ['per'] = $per;
+                $encoded ['val'] = $perval;
+        }
+        elseif ($result == false) {
+                $encoded ['msg'] = $activeModule . __('s were not duplicated','smart-manager');
+        }
+        echo json_encode ( $encoded );
+    }
+
+    /*Code to handle the First AJAX request used to calculate the 
+        number of ajax request that needs to be prepared based on the 
+        number of selected products*/
+    if(isset ( $_POST ['part'] ) && $_POST ['part'] == 'initial') {
+
+        //Code for getting the number of parent products for the dulplication of entire store
+        if ( $_POST ['menu'] == 'store') {
+            $query="SELECT id from {$wpdb->prefix}posts WHERE post_type='product' AND post_parent =0";
+            $data_dup = $wpdb->get_col ( $query );
+        }
+        else{
+            if ($_POST ['incvariation'] == true) {
+                $query="SELECT id from {$wpdb->prefix}posts WHERE post_type='product' AND post_parent =0";
+                $parent_ids = $wpdb->get_col ( $query );
+
+                for ($i=0;$i<sizeof($parent_ids);$i++) {
+                    $id[$parent_ids[$i]] = 'simple';
+                }
+
+                for ($i=0,$j=0;$i<sizeof($data_temp);$i++) {
+                    if (isset($id[$data_temp[$i]])) {
+                       $data_dup[$j] = $data_temp[$i];
+                       $j++;
+                    }
+                }
+            }
+            else{
+                $data_dup = $data_temp;
+            }
+        }
+        $dupCnt = count ( $data_dup );
+
+        if ($dupCnt > 20) {
+            for ($i=0;$i<$dupCnt;) {
+                $count_dup ++;
+                $i = $i+20;
+            }
+        }
+        else{
+            $count_dup = 1;
+        }
+
+        $data_dup = json_encode ( $data_dup );
+        $encoded['count'] = $count_dup;
+        $encoded['dupCnt'] = $dupCnt;
+        $encoded['data_dup'] = $data_dup;
+        
+        echo json_encode ( $encoded );
+    }
+
+    /*Code for handling the remmaing ajax request which actully calls the 
+     function for duplicating the products */
+    else {
+        $count = $_POST ['count'];
+        $data = json_decode ( stripslashes ( $_POST ['dup_data'] ) );
+        $data_count = $_POST ['fdupcnt'] - $_POST ['dupcnt'];
+
+        for ($i=1;$i<=$count;$i++) {
+            if (isset ( $_POST ['part'] ) && $_POST ['part'] == $i) {
+                $per = intval(($_POST ['part']/$count)*100); // Calculating the percentage for the display purpose
+                $perval = $per/100;
+
+                if ($per == 100) {
+                    $dupCnt = $_POST['total_records'];
+                    if ($data_count == 1) {
+                        $msg = $dupCnt . " " . $activeModule . __(' Duplicated Successfully','smart-manager');
+                    }
+                    else if ($data_count == 0) {
+                        $msg = "Sorry! Variations Cannot be Duplicated";
+                    }
+                    else if ($_POST ['menu'] == 'store') {
+                        $msg = "Store Duplicated Successfully";
+                    }
+                    else{
+                        $msg = $dupCnt . " " . $activeModule . __('s Duplicated Successfully','smart-manager');
+                    }
+                }
+                else{
+                    $msg = $per . "% Duplication Completed";
+                }
+                duplicate_product ($_POST ['dupcnt'], $_POST ['fdupcnt'], $data, $msg, $data_count, $per,$perval);
+                break;
+            }
+        }
+    }
+}
+
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 	$delCnt = 0;
 	$activeModule = substr( $_POST ['active_module'], 0, -1 );
@@ -929,10 +1269,10 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		
 		if ($result == true) {
 			if ($delCnt == 1) {
-				$encoded ['msg'] = $delCnt . " " . $activeModule . __('deleted Successfully','smart-manager');
+				$encoded ['msg'] = $delCnt . " " . $activeModule . __(' Deleted Successfully','smart-manager');
 				$encoded ['delCnt'] = $delCnt;
 			} else {
-				$encoded ['msg'] = $delCnt . " " . $activeModule . __('s deleted Successfully','smart-manager');
+				$encoded ['msg'] = $delCnt . " " . $activeModule . __('s Deleted Successfully','smart-manager');
 				$encoded ['delCnt'] = $delCnt;
 			}
 		} elseif ($result == false) {
@@ -1021,5 +1361,5 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 	ob_clean();
         echo json_encode ( $thumbnail );
 }
-
+ob_end_flush();
 ?>
