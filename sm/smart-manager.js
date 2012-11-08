@@ -68,6 +68,7 @@ Ext.onReady(function () {
 	// Global object SM....declared in manager-console.php
 	SM.searchTextField   = '';
 	SM.dashboardComboBox = '';
+        SM.duplicateButton   = '';
 	SM.colModelTimeoutId = '';		
 	SM.activeModule      = 'Products'; //default module selected.
 	SM.activeRecord      = '';
@@ -168,6 +169,8 @@ Ext.onReady(function () {
 				if (sm.getCount()) {					
 					pagingToolbar.batchButton.enable();
 					
+                                        editorGrid.getTopToolbar().get('duplicateButton').enable();
+                                        
 					if(pagingToolbar.hasOwnProperty('deleteButton'))
 					pagingToolbar.deleteButton.enable();
 					
@@ -176,6 +179,8 @@ Ext.onReady(function () {
 				} else {					
 					pagingToolbar.batchButton.disable();
 					
+                                        editorGrid.getTopToolbar().get('duplicateButton').disable();
+                                        
 					if(pagingToolbar.hasOwnProperty('deleteButton'))
 					pagingToolbar.deleteButton.disable();
 					
@@ -553,6 +558,7 @@ Ext.onReady(function () {
 			dataIndex: SM.productsCols.desc.colName,
 			tooltip: getText('Description'), 
 			width: 180,
+                        hidden: true,
 			editor: new fm.TextArea({				
 				autoHeight: true,
 				grow: true,
@@ -776,6 +782,7 @@ Ext.onReady(function () {
 		for(var i=2;i<=8;i++)
 		editorGrid.getTopToolbar().get(i).hide();
 		editorGrid.getTopToolbar().get('incVariation').show();
+                editorGrid.getTopToolbar().get('duplicateButton').show();
 
 		productsStore.load();
 		pagingToolbar.bind(productsStore);
@@ -892,6 +899,12 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			if(r.get('id') == ''){
 				r.data.category = newCatId;
 			}
+                        
+                        if (r.store.baseParams.active_module == 'Customers') {
+                            r.data['last_order_id'] = r.json['last_order_id'];
+                            r.data['modified'] = r.modified;
+                        }
+			
 			edited.push(r.data);
 		});
 		
@@ -925,12 +938,182 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			Ext.Ajax.request(o);
 	};
 
+
+        // Function to duplicate the Selected Products
+        var duplicateRecords = function (menu) {
+		var selected  = editorGrid.getSelectionModel();
+		var records   = selected.selections.keys;
+		var getDuplicateRecords = function (btn, text) {
+			if (btn == 'yes') {
+
+                        //Code to create a extjs Messagebox with a progressbar
+                        var progress = Ext.MessageBox.show({
+                           title: 'Please wait',
+                           msg: 'Duplicating Products...',
+                           progressText: 'Initializing...',
+                           width: 300,
+                           progress: true,
+                           closable: false
+                           });
+
+                        var count = 0;
+
+                        function demo(count, total_records, dup_data) {
+                        var arr = new Array();
+
+                        dupcnt = 0;
+                        if (total_records > 20) {
+                            fdupcnt = 20;
+                        }
+                        else{
+                            fdupcnt = total_records;
+                        }
+
+                        //Code to delay the progressbar hide task and then load the store
+                        var task = new Ext.util.DelayedTask(function(){
+                            progress.hide();
+                            store.load();
+                        });
+
+                        //Code to create multiple AJAX request based on the count received from the first AJAX Request
+                        for (i=0;i<count;i++) {
+
+                                arr[i] = {
+					url: jsonURL,
+					method: 'post',
+					callback: function (options, success, response) {
+
+                                                store = productsStore;
+                                                
+                                                try {
+                                                    var myJsonObj    = Ext.decode(response.responseText);
+                                                    var nxtreq       = myJsonObj.nxtreq;
+                                                    var dupcnt       = myJsonObj.dupCnt;
+                                                    var per          = myJsonObj.per;
+                                                    var val          = myJsonObj.val;
+                                                
+                                                    if (true !== success) {
+                                                        Ext.notification.msg('Failed',myJsonObj.msg);
+							return;
+                                                    }
+                                                    else{
+                                                        progress.updateProgress(val,per+"% Completed");
+							
+                                                        if (nxtreq < count) {
+                                                            Ext.Ajax.request(arr[nxtreq]);
+                                                        }
+                                                        else{
+                                                            task.delay(2500);
+                                                        }
+
+                                                        if (dupcnt == 0) {
+                                                            Ext.notification.msg('Warning', myJsonObj.msg);
+                                                        }
+                                                        else{
+                                                             if (per == 100) {
+                                                                Ext.notification.msg('Success', myJsonObj.msg);							
+                                                            }
+                                                        }
+
+                                                    }
+
+                                                }
+                                                catch (e) {
+                                                            Ext.notification.msg('Warning','Duplication of the Product Not Successful');							
+                                                            return;
+						}
+					},
+					scope: this,
+					params: {
+						cmd : 'dupData',
+                                                part : i+1,
+                                                dupcnt : dupcnt,
+                                                fdupcnt : fdupcnt,
+                                                count : count,
+                                                total_records : total_records,
+                                                dup_data : dup_data,
+                                                menu : menu,
+                                                active_module : SM.activeModule,
+                                                incvariation : SM.incVariation
+					}
+				};
+
+                                    dupcnt = fdupcnt;
+                                    if ((fdupcnt+20) <= total_records) {
+                                          fdupcnt = fdupcnt +20;
+                                    }
+                                     else{
+                                        fdupcnt = total_records;
+                                    }
+     
+                         }
+
+                            Ext.Ajax.request(arr[0]);
+                        }
+                        
+                        //Initial AJAX request to get the number of AJAX request to be made based on the number of products selected for duplication
+                        var o = {
+                            url: jsonURL,
+                            method: 'post',
+                            callback: function (options, success, response) {
+                                try {
+                                    var myJsonObj    = Ext.decode(response.responseText);
+                                    var count        = myJsonObj.count;
+                                    var dupcnt       = myJsonObj.dupCnt;
+                                    var dup_data     = myJsonObj.data_dup;
+                                    demo(count, dupcnt, dup_data);
+                                }
+                                catch (e) {
+                                    Ext.notification.msg('Warning','Duplication of the Product Not Successful');							
+                                    return;
+                                }
+                            },
+                            scope: this,
+                            params: {
+                                    cmd: 'dupData',
+                                    part: 'initial',
+                                    menu : menu,
+                                    active_module: SM.activeModule,
+                                    incvariation: SM.incVariation,
+                                    data: Ext.encode(records)
+                            }
+                    };
+                    Ext.Ajax.request(o);
+                }
+            }
+
+            var msg;
+            if (menu == 'selected') {
+                if (records.length == 1) {
+                    msg = getText('Are you sure you want to duplicate the selected product?');
+                }
+                else{
+                    msg = getText('Are you sure you want to duplicate the selected products?');
+                }
+            }
+            else{
+                msg = getText('Are you sure you want to duplicate the entire store?');
+            }
+
+            Ext.Msg.show({
+                    title: getText('Confirm Product Duplication'),
+                    msg: msg,
+                    width: 400,
+                    buttons: Ext.MessageBox.YESNO,
+                    fn: getDuplicateRecords,
+                    animEl: 'dup',
+                    closable: false,
+                    icon: Ext.MessageBox.QUESTION
+            })
+	};
+
 	// Function to delete selected records
 	var deleteRecords = function () {
 		var selected  = editorGrid.getSelectionModel();
 		var records   = selected.selections.keys;
 		var getDeletedRecords = function (btn, text) {
 			if (btn == 'yes') {
+                                batchUpdateWindow.loadMask.show();
 				var o = {
 					url: jsonURL,
 					method: 'post',
@@ -982,10 +1165,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 				Ext.Ajax.request(o);
 			}
 		}
-		if (records.length == 1)
-		var msg = getText('Are you sure you want to delete the selected record?'); 
-		else
-		var msg = getText('Are you sure you want to delete the selected records?');
+                
+                var msg = getText('Are you sure you want to delete the selected record' + (records.length == 1) ? '': 's' + '?');
 
 		Ext.Msg.show({
 			title: getText('Confirm File Delete'),
@@ -1012,6 +1193,54 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		}
 	};
 	
+        //Code to create a new button for dulicating product
+        SM.duplicateButton = new Ext.SplitButton({
+                        id          : 'duplicateButton',
+                        menu: [{
+                                text: getText('Selected Products'),
+                                handler: function(){
+                                    if ( fileExists != 1 ) {
+					Ext.notification.msg('Smart Manager', getText('Duplicate Product feature is available only in Pro version') ); 
+					return;
+                                    }
+                                    else{
+                                        duplicateRecords('selected');
+                                    }
+                                }
+                                },{
+                                text: getText('Duplicate Store'),
+                                handler: function(){
+                                    if ( fileExists != 1 ) {
+					Ext.notification.msg('Smart Manager', getText('Duplicate Store feature is available only in Pro version') ); 
+					return;
+                                    }
+                                    else{
+                                        duplicateRecords('store');
+                                    }
+                                }
+                                }],
+                        text        : getText('Duplicate Product'),
+                        tooltip     : getText('Duplicate Product'),
+                        icon        : imgURL + 'batch_update.png',
+                        scope       : this,
+                        disabled    : true,
+                        hidden      : false,
+                        ref         : 'SM.duplicateButton',
+                        listeners: {
+                                click: function () {
+                                    if(this.pressed == true){
+                                        this.hideMenu();
+                                        this.pressed = false;
+                                    }
+                                    else{
+                                        this.showMenu();
+                                        this.menu.visible = true;
+                                        this.pressed = true;
+                                    }
+                                   
+                                }}
+                        });
+        
 	// Products, Customers and Orders combo box
 	SM.dashboardComboBox = new Ext.form.ComboBox({
 		id: 'dashboardComboBox',
@@ -1297,7 +1526,6 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
             tooltip: getText('Total Number Of Orders'),
             editable: false,
             align: 'left',
-            //flex:0.25,
             width: 100
         },{
             header: getText('Total Purchased'),
@@ -1326,7 +1554,6 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                 customersColumnModel.columns[customersColumnModel.findColumnIndex('total_orders')].align = 'center';
 	}else{
 		totPurDataType = 'float';
-//		customersColumnModel.setRenderer(7,amountRenderer);		
 	}
 	
 	// Data reader class to create an Array of Records objects from a JSON packet.
@@ -1391,6 +1618,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			for(var i=2;i<=8;i++)
 			editorGrid.getTopToolbar().get(i).hide();
 			editorGrid.getTopToolbar().get('incVariation').hide();
+                        editorGrid.getTopToolbar().get('duplicateButton').hide();
 
 			if(customersFields != 0)
 			fieldsStore.loadData(customersFields);
@@ -1616,7 +1844,6 @@ if(isWPSC38 == '1'){
 			tooltip: getText('Shipping Region'),
 			align: 'center',
 			hidden: true,
-//			editor: regionEditor,
 			width: 100		
 		},
 		{
@@ -1624,9 +1851,17 @@ if(isWPSC38 == '1'){
 			id: 'shippingcountry',
 			dataIndex: 'shippingcountry',
 			tooltip: getText('Shipping Country'),
-//			editor:countriesCombo,
 			hidden: true,
 			width: 120
+		},
+                {   
+			header: getText('Phone Number'),
+			id: 'billingphone',
+			dataIndex: 'billingphone',
+			tooltip: getText('Customer Phone Number'),
+			align: 'left',
+			hidden: true,
+			width: 100		
 		}
 		],
 		listeners: {
@@ -1658,7 +1893,8 @@ if(isWPSC38 == '1'){
 		{name:'shippingcity', type:'string'},
 		{name:'shippingcountry', type:'string'},
 		{name:'shippingstate', type:'string'},  
-		{name:'shippingpostcode', type:'string'}
+		{name:'shippingpostcode', type:'string'},
+                {name:'billingphone', type:'string'}
 		]
 	});
 	
@@ -1729,6 +1965,7 @@ if(isWPSC38 == '1'){
 			for(var i=2;i<=8;i++)
 			editorGrid.getTopToolbar().get(i).show();
 			editorGrid.getTopToolbar().get('incVariation').hide();
+                        editorGrid.getTopToolbar().get('duplicateButton').hide();
 
 			ordersStore.load();
 			editorGrid.reconfigure(ordersStore,ordersColumnModel);
@@ -2504,11 +2741,17 @@ var checkModifiedAndshowDetails = function(record,rowIndex){
 var showCustomerDetails = function(record,rowIndex){
 	//START extracting emailId
 	var name_emailid     = record.json.name;
+        var reg_email        = record.json.reg_email;
 	var name_emailid_arr = name_emailid.split(' ');
 	var mix_emailId      = Ext.util.Format.stripTags(name_emailid_arr[name_emailid_arr.length -1]);
 	var emailId          = mix_emailId.substring(1,mix_emailId.length-1);
 	// END
 	
+        if (reg_email != "") {
+            emailId = reg_email;
+        }
+        
+        batchUpdateWindow.loadMask.show();
 	clearTimeout(SM.colModelTimeoutId);
 	SM.colModelTimeoutId = showCustomersView.defer(100,this,[emailId]);
 	SM.searchTextField.setValue(emailId);
@@ -2538,8 +2781,8 @@ var showCustomerDetails = function(record,rowIndex){
 			{text:'To:', id:'toTextId'},toDateTxt,{icon: imgURL + 'calendar.gif', menu: toDateMenu, id:'toDateMenuId'},
 			{xtype: 'tbspacer', id:'afterDateMenuTbspacer', width: 15},
 			SM.searchTextField,{ icon: imgURL + 'search.png', id:'searchIconId' },
-			{xtype: 'tbspacer',width: 50, id:'afterSearchId'}
-			,
+//			{xtype: 'tbspacer',width: 10, id:'afterSearchId'}
+			'->',
 			{ 
 				xtype: 'checkbox',
 				id:'incVariation',
@@ -2564,7 +2807,10 @@ var showCustomerDetails = function(record,rowIndex){
 			 			}
 			 		}
 			 	}
-			}],
+			},
+                         {xtype: 'tbspacer',width: 10, id:'afterShowVariation'},
+                         SM.duplicateButton
+                        ],
 	scrollOffset: 50,
 	listeners: {
 		beforerender: function(grid) {
@@ -2594,13 +2840,7 @@ var showCustomerDetails = function(record,rowIndex){
 									icon: Ext.MessageBox.WARNING
 								});
 							} else {
-//								SM.dashboardComboBox.setValue(dashboardComboStore[0][1]);
-//								grid.cm = eval(SM.dashboardComboBox.value.toLowerCase()+'ColumnModel');
-//								grid.store = eval(SM.dashboardComboBox.value.toLowerCase()+'Store');
-//								grid.stateId = SM.dashboardComboBox.value.toLowerCase()+'EditorGridPanelWpsc';
-											
 								SM.dashboardComboBox.store.loadData(dashboardComboStore);
-//								showSelectedModule(SM.dashboardComboBox.getValue());
 							}
 						}
 						,scope: SM.dashboardComboBox
@@ -2794,7 +3034,6 @@ var showCustomerDetails = function(record,rowIndex){
 		// after each edit record enable the save button.
 		afteredit: function(e) {
 			pagingToolbar.saveButton.enable();
-//			pagingToolbar.addProductButton.disable();
 		}
 	}
 });
@@ -2830,4 +3069,3 @@ if(fileExists == 1){
 		return;
 	}
 });
-
