@@ -3,8 +3,8 @@ Contributors: niravmehta, ratnakar.dubey, rupali, tarun
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
-Tested up to: 3.4.1
-Stable tag: 2.7.2
+Tested up to: 3.4.2
+Stable tag: 2.8
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -95,6 +95,16 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 2.8 =
+* New: Feature to Duplicate Products
+* Update: Additional column to display & export Phone Number from Orders dashboard
+* Fix: Handling ISO 8859-1 Symbols ( for e.g. symbol for Registered & TradeMark )
+* Fix: Products & Orders list empty
+* Fix: Product details: Deletion of Product & Batch Update for Post Status not working (WooCommerce)
+* Fix: Order details: Deletion of Order & Batch Update for Order Status not working (WooCommerce)
+* Fix: Exported file for Orders doesn't contain SKU for simple products (WPeC)
+* Fix: Customer details: Incorrect count for Total Orders in filtered result
 
 = 2.7.2 =
 * Fixed: "Remote Connection Error" message on admin pages of WordPress
@@ -346,6 +356,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 2.8 =
+New feature for Duplication of products. Performance improvements, enhancements and fixes. Recommended upgrade.
 
 = 2.7.2 =
 Must have upgrade. Fixes "Remote Connection Error" messages in WordPress admin.
