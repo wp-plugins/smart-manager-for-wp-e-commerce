@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.4.2
-Stable tag: 2.8
+Stable tag: 2.9
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -67,6 +67,14 @@ Thousands of customers are extremely happy with Smart Manager! Checkout our webs
 
 You can export most important fields from Product / Customer / Order as CSV in paid versions. Smart Manager does not currently support importing data.
 
+= Can I customize Smart Manager by adding/removing columns? =
+
+No, Smart Manager is not customizable. You can not add/remove columns in Smart Manager
+
+= Which browser to choose for best performance? =
+
+Smart Manager works best in Firefox, Chrome.
+
 = What do I get in this free version? =
 
 Spreadsheet like view of products, customers and orders. Search and navigation, 
@@ -95,6 +103,22 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 2.9 =
+* New: Feature to set "Regular Price equal to Sale Price" & vice-versa in Batch Update
+* New: Progress Bar for Batch Update
+* Update: Retain values in Batch Update window after Batch Update
+* Update: Stay on the same page of records list after Batch Update
+* Update: Improved search functionality for Products (WooCommerce)
+* Update: Removed the Description and Additional Description columns in Products
+* Fix: Scrollbar not appearing from 2nd page onwards in Smart Manager editor grid
+* Fix: Variations getting displayed even if the parent product got deleted
+* Fix: Message not appearing in the confirm dialog box for deletion of products
+* Fix: Batch Update not working for products added from Smart Manager (WooCommerce)
+* Fix: Encoding of special characters while saving
+* Fix: Batch Printing not working (WPeC)
+* Fix: Price Updation through Inline Editing & Batch Update (WooCommerce)
+* Fix: Customer List not showing all customers
 
 = 2.8 =
 * New: Feature to Duplicate Products
@@ -356,6 +380,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 2.9 =
+New features in Batch Update, enhancements and fixes. Recommended upgrade.
 
 = 2.8 =
 New feature for Duplication of products. Performance improvements, enhancements and fixes. Recommended upgrade.
