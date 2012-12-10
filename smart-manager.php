@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/smart-manager-for-wp-e-commerce/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 2.8
+Version: 2.9
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012 Store Apps All rights reserved.
@@ -64,7 +64,7 @@ function smart_is_pro_updated() {
 	include_once (ABSPATH . WPINC . '/functions.php');
 	$old_plugin = 'smart-manager/smart-manager.php';
 	
-	if (is_plugin_active ( $old_plugin )) {
+        if (is_plugin_active ( $old_plugin )) {
 		deactivate_plugins ( $old_plugin );
 		$action_url = "plugins.php?action=activate&plugin=$plugin&plugin_status=all&paged=1";
 		$url = wp_nonce_url ( $action_url, 'activate-plugin_' . $plugin );
@@ -105,8 +105,8 @@ function smart_is_pro_updated() {
 			define ( 'IS_WPSC37', version_compare ( WPSC_VERSION, '3.8', '<' ) );
 			define ( 'IS_WPSC38', version_compare ( WPSC_VERSION, '3.8', '>=' ) );
 			if ( IS_WPSC38 ) {		// WPEC 3.8.7 OR 3.8.8
-				define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.7.6.2', '<=' ));
-				define('IS_WPSC388', version_compare ( WPSC_VERSION, '3.8.7.6.2', '>' ));
+				define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.8-rc2', '>=' ));
+				define('IS_WPSC388', version_compare ( WPSC_VERSION, '3.8.8-rc2', '<' ));
 			}
 		} else if ( ( isset($_GET['post_type']) && $_GET['post_type'] == 'product' ) || ( isset($_GET['page']) && $_GET['page'] == 'smart-manager-woo' ) ) {
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager-woo.js', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );

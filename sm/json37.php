@@ -136,7 +136,7 @@ function get_data_wpsc_37 ( $_POST, $offset, $limit, $is_export = false ) {
 					unset($records[$i]['sku_dimension']);
 					if ( $record_key == 'thumbnail' ) {
 						if ( file_exists( "../../../" . substr ( strstr ( WPSC_THUMBNAIL_URL, 'uploads' ), 0 ) . $records[$i]['thumbnail'] ) ) {
-							$records[$i]['thumbnail'] = substr ( strstr ( WPSC_THUMBNAIL_URL, 'uploads' ), 0 ) . $records[$i]['thumbnail'];
+							$records[$i]['thumbnail'] = WP_CONTENT_URL . '/' . substr ( strstr ( WPSC_THUMBNAIL_URL, 'uploads' ), 0 ) . $records[$i]['thumbnail'];
 						} else {
 							$records[$i]['thumbnail'] = substr ( UPLOADS, strlen ( 'wp-content/' ) ) . substr ( strstr ( WPSC_THUMBNAIL_URL, 'uploads/' ), strlen ( 'uploads/' ) ) . $records[$i]['thumbnail'];
 							

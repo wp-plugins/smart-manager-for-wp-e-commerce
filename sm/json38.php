@@ -125,6 +125,22 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
 			$order_by = " ORDER BY products.id desc";
 		}
 
+                $query_ids = "SELECT `ID` FROM {$wpdb->prefix}posts 
+                            WHERE `post_type` = 'wpsc-product' 
+                                AND `post_status` = 'publish' 
+                                AND `post_parent`=0 
+                                AND `ID` NOT IN ( SELECT distinct `post_parent` 
+                                                  FROM wp_posts WHERE `post_parent`>0)";
+                
+                $result_ids = $wpdb->get_col ( $query_ids );
+                $num_ids = $wpdb->num_rows;
+
+                if ($num_ids > 0) {
+                    for ($i=0;$i<sizeof($result_ids);$i++) {
+                        $simple_ids [$result_ids[$i]] = 0;
+                    }
+                }
+                
 		// if max-join-size issue occurs
 		$query = "SET SQL_BIG_SELECTS=1;";
 		$wpdb->query ( $query );
@@ -630,7 +646,7 @@ elseif ($active_module == 'Orders') {
                                         
                                         FROM " . WPSC_TABLE_PURCHASE_LOGS . " AS wtpl
                                                  LEFT JOIN " . WPSC_TABLE_SUBMITED_FORM_DATA . " AS customer_email ON ( customer_email.log_id = wtpl.id AND customer_email.form_id = $email_form_id )
-                                        WHERE wtpl.user_ID = 0 AND customer_email.form_id = 9
+                                        WHERE wtpl.user_ID = 0
                                         GROUP BY customer_email.value
                                         ORDER BY Last_Order DESC";
                 $result_max_guest_ids = $wpdb -> get_results($query_max_guest_ids, 'ARRAY_A' );
@@ -881,8 +897,8 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 				$columns_header['_wpsc_stock'] 				= __('Inventory / Stock', $sm_domain);
 				$columns_header['_wpsc_sku'] 				= __('SKU', $sm_domain);
 				$columns_header['category'] 				= __('Category / Group', $sm_domain);
-				$columns_header['post_content'] 			= __('Product Description', $sm_domain);
-				$columns_header['post_excerpt'] 			= __('Additional Description', $sm_domain);
+//				$columns_header['post_content'] 			= __('Product Description', $sm_domain);
+//				$columns_header['post_excerpt'] 			= __('Additional Description', $sm_domain);
 				$columns_header['weight'] 					= __('Weight', $sm_domain);
 				$columns_header['weight_unit'] 				= __('Weight Unit', $sm_domain);
 				$columns_header['height'] 					= __('Height', $sm_domain);
@@ -1108,10 +1124,10 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		
 		if ($result == true) {
 			if ($delCnt == 1) {
-				$encoded ['msg'] = "<b>" . $delCnt . "</b> " . __( 'Product deleted Successfully', 'smart-manager' ); 
+				$encoded ['msg'] = "<b>" . $delCnt . "</b> " . __( 'Product Deleted Successfully', 'smart-manager' ); 
 				$encoded ['delCnt'] = $delCnt;
 			} else {
-				$encoded ['msg'] = "<b>" . $delCnt . "</b> " . __( 'Products deleted Successfully', 'smart-manager' );
+				$encoded ['msg'] = "<b>" . $delCnt . "</b> " . __( 'Products Deleted Successfully', 'smart-manager' );
 				$encoded ['delCnt'] = $delCnt;
 			}
 		} elseif ($result == false) {
@@ -1183,8 +1199,15 @@ function update_orders($_POST) {
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
     
         //For encoding the string in UTF-8 Format
-        $charset = "EUC-JP, ASCII, UTF-8, ISO-8859-1, JIS, SJIS";
-        $_POST['edited'] = mb_convert_encoding(stripslashes($_POST['edited']),"UTF-8",$charset);
+//        $charset = "EUC-JP, ASCII, UTF-8, ISO-8859-1, JIS, SJIS";
+        $charset = ( get_bloginfo('charset') === 'UTF-8' ) ? null : get_bloginfo('charset');
+        
+        if (!(is_null($charset))) {
+            $_POST['edited'] = mb_convert_encoding(stripslashes($_POST['edited']),"UTF-8",$charset);
+        }
+        else {
+            $_POST['edited'] = stripslashes($_POST['edited']);
+        }
     
 	if ($active_module == 'Products') {
 		if (SMPRO == true)
@@ -1215,15 +1238,17 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 			if ($result ['updated'] == 1) {
 				if ($result ['updateCnt'] == 1) {
 					$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __( 'Record Updated Successfully', 'smart-manager' );
-				} else
+				} else {
 					$encoded ['msg'] = "<b>" . $result ['updateCnt'] . "</b> " . __( 'Records Updated Successfully', 'smart-manager' );
+                                }
 			}
 			
 			if ($result ['inserted'] == 1) {
-				if ($result ['updateCnt'] == 1)
-					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> " . __( 'New Records Inserted Successfully', 'smart-manager' ); 
-				else
+				if ($result ['insertCnt'] == 1) {
+					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> " . __( 'New Record Inserted Successfully', 'smart-manager' ); 
+                                } else {
 					$encoded ['msg'] = "<b>" . $result ['insertCnt'] . "</b> " . __(' New Records Inserted Successfully', 'smart-manager' );
+                                }
 			}
 			
 		}
