@@ -20,15 +20,15 @@ $blog_info = get_bloginfo ( 'url' );
 if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
         $products_details_url = $site_url.'/wp-admin/post.php?post=';
 } else if (WOO_RUNNING === true) {
-
+        
 	$products_details_url = $site_url.'/wp-admin/post.php?action=edit&post='.$product_id;
 }
 
 if (WPSC_RUNNING === true) {
-	if ( IS_WPSC388 )	
-		$orders_details_url = ADMIN_URL . "/index.php?page=wpsc-purchase-logs&c=item_details&id=";
+	if ( defined('IS_WPSC388') && IS_WPSC388 )	
+		$orders_details_url = $site_url . "/wp-admin/index.php?page=wpsc-purchase-logs&c=item_details&id=";
 	else
-		$orders_details_url = ADMIN_URL . "/index.php?page=wpsc-sales-logs&purchaselog_id=";
+		$orders_details_url = $site_url . "/wp-admin/index.php?page=wpsc-sales-logs&purchaselog_id=";
 
 	$weight_unit ['items']  = array (array ('id' => 0, 'name' => __('Pounds', $sm_domain), 'value' => 'pound' ), array ('id' => 1, 'name' => __('Ounces', $sm_domain), 'value' => 'ounce' ), array ('id' => 2, 'name' => __('Grams', $sm_domain), 'value' => 'gram' ), array ('id' => 3, 'name' => __('Kilograms', $sm_domain), 'value' => 'kilogram' ) );
 	$weight_unit ['totalCount'] = count ( $weight_unit ['items'] );
@@ -193,12 +193,12 @@ $products_cols['name']['colName']   ='post_title';
 $products_cols['name']['tableName'] ="{$wpdb->prefix}posts";
 
 $products_cols['price']['name']=__( 'Price', $sm_domain );
-$products_cols['price']['actionType']='modIntPercentActions';
+$products_cols['price']['actionType']='price_actions';
 $products_cols['price']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['price']['updateColName']='meta_value';
 
 $products_cols['salePrice']['name']=__( 'Sale Price', $sm_domain );
-$products_cols['salePrice']['actionType']='modIntPercentActions';
+$products_cols['salePrice']['actionType']='salesprice_actions';
 $products_cols['salePrice']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['salePrice']['updateColName']='meta_value';
 	
@@ -689,6 +689,8 @@ if (WPSC_RUNNING === true) {
 		lang.add_a_new_row			= '" . __('Add a new row',$sm_domain) . "';
 		lang.update				= '" . __('Update',$sm_domain) . "';
 		lang.apply_all_changes	= '" . __('Apply all changes',$sm_domain) . "';
+                lang.reset				= '" . __('Reset',$sm_domain) . "';
+		lang.reset_all_fields	= '" . __('Reset all fields',$sm_domain) . "';
 		lang.batch_update___available_only_in_pro_version		= '" . __('Batch Update - available only in Pro version',$sm_domain) . "';
 		lang.your_browser_does_not_support_iframes_		= '" . __('Your browser does not support iframes.',$sm_domain) . "';
 		lang.first_name			= '" . __('First Name',$sm_domain) . "';
@@ -752,6 +754,8 @@ if (WPSC_RUNNING === true) {
 		lang.decrease_by__		= '" . __('decrease by %',$sm_domain) . "';
 		lang.increase_by_number	= '" . __('increase by number',$sm_domain) . "';
 		lang.decrease_by_number	= '" . __('decrease by number',$sm_domain) . "';
+                lang.set_to_sales_price	= '" . __('set to sales price',$sm_domain) . "';
+                lang.set_to_regular_price = '" . __('set to regular price',$sm_domain) . "';
 		lang.yes				= '" . __('Yes',$sm_domain) . "';
 		lang.no				= '" . __('No',$sm_domain) . "';
 		lang.add_to				= '" . __('add to',$sm_domain) . "';
@@ -893,7 +897,10 @@ if (WPSC_RUNNING === true) {
 } elseif (WOO_RUNNING === true) {
 		echo "if(value.actionType != ''){";
 }
-		echo "if(value.value != 'group'){
+
+                //Condition to skip the Description, Additional Description and Group column from SM Batch Update
+                
+		echo "if(value.value != 'group' && value.value != 'desc' && value.value != 'addDesc'){
 				productsFields.items.push(value);
 				productsFields.totalCount = ++j;
 			}
