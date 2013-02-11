@@ -32,9 +32,9 @@ if (file_exists ( WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro
 $active_module = $_POST ['active_module'];
 
 // Searching a product in the grid
-function get_data_wpsc_37 ( $_POST, $offset, $limit, $is_export = false ) {
+function get_data_wpsc_37 ( $post, $offset, $limit, $is_export = false ) {
 	global $wpdb;
-	
+	$_POST = $post;     // Fix: PHP 5.4
 	// getting the active module
 	$active_module = $_POST ['active_module'];
 	
@@ -574,9 +574,10 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
         echo json_encode ( $encoded );
 }
 
-function update_products($_POST) {
+function update_products($post) {
 	global $table_prefix, $result, $wpdb;
-	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
+	$_POST = $post;     // Fix: PHP 5.4
+        $edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
 	$updateCnt = 1;
 	foreach ( $edited_object as $obj ) {
 		$query = "UPDATE " . WPSC_TABLE_PRODUCT_LIST . " SET name = '" . $wpdb->_real_escape($obj->name) . "',

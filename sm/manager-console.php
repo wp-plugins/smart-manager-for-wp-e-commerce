@@ -3,6 +3,11 @@
 global $wpdb, $woocommerce;
 $limit = 2;
 
+function add_jquery() {
+    wp_enqueue_script( 'jquery' );
+}
+add_action('wp_enqueue_scripts', 'add_jquery');
+
 // to set javascript variable of file exists
 $fileExists = (defined('SMPRO') && SMPRO === true) ? 1 : 0;
 $wpsc = (defined('WPSC_RUNNING') && WPSC_RUNNING === true) ? 1 :0;
@@ -793,6 +798,17 @@ if (WPSC_RUNNING === true) {
         lang.kilograms     			= '" . __('Kilograms',$sm_domain) . "';
         lang.sum_total_of_all_orders     			= '" . __('Sum Total Of All Orders',$sm_domain) . "';
         lang.total_purchased     			= '" . __('Total Purchased',$sm_domain) . "';
+        
+        lang.order_shipping     			= '" . __('Order Shipping',$sm_domain) . "';
+        lang.order_discount     			= '" . __('Order Discount',$sm_domain) . "';
+        lang.cart_discount     			= '" . __('Cart Discount',$sm_domain) . "';
+        lang.order_tax     			= '" . __('Order Tax',$sm_domain) . "';
+        lang.order_shipping_tax     			= '" . __('Order Shipping Tax',$sm_domain) . "';
+        lang.order_currency     			= '" . __('Order Currency',$sm_domain) . "';
+        lang.coupons_used     			= '" . __('Coupons Used',$sm_domain) . "';
+        lang.order_excluding_tax     			= '" . __('Order Excluding Tax',$sm_domain) . "';
+        lang.order_total_excluding_tax     			= '" . __('Order Total Excluding Tax',$sm_domain) . "';
+        lang.order_notes     			= '" . __('Order Notes',$sm_domain) . "';
 
 		newText = lang[oldTextKey];
 		return newText;
