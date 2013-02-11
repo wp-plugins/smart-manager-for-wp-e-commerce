@@ -43,17 +43,20 @@ var	categories         = new Array(), //an array for category combobox in batchu
 	editorGrid         = '',
 	weightUnitStore    = '',
 	showOrdersView     = '',
-	countriesStore     = '';
+	countriesStore     = '',
+    hidden_state       = false;
+
+
 
 Ext.onReady(function () {
 	try{
 		if(wpsc_woo != 1){
 			//Stateful
-			Ext.state.Manager.setProvider(new Ext.state.CookieProvider({
-				expires: new Date(new Date().getTime()+(1000*60*60*24*30)) //30 days from now
-			}));
+//			Ext.state.Manager.setProvider(new Ext.state.CookieProvider({
+//				expires: new Date(new Date().getTime()+(1000*60*60*24*30)) //30 days from now
+//			}));
 		}
-		
+                      
 	// Tooltips
 	Ext.QuickTips.init();
 	Ext.apply(Ext.QuickTips.getQuickTip(), {
@@ -73,6 +76,14 @@ Ext.onReady(function () {
 	SM.curDataIndex      = '';
 	SM.incVariation      = false;
 	SM.typeColIndex 	 = '';
+        SM.products_state = "";
+        SM.customers_state = "";
+        SM.orders_state = "";
+        SM.dashboard_state = "";
+        SM.variation_state = "";
+        SM.editor_state = "";
+        
+        
 	
 	var actions = new Array();
 	
@@ -213,17 +224,91 @@ Ext.onReady(function () {
 		}
 	});
 
-	//save the columns state (size, visibility..) of all the three Dashboard
-	var storeColState = function(){
-		var editorGridStateId = editorGrid.getStateId();
-		var state = Ext.state.Manager.get(editorGridStateId);
 
-		if(state != undefined){
-			state = editorGrid.getState();
-			Ext.state.Manager.set(editorGridStateId,state);
-		}
-	};	
-	
+        var refresh_state = false; // flag to handle the refreshing of the grid
+        var products_hidden_state = false; // flag to handle the hiddenchange event of the products column module
+        var hidden_change = false; // flag to manage the state apply when a column is unhidden for all the modules
+
+        var state_apply = false;// flag to handle the firing of the state apply ajax request
+        
+        //Function to handle the state apply at regular intervals
+        function state_update() {
+            
+            if (state_apply === true) {
+                
+                var editor_current_state = editorGrid.getState();
+                if (SM.dashboard_state == "Products") {
+                    SM.products_state = editor_current_state;
+                }
+                else if (SM.dashboard_state == "Customers") {
+                    SM.customers_state = editor_current_state;
+                }
+                else if (SM.dashboard_state == "Orders") {
+                    SM.orders_state = editor_current_state;
+                }
+
+                jQuery.ajax({
+                    type : 'POST',
+                    url : jsonURL,
+                    dataType:"text",
+                    async: false,
+                    data: {
+                                cmd: 'state',
+                                op : 'set',
+                                dashboardcombobox : SM.dashboard_state,
+                                incVariation : SM.variation_state,
+                                Products : Ext.encode(SM.products_state),
+                                Customers : Ext.encode(SM.customers_state),
+                                Orders : Ext.encode(SM.orders_state)
+                    },
+                    success: function(data) {
+                        state_apply = false;
+                    }
+                });
+            }
+            
+            
+        }
+        
+        //Function to get all the states on load
+        jQuery(document).ready(function()
+        {
+          jQuery.ajax({
+                type : 'POST',
+                url : jsonURL,
+                dataType:"text",
+                async: false,
+                data: {
+                            cmd: 'state',
+                            op : 'get'
+                },
+                success: function(response) {
+                    var myJsonObj    = Ext.decode(response);
+                    
+                    SM.products_state = Ext.decode(myJsonObj['Products']);
+                    SM.customers_state = Ext.decode(myJsonObj['Customers']);
+                    SM.orders_state = Ext.decode(myJsonObj['Orders']);
+                    SM.dashboard_state = myJsonObj['dashboardcombobox'];
+                    SM.variation_state = myJsonObj['incVariation'];
+                    
+//                    SM.editor_state = Ext.decode(myJsonObj[SM.dashboard_state]);
+
+                    if(SM.dashboard_state === "" || SM.dashboard_state === null) {
+                        SM.dashboard_state = 'Products';
+                    }
+                    if(SM.variation_state === "" || SM.variation_state === null) {
+                        SM.variation_state = false;
+                    }
+                }
+            });
+        })
+        
+        //Function to set all the states on unload
+        window.onbeforeunload = function (evt) {  
+            state_apply = true;
+            state_update();
+        }
+        
 	//Function to escape white space characters	in customJsonReader
 	String.prototype.trim = function() {
 		return this.replace(/^\s+|\s+$/g,"");
@@ -465,8 +550,19 @@ Ext.onReady(function () {
         displayField: 'name'
     });
 
-//Code to override the Drag function of EXTJS
 
+//Ext.override(Ext.grid.ColumnModel, { 
+//    setState: function (col, state) { 
+//        if (SM.activeModule == 'Products') {
+//            Ext.apply(this.lookup[col], state); 
+//        }
+//    } 
+//}); 
+
+
+
+
+//Code to override the Drag function of EXTJS
 Ext.override(Ext.grid.HeaderDragZone, {
     getDragData : function(e){
         var t = Ext.lib.Event.getTarget(e);
@@ -525,7 +621,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 		},
 		{
 			header: SM.productsCols.name.name,
-			id: 'name',
+			id: 'name_products',
 			sortable: true,
 			dataIndex: SM.productsCols.name.colName,
 			tooltip: getText('Product Name'),
@@ -764,8 +860,9 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 		}],
 		listeners: {
 			hiddenchange: function( ColumnModel,columnIndex, hidden ){
-				storeColState();
+                            state_apply = true;
 			}
+                        
 		},
 		defaultSortable: true
 	});	
@@ -837,8 +934,8 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 				editorGridSelectionModel.clearSelections();
 				pagingToolbar.saveButton.disable();
 				productsColumnModel.getColumnById('publish').editor = productStatusCombo;
-                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;   // Tarun
-                productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
+                                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;   // Tarun
+                                productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
 			}
 		}
 	});
@@ -864,7 +961,8 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 		productsStore.load();
 		pagingToolbar.bind(productsStore);
 
-		editorGrid.reconfigure(productsStore,productsColumnModel);
+		incvariation = editorGrid.getTopToolbar().get('incVariation').fireEvent('getState');
+                editorGrid.reconfigure(productsStore,productsColumnModel);
 		fieldsStore.loadData(productsFields);
 
 		var firstToolbar       = batchUpdatePanel.items.items[0].items.items[0];
@@ -1280,6 +1378,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 	};
 
 	var showSelectedModule = function(clickedActiveModule){
+            
 		if(clickedActiveModule == 'Customers'){
 			SM.activeModule = 'Customers';
 			showCustomersView();
@@ -1339,7 +1438,15 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                     }
                                    
                                 }}
-                        });
+                        });         
+        
+var mask = new Ext.LoadMask(Ext.getBody(), {
+	msg: getText('Please wait') + "..."
+});
+
+var batchMask = new Ext.LoadMask(Ext.getBody(), {
+	msg: getText('Please wait') + "..."
+});
         
 	// Products, Customers and Orders combo box
 	SM.dashboardComboBox = new Ext.form.ComboBox({
@@ -1347,11 +1454,6 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		stateId : 'dashboardComboBoxWoo',
 		stateEvents : ['added','beforerender','enable','select','change','show','beforeshow'],
 		stateful: true,
-		getState: function(){ return { value: this.getValue()}; },
-		applyState: function(state) {
-			this.setValue(state.value);
-			pagingToolbar.emptyMsg =  state.value + ' ' + getText('list is empty');
-		},
 		store: new Ext.data.ArrayStore({
 			autoDestroy: true,
 			forceSelection: true,
@@ -1368,13 +1470,46 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			fontSize: '14px',
 			paddingLeft: '2px'
 		},
+                
+                applyState: function(state) {
+                    if(state){
+                        this.setValue(state);
+                        mask.show();
+                    }
+                    pagingToolbar.emptyMsg =  state.value + ' ' + getText('list is empty');
+                },
+
+                initState : function(){
+                      this.applyState(SM.dashboard_state);
+                },
+                
+                saveState : function(){
+                      SM.dashboard_state = this.value;
+                },
+		
 		forceSelection: true,
 		width: 135,
 		listeners: {
 			select: function () {
 				pagingToolbar.emptyMsg = this.getValue() + ' ' + getText('list is empty');
-				editorGrid.stateId = this.value.toLowerCase()+'EditorGridPanelWoo';
+                                
+                                if(this.value == 'Products') {
+                                      editorGrid.stateId = this.value.toLowerCase()+'EditorGridPanelWoo';
+                                }
 
+                                var editor_current_state = editorGrid.getState();
+                                if (SM.dashboard_state == "Products") {
+                                    SM.products_state = editor_current_state;
+                                }
+                                else if (SM.dashboard_state == "Customers") {
+                                    SM.customers_state = editor_current_state;
+                                }
+                                else if (SM.dashboard_state == "Orders") {
+                                    SM.orders_state = editor_current_state;
+                                }
+
+                                SM.dashboard_state = this.value;
+                                
 				cellClicked = false;
 				
                                 batchupdate_reset(); // to reset the batch update window on store change 
@@ -1606,13 +1741,7 @@ var countriesStoreCombo = new Ext.form.ComboBox({
 		editable: false
 });
 
-var mask = new Ext.LoadMask(Ext.getBody(), {
-	msg: getText('Please wait') + "..."
-});
 
-var batchMask = new Ext.LoadMask(Ext.getBody(), {
-	msg: getText('Please wait') + "..."
-});
 
 var orderStatusStoreData = new Array();
     orderStatusStoreData = [
@@ -1865,11 +1994,6 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
                                                     textField1Cmp.hide();
                                                 }
                                                 
-                                                if ( field_name == 'Group:Categories' ){
-                                                    textField1Cmp.hide();
-                                                    textField2Cmp.hide();
-                                                }
-                                                
 						if ( selectedValue.substring( 0, 14 ) == 'groupAttribute' ){
 							if( selectedActionvalue == 'custom'){
 								comboCategoriesActionCmp.hide();
@@ -1916,7 +2040,10 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 											};
 								Ext.Ajax.request(object);
 							}
-						}
+						} else if ( selectedValue.substring( 0, 5 ) == 'group' ) {
+                                                    textField1Cmp.hide();
+                                                    textField2Cmp.hide();
+                                                }
 					}
 				}
 			},'',{
@@ -1995,7 +2122,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 			},'',{
 				xtype: 'textfield',
 				width: 170,
-				allowBlank: false,
+				allowBlank: true,
 				style: {
 					fontSize: '12px',
 					paddingLeft: '2px'
@@ -2076,7 +2203,8 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
                                                         temp[6] = 'Cancelled';
                                                         
                                                         
-							this.store = orderStatusStore;
+//							comboRegionCmp.hide();
+//                                                        this.store = orderStatusStore;                                                        
                                                         comboRegionCmp.store.loadData(orderStatusStoreData);
                                                         comboRegionCmp.show();
 							comboRegionCmp.reset();
@@ -2488,7 +2616,7 @@ var showCustomerDetails = function(record,rowIndex){
 		}],
 		listeners: {
 			hiddenchange: function( ColumnModel,columnIndex, hidden ){
-				storeColState();
+                            state_apply = true;
 			}
 		},
 		defaultSortable: true
@@ -2657,7 +2785,7 @@ var showCustomerDetails = function(record,rowIndex){
 			width: 180
 		},{
 			header: getText('Name'), 
-			id: 'name',
+			id: 'name_customer',
 			dataIndex: 'name',
 			tooltip: getText('Customer Name'),
 			width: 350
@@ -2784,6 +2912,87 @@ var showCustomerDetails = function(record,rowIndex){
 			hidden: true,
 			width: 100		
 		},{
+                    header: getText('Order Shipping'),
+                    id: '_order_shipping',
+                    dataIndex: '_order_shipping',
+                    tooltip: getText('Order Shipping'),
+                    editable: false,
+                    hidden: true,
+                    align: 'left',
+                    width: 90
+                },{
+                    header: getText('Order Discount'),
+                    id: '_order_discount',
+                    dataIndex: '_order_discount',
+                    tooltip: getText('Order Discount'),
+                    editable: false,
+                    hidden: true,
+                    align: 'left',
+                    width: 90
+                },{
+                    header: getText('Cart Discount'),
+                    id: '_cart_discount',
+                    dataIndex: '_cart_discount',
+                    tooltip: getText('Cart Discount'),
+                    editable: false,
+                    hidden: true,
+                    align: 'left',
+                    width: 90
+                },{
+                    header: getText('Coupons Used'),
+                    id: 'coupons',
+                    dataIndex: 'coupons',
+                    tooltip: getText('Coupons Used'),
+                    editable: false,
+                    hidden: true,
+                    align: 'left',
+                    width: 90
+                },{
+                    header: getText('Order Tax'),
+                    id: '_order_tax',
+                    dataIndex: '_order_tax',
+                    tooltip: getText('Order Tax'),
+                    editable: false,
+                    hidden: true,
+                    align: 'left',
+                    width: 90
+                },{
+                    header: getText('Order Shipping Tax'),
+                    id: '_order_shipping_tax',
+                    dataIndex: '_order_shipping_tax',
+                    tooltip: getText('Order Shipping Tax'),
+                    editable: false,
+                    hidden: true,
+                    align: 'left',
+                    width: 90
+                },{
+                    header: getText('Order Excluding Tax'),
+                    id: 'order_total_ex_tax',
+                    dataIndex: 'order_total_ex_tax',
+                    tooltip: getText('Order Total Excluding Tax'),
+                    editable: false,
+                    hidden: true,
+                    align: 'left',
+                    width: 90
+                },{
+                    header: getText('Order Currency'),
+                    id: '_order_currency',
+                    dataIndex: '_order_currency',
+                    tooltip: getText('Order Currency'),
+                    editable: false,
+                    hidden: true,
+                    align: 'left',
+                    width: 90
+                },{
+                    header: getText('Order Notes'),
+                    id: 'order_note',
+                    dataIndex: 'order_note',
+                    tooltip: getText('Order Notes'),
+                    editable: false,
+                    hidden: true,
+                    align: 'left',
+                    width: 90
+                },{
                         header: '',
                         id: 'orders_scroll',
                         width: 8,
@@ -2795,7 +3004,7 @@ var showCustomerDetails = function(record,rowIndex){
                 }],
 		listeners: {
 			hiddenchange: function( ColumnModel,columnIndex, hidden ){
-				storeColState();
+                            state_apply = true;
 			}
 		},
 		defaultSortable: true
@@ -2822,7 +3031,16 @@ var showCustomerDetails = function(record,rowIndex){
 		{name:'_shipping_country', type:'string'},
 		{name:'_shipping_state', type:'string'},  
 		{name:'_shipping_postcode', type:'string'},
-                {name:'_billing_phone', type:'string'}
+                {name:'_billing_phone', type:'string'},
+                {name:'_order_shipping', type:'string'},
+                {name:'_order_discount', type:'string'},
+                {name:'_cart_discount', type:'string'},
+                {name:'coupons', type:'string'},
+                {name:'_order_tax', type:'string'},
+                {name:'_order_shipping_tax', type:'string'},
+                {name:'order_total_ex_tax', type:'string'},
+                {name:'order_note', type:'string'},
+                {name:'_order_currency', type:'string'}
 		]
 	});
 	
@@ -2911,6 +3129,9 @@ var showCustomerDetails = function(record,rowIndex){
         //code to get the width of SM w.r.to width of the browser
         var wWidth  = document.documentElement.offsetWidth - 183;
 	
+        var variation_state=""; // Variable to handle the incVariation checkbox state
+        var column_move = false;
+
 	// Grid panel for the records to display
 	
 	editorGrid = new Ext.grid.EditorGridPanel({
@@ -2947,14 +3168,29 @@ var showCustomerDetails = function(record,rowIndex){
 				name: 'incVariation',
 				stateEvents : ['added','check'],
 				stateful: true,
-				getState: function(){ return { value: this.getValue()}; },
-				applyState: function(state) { this.setValue(state.value);},
+                                
+                                applyState: function(state) {
+                                    if(state){
+                                        this.setValue(state);
+                                        variation_state = state;
+                                    }
+                                },
+
+                                initState : function(){
+                                    this.applyState(SM.variation_state);
+                                },
+
+                                saveState : function(){
+                                      SM.variation_state = this.checked;
+                                },
+                                
 			 	boxLabel: getText('Show Variations'),
 			 	listeners: {
 			 		check : function(checkbox, bool) {
 			 			if ( SM.activeModule == 'Products' ) {
 				 			if(fileExists == 1){
-				 				SM.incVariation  = bool;
+                                                                mask.show();
+                                                                SM.incVariation  = bool;
 				 				productsStore.setBaseParam('incVariation', SM.incVariation);
 				 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
 				 			}else{
@@ -2971,7 +3207,7 @@ var showCustomerDetails = function(record,rowIndex){
                         autoScroll:true,
 	listeners: {
 		beforerender: function(grid) {
-			var object = {
+                    	var object = {
 						url:jsonURL
 						,method:'post'
 						,callback: function(options, success, response)	{
@@ -3010,7 +3246,7 @@ var showCustomerDetails = function(record,rowIndex){
 		cellclick: function(editorGrid,rowIndex, columnIndex, e) {
 			try{
 				var record  = editorGrid.getStore().getAt(rowIndex);
-				cellClicked = true;
+                                cellClicked = true;
 				var editLinkColumnIndex   	  = productsColumnModel.findColumnIndex('edit_url'),
 					editImageColumnIndex   	  = productsColumnModel.findColumnIndex(SM.productsCols.image.colName),
 					prodTypeColumnIndex       = productsColumnModel.findColumnIndex('type'),
@@ -3161,7 +3397,7 @@ var showCustomerDetails = function(record,rowIndex){
 				else if(SM.activeModule == 'Customers'){
 					if(fileExists == 1){
 						if(columnIndex == totalPurchasedColumnIndex){
-							checkModifiedAndshowDetails(record,rowIndex);
+                                                        checkModifiedAndshowDetails(record,rowIndex);
 						}else if(columnIndex == lastOrderColumnIndex){
 							billingDetailsIframe(record.json.id);
 						}
@@ -3200,26 +3436,154 @@ var showCustomerDetails = function(record,rowIndex){
 		// Fires when the grid view is available.
 		// This happens only for the first time when the page is rendered with the editorgrid panel.
 		// From here the flow of the code starts.
+                
 		viewready: function(grid){
-            showSelectedModule( SM.dashboardComboBox.getValue() );
-			SM.dashboardComboBox.setValue( getText( SM.dashboardComboBox.getValue() ) );
 
+                    showSelectedModule( SM.dashboardComboBox.getValue() );
+                    SM.dashboardComboBox.setValue( getText( SM.dashboardComboBox.getValue() ) );
+        },
+
+        applyState : function(state){
+            editorGrid.loadMask.show();
+
+            if (SM.activeModule == "Products") {
+                products_hidden_state = false;
+            }
+            else {
+                products_hidden_state = true;
+            }
+
+            var cm = this.colModel,
+                cs = state.columns,
+                store = this.store,
+                s,
+                c,
+                c_old,
+                colIndex,
+                hidden_colIndex,
+                hidden_state = false;
+
+                if (refresh_state === false) {
+
+                    if(cs){
+                        for(var i = 0, len = cs.length; i < len; i++){
+                            s = cs[i];
+                            c = cm.getColumnById(s.id);
+                            if(c){
+                                colIndex = cm.getIndexById(s.id);
+
+                                c_old =  c['hidden'];
+
+                                cm.setState(colIndex, {
+                                    hidden: s.hidden,
+                                    width: s.width,
+                                    sortable: s.sortable
+                                });
+
+                                if(colIndex != i){
+                                    column_move = true;
+                                    cm.dataMap = null;
+
+                                    var c1 = cm.config[colIndex];
+                                    cm.config.splice(colIndex, 1);
+                                    cm.config.splice(i, 0, c1);
+                                }
+
+                                //Code to handle the hiddenchange event
+                                if(c_old !== true && c['hidden'] === true) {
+                                    cm.totalWidth = 0;
+                                    hidden_state = true;
+                                    hidden_colIndex = colIndex;
+                                }
+                            }
+                        }
+                    }
+
+                    if(store){
+                        s = state.sort;
+                        if(s){
+                            store[store.remoteSort ? 'setDefaultSort' : 'sort'](s.field, s.direction);
+                        }
+                        s = state.group;
+                        if(store.groupBy){
+                            if(s){
+                                store.groupBy(s);
+                            }else{
+                                store.clearGrouping();
+                            }
+                        }
+
+                    }
+                    var o = Ext.apply({}, state);
+                    delete o.columns;
+                    delete o.sort;
+
+                    Ext.grid.GridPanel.superclass.applyState.call(this, o);
+                    this.view.refresh(true);
+                    
+                    setInterval(function(){state_update()}, 60000);
+                }
+
+                editorGrid.loadMask.hide();
+                if (variation_state == "true" && SM.activeModule == "Products") {
+                    variation_state = "false";
+                    editorGrid.loadMask.show();
+                }
 		},
+
 		// Fires when the grid is reconfigured with a new store and/or column model.
 		// state of the editor grid is captured and applied to back to the grid.
+                
 		reconfigure : function(grid,store,colModel ){
-			var editorGridStateId = grid.getStateId();
-			var state = Ext.state.Manager.get(editorGridStateId);
-			
-			grid.fireEvent('beforestaterestore', editorGrid, state);
-			grid.applyState(Ext.apply({}, state));
-			grid.fireEvent('staterestore', editorGrid, state);
-		},
-		// after each edit record enable the save button.
-		afteredit: function(e) {
-			pagingToolbar.saveButton.enable();
-		}
-	}
+//                    editorGrid.view.refresh(true);
+                    editorGrid.loadMask.show();
+                    
+                    state_apply = true;
+                    
+                    if (SM.dashboard_state == "Products") {
+                        if (SM.products_state != "" && SM.products_state != null) {
+                            SM.editor_state = SM.products_state;
+                        }
+                        else {
+                            SM.editor_state = productsColumnModel;
+                        }
+                    }
+                    else if (SM.dashboard_state == "Customers") {
+                        if (SM.customers_state != "" && SM.customers_state != null) {
+                            SM.editor_state = SM.customers_state;
+                        }
+                        else {
+                            SM.editor_state = customersColumnModel;
+                        }
+
+                    }
+                    else if (SM.dashboard_state == "Orders" ) {
+                        if (SM.orders_state != "" && SM.orders_state != null) {
+                            SM.editor_state = SM.orders_state;
+                        }
+                        else {
+                            SM.editor_state = ordersColumnModel;
+                        }
+                    }
+
+                    refresh_state = false;
+
+                    editorGrid.fireEvent('applyState',SM.editor_state);
+        },
+
+        columnresize: function(e) {
+            state_apply = true;
+        },
+
+        columnmove: function(e) {
+            state_apply = true;
+        },
+                
+        // after each edit record enable the save button.
+        afteredit: function(e) {
+                pagingToolbar.saveButton.enable();
+        }
+    }
 });
 
 for(var i=2;i<=8;i++)

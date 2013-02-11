@@ -34,9 +34,9 @@ function values( $arr ) {
 // getting the active module
 $active_module = $_POST ['active_module'];
 
-function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
+function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 	global $wpdb, $woocommerce, $post_status, $parent_sort_id, $order_by, $post_type, $variation_name, $from_variation, $parent_name, $attributes;
-	
+	$_POST = $post;     // Fix: PHP 5.4
         $products = array();
         
 	// getting the active module
@@ -306,7 +306,9 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                                         $query_ids1 = "SELECT GROUP_CONCAT(post_id ORDER BY post_id SEPARATOR ',') as id FROM {$wpdb->prefix}postmeta WHERE meta_value = '$search_on' AND meta_key like 'attribute_%';";
                                         $records_id1 = implode(",",$wpdb->get_col ( $query_ids1 ));
 
-                                        $search_condn .= " products.id IN ($records_id1)";
+//                                        $search_condn .= " products.id IN ($records_id1)";
+                                        if ( !empty( $records_id1 ) ) 
+                                            $search_condn = " HAVING products.id IN ($records_id1)";
 				}
                                 else{
 				$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
@@ -322,16 +324,6 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 						           ";
 			}
         }
-        
-        //Condition for handling the search functionality for the category names
-//            if ($rows_category > 0) {
-//                $search_condn .= " OR";
-//                for ($i=0;$i<sizeof($results_category);$i++) {
-//                    $search_condn .= " term_taxonomy_id LIKE '%$results_category[$i]%'";
-//                    $search_condn .= " OR";
-//                }
-//                $search_condn = substr( $search_condn, 0, -2 );
-//            }
         
 		} 
 
@@ -492,7 +484,8 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
             //Query for getting the max of post id for all the Registered Customers
             $query_post_user = "SELECT post_ID FROM {$wpdb->prefix}postmeta
                                 WHERE meta_key ='_customer_user' AND meta_value>0
-                                AND post_id IN ($terms_post)";
+                                AND post_id IN ($terms_post)
+                                AND meta_value IN (SELECT id FROM $wpdb->users)";
             $post_id_user = $wpdb->get_col($query_post_user);                        
             $num_user 	 =  $wpdb->num_rows;            
 
@@ -720,6 +713,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
                 $terms_post = implode(",",$terms_id);
                 
 		$select_query = "SELECT SQL_CALC_FOUND_ROWS posts.ID as id,
+                                                                posts.post_excerpt as order_note,
 								date_format(posts.post_date,'%b %e %Y, %r') AS date,
 								GROUP_CONCAT( postmeta.meta_value 
 								ORDER BY postmeta.meta_id
@@ -738,7 +732,8 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 																				'_shipping_first_name', '_shipping_last_name', '_shipping_address_1', '_shipping_address_2',
 																				'_shipping_city', '_shipping_state', '_shipping_country','_shipping_postcode',
 																				'_shipping_method', '_payment_method', '_order_items', '_order_total',
-																				'_shipping_method_title', '_payment_method_title','_customer_user','_billing_phone'))";
+																				'_shipping_method_title', '_payment_method_title','_customer_user','_billing_phone',
+                                                                                                                                                                '_order_shipping', '_order_discount', '_cart_discount', '_order_tax', '_order_shipping_tax', '_order_currency', 'coupons'))";
 			
 			$group_by    = " GROUP BY posts.ID";
 			$limit_query = " ORDER BY posts.ID DESC $limit_string ;";
@@ -955,7 +950,7 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 			}
 			
 			//get the state id if the shipping state is numeric or blank
-			$query    = "$select_query $where $group_by $search_condn $limit_query;";
+			$query    = "$select_query $where $group_by $search_condn $limit_query";
 			$results  = $wpdb->get_results ( $query,'ARRAY_A');
 			//To get the total count
 			$orders_count_result = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
@@ -995,22 +990,32 @@ function get_data_woo ( $_POST, $offset, $limit, $is_export = false ) {
 						if (is_serialized($postmeta['_order_items'])) {
 							$order_items = unserialize(trim($postmeta['_order_items']));
 							foreach ( (array)$order_items as $order_item) {
-								$data['details'] += $order_item['qty'];
+                                                                if ( isset( $order_item['item_meta'] ) && count( $order_item['item_meta'] ) > 0 ) {
+                                                                    $variation_data = array();
+                                                                    foreach ( $order_item['item_meta'] as $meta ) {
+                                                                        $variation_data['attribute_'.$meta['meta_name']] = $meta['meta_value'];
+                                                                    }
+                                                                    $variation_details = woocommerce_get_formatted_variation( $variation_data, true );
+                                                                }
+                                                            
+                                                                $data['details'] += $order_item['qty'];
+                                                                $data['order_total_ex_tax'] += $order_item['line_total'];
 								$product_id = ( $order_item['variation_id'] > 0 ) ? $order_item['variation_id'] : $order_item['id'];
 								$sku = get_post_meta( $product_id, '_sku', true );
 								if ( ! empty( $sku ) ) {
-									$sku = '[' . $sku . ']';
+									$sku_detail = '[SKU: ' . $sku . ']';
 								} else {
-									$sku = '';
+									$sku_detail = '';
 								}
-								$data['products_name'] .= $order_item['name'].$sku.'('.$order_item['qty'].'), ';
+                                                                $product_full_name = ( !empty( $variation_details ) ) ? $order_item['name'] . ' (' . $variation_details . ')' : $order_item['name'];
+								$data['products_name'] .= $product_full_name.' '.$sku_detail.'['.__('Qty','smart-manager').': '.$order_item['qty'].']['.__('Price','smart-manager').': '.($order_item['line_total']/$order_item['qty']).'], ';
 							}
 							isset($data['details']) ? $data['details'] .= ' items' : $data['details'] = ''; 
 							$data['products_name'] = substr($data['products_name'], 0, -2);	//To remove extra comma ', ' from returned string
 						} else {
 							$data['details'] = 'Details';
 						}
-                                                
+
                                                 //Code to get the Order_Status using the $terms_name array
                                                 $data ['order_status'] = $terms_name[$data ['term_taxonomy_id']];
                                                 
@@ -1049,6 +1054,47 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	unset($encoded);
 }
 
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
+
+        global $current_user , $wpdb;
+
+        $state_nm = array("dashboardcombobox", "Products", "Customers", "Orders","incVariation");
+        
+        for ($i=0;$i<sizeof($state_nm);$i++) {
+            $stateid = "_sm_".$current_user->user_email."_".$state_nm[$i];
+        
+            $query_state  = "SELECT option_value FROM {$wpdb->prefix}options WHERE option_name like '$stateid'";
+            $result_state =  $wpdb->get_col ( $query_state );
+            $rows_state   = $wpdb->num_rows;
+            
+            if ($rows_state > 0) {
+            
+                if ($_POST ['op'] == 'get' ) {
+                    $state[$state_nm[$i]] = $result_state[0];
+                }
+                elseif ($_POST ['op'] == 'set') {
+                    $state_apply = $_POST[$state_nm[$i]];
+                    $query_state = "UPDATE {$wpdb->prefix}options SET option_value = '$state_apply' WHERE option_name = '$stateid'";
+                    $result_state =  $wpdb->query ( $query_state );
+                }
+
+            }
+            else {
+                
+                $state_apply = $_POST[$state_nm[$i]];
+                
+                $query_state = "INSERT INTO {$wpdb->prefix}options (option_name,option_value) values ('$stateid','$state_apply')";
+                $result_state =  $wpdb->query ( $query_state );
+                
+                $state[$state_nm[$i]] = $state_apply;
+            }
+        }
+        if ($_POST ['op'] == 'get' ) {   
+            echo json_encode ($state);
+        }
+}
+
+
 
 if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
         
@@ -1071,14 +1117,12 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
 				$columns_header['_stock'] 					= __('Inventory / Stock', $sm_domain);
 				$columns_header['_sku'] 					= __('SKU', $sm_domain);
 				$columns_header['category'] 				= __('Category / Group', $sm_domain);
-//				$columns_header['post_content'] 			= __('Product Description', $sm_domain);
-//				$columns_header['post_excerpt'] 			= __('Additional Description', $sm_domain);
 				$columns_header['_weight'] 					= __('Weight', $sm_domain);
 				$columns_header['_height'] 					= __('Height', $sm_domain);
 				$columns_header['_width'] 					= __('Width', $sm_domain);
 				$columns_header['_length'] 					= __('Length', $sm_domain);
 				$columns_header['_tax_status'] 				= __('Tax Status', $sm_domain);
-                $columns_header['_visibility'] 				= __('Visibility', $sm_domain);
+                                $columns_header['_visibility'] 				= __('Visibility', $sm_domain);
 			break;
 			
 		case 'Customers':
@@ -1105,8 +1149,15 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
 				$columns_header['_billing_last_name'] 		= __('Billing Last Name', $sm_domain);
 				$columns_header['_billing_email'] 			= __('Billing E-mail ID', $sm_domain);
                                 $columns_header['_billing_phone'] 			= __('Billing Phone Number', $sm_domain);
-				$columns_header['_order_total'] 			= __('Order Total', $sm_domain);
-				$columns_header['products_name'] 			= __('Order Items (Product Name[SKU](Qty))', $sm_domain);
+                                $columns_header['_order_shipping'] 			= __('Order Shipping', $sm_domain);
+                                $columns_header['_order_discount'] 			= __('Order Discount', $sm_domain);
+                                $columns_header['_cart_discount'] 			= __('Cart Discount', $sm_domain);
+                                $columns_header['coupons'] 			= __('Coupons Used', $sm_domain);
+                                $columns_header['_order_tax'] 			= __('Order Tax', $sm_domain);
+                                $columns_header['_order_shipping_tax'] 			= __('Order Shipping Tax', $sm_domain);
+                                $columns_header['_order_total'] 			= __('Order Total', $sm_domain);
+				$columns_header['_order_currency'] 			= __('Order Currency', $sm_domain);
+				$columns_header['products_name'] 			= __('Order Items (Product Name [SKU][Qty][Price])', $sm_domain);
 				$columns_header['_payment_method_title'] 	= __('Payment Method', $sm_domain);
 				$columns_header['order_status'] 			= __('Order Status', $sm_domain);
 				$columns_header['_shipping_method_title'] 	= __('Shipping Method', $sm_domain);
@@ -1117,6 +1168,7 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
 				$columns_header['_shipping_city'] 			= __('Shipping City', $sm_domain);
 				$columns_header['_shipping_state'] 			= __('Shipping State / Region', $sm_domain);
 				$columns_header['_shipping_country'] 		= __('Shippping Country', $sm_domain);
+				$columns_header['order_note'] 		= __('Order Notes', $sm_domain);
 			break;
 	}
 	
@@ -1135,9 +1187,9 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
 }
 
 //update products for lite version.
-function update_products_woo($_POST) {
+function update_products_woo($post) {
 	global $result, $wpdb;
-        
+        $_POST = $post;     // Fix: PHP 5.4
         //For encoding the string in UTF-8 Format
 //        $charset = "EUC-JP, ASCII, UTF-8, ISO-8859-1, JIS, SJIS";
         $charset = ( get_bloginfo('charset') === 'UTF-8' ) ? null : get_bloginfo('charset');

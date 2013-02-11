@@ -64,7 +64,6 @@ function get_log_ids( $result ) {
     return $result['last_order_id'];
 }
 
-//
 function get_all_matched_purchase_log_ids( $search_on = '' ) {
     global $wpdb;
 
@@ -85,9 +84,9 @@ function get_all_matched_purchase_log_ids( $search_on = '' ) {
 
 
 // Searching a product in the grid
-function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
+function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
 	global $wpdb,$post_status,$parent_sort_id,$order_by;
-	
+	$_POST = $post;     // Fix: PHP 5.4
         $regions_ids = get_regions_ids();		
 	$country_results = $wpdb->get_results( "SELECT isocode, country FROM " . WPSC_TABLE_CURRENCY_LIST, 'ARRAY_A' );
         $country_data = array();
@@ -267,8 +266,11 @@ function get_data_wpsc_38 ( $_POST, $offset, $limit, $is_export = false ) {
                                     $record->post_title = $title . ' - (' . implode( ', ', $variation_terms ) . ')';
                                 }
 		
-				$thumbnail = isset( $prod_meta_key_values['_thumbnail_id'] ) ? wp_get_attachment_image_src( $prod_meta_key_values['_thumbnail_id'], $image_size ) : '';
-				$record->thumbnail    = ( $thumbnail[0] != '' ) ? $thumbnail[0] : false;
+//				$thumbnail = isset( $prod_meta_key_values['_thumbnail_id'] ) ? wp_get_attachment_image_src( $prod_meta_key_values['_thumbnail_id'], $image_size ) : '';
+//				$record->thumbnail    = ( $thumbnail[0] != '' ) ? $thumbnail[0] : false;
+
+                $thumbnail = wpsc_the_product_thumbnail( '', '', $record->id, '' );
+                $record->thumbnail    = ( $thumbnail != '' ) ? $thumbnail : false;
 
 				foreach ( $prod_meta_key_values as $key => $value ) {
 					if (is_serialized ( $value )) {
@@ -879,6 +881,47 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	unset($encoded);
 }
 
+if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
+
+        global $current_user , $wpdb;
+
+        $state_nm = array("dashboardcombobox", "Products", "Customers", "Orders","incVariation");
+        
+        for ($i=0;$i<sizeof($state_nm);$i++) {
+            $stateid = "_sm_wpsc_".$current_user->user_email."_".$state_nm[$i];
+        
+            $query_state  = "SELECT option_value FROM {$wpdb->prefix}options WHERE option_name like '$stateid'";
+            $result_state =  $wpdb->get_col ( $query_state );
+            $rows_state   = $wpdb->num_rows;
+            
+            if ($rows_state > 0) {
+            
+                if ($_POST ['op'] == 'get' ) {
+                    $state[$state_nm[$i]] = $result_state[0];
+                }
+                elseif ($_POST ['op'] == 'set') {
+                    $state_apply = $_POST[$state_nm[$i]];
+                    $query_state = "UPDATE {$wpdb->prefix}options SET option_value = '$state_apply' WHERE option_name = '$stateid'";
+                    $result_state =  $wpdb->query ( $query_state );
+//                    $state = $_POST['state'];
+                }
+
+            }
+            else {
+                
+                $state_apply = $_POST[$state_nm[$i]];
+                
+                $query_state = "INSERT INTO {$wpdb->prefix}options (option_name,option_value) values ('$stateid','$state_apply')";
+                $result_state =  $wpdb->query ( $query_state );
+                
+                $state[$state_nm[$i]] = $state_apply;
+            }
+        }
+        if ($_POST ['op'] == 'get' ) {   
+            echo json_encode ($state);
+        }
+}
+
 
 if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 
@@ -897,8 +940,6 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 				$columns_header['_wpsc_stock'] 				= __('Inventory / Stock', $sm_domain);
 				$columns_header['_wpsc_sku'] 				= __('SKU', $sm_domain);
 				$columns_header['category'] 				= __('Category / Group', $sm_domain);
-//				$columns_header['post_content'] 			= __('Product Description', $sm_domain);
-//				$columns_header['post_excerpt'] 			= __('Additional Description', $sm_domain);
 				$columns_header['weight'] 					= __('Weight', $sm_domain);
 				$columns_header['weight_unit'] 				= __('Weight Unit', $sm_domain);
 				$columns_header['height'] 					= __('Height', $sm_domain);
@@ -1159,8 +1200,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 }
 
 //update products for lite version.
-function update_products($_POST) {
+function update_products($post) {
 	global $result, $wpdb;
+        $_POST = $post;     // Fix: PHP 5.4
 	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
 	$updateCnt = 1;
 	foreach ( $edited_object as $obj ) {
@@ -1178,8 +1220,9 @@ function update_products($_POST) {
 }
 
 // Update Order LITE version
-function update_orders($_POST) {
+function update_orders($post) {
     global $wpdb; // to use as global
+    $_POST = $post;     // Fix: PHP 5.4
     $edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
 
     $ordersCnt = 1;
@@ -1271,9 +1314,12 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 	$wpsc_default_image = WP_PLUGIN_URL . '/wp-e-commerce/wpsc-theme/wpsc-images/noimage.png';
-	$post_thumbnail_id = get_post_thumbnail_id( $_POST ['id'] );
-	$image = isset( $post_thumbnail_id ) ? wp_get_attachment_image_src( $post_thumbnail_id, 'admin-product-thumbnails' ) : '';
-	$thumbnail = ( $image[0] != '' ) ? $image[0] : '';
+
+//	$post_thumbnail_id = get_post_thumbnail_id( $_POST ['id'] );
+//	$image = isset( $post_thumbnail_id ) ? wp_get_attachment_image_src( $post_thumbnail_id, 'admin-product-thumbnails' ) : '';
+//	$thumbnail = ( $image[0] != '' ) ? $image[0] : '';
+    $image = wpsc_the_product_thumbnail( '','', $_POST ['id'], '' );
+    $thumbnail    = ( $image != '' ) ? $image : '';
 	ob_clean();
         echo json_encode ( $thumbnail );
 }
