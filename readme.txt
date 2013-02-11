@@ -3,8 +3,8 @@ Contributors: niravmehta, ratnakar.dubey, rupali, tarun
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
-Tested up to: 3.4.2
-Stable tag: 2.9
+Tested up to: 3.5.1
+Stable tag: 3.0
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -33,14 +33,13 @@ Use that time to develop a new product, or simply present it to your family.
 
 Smart Manager works with WooCommerce latest versions and both WP e-Commerce 3.7 and 3.8.
 
-
 Highlights:
 
 * Convenient Browsing & Searching - Eliminate Extra Clicks And Long Wait Times
 * Inline Product/Order/Customer Management - Get Productive Right Away
 * Product Variations management in Pro version
 * Quick, In-page detail view for Products/Orders/Customers
-* Print multiple packing slips in one go
+* Print multiple packing slips in one go (WPeC)
 * Fast And Reliable Batch Updates With Intelligent Update Actions
 * Note: Some of these features are only in Pro version
 
@@ -73,7 +72,7 @@ No, Smart Manager is not customizable. You can not add/remove columns in Smart M
 
 = Which browser to choose for best performance? =
 
-Smart Manager works best in Firefox, Chrome.
+Smart Manager works best in Firefox, Chrome. Currently it is not compatible with IE.
 
 = What do I get in this free version? =
 
@@ -103,6 +102,22 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.0 =
+* New: Additional columns (discounts, taxes, coupon codes, order notes etc.) introduced in Order's dashboard (WooCommerce)
+* New: Included above fields in CSV export (Woocommerce)
+* Update: Storing the state of Smart Manager into the database instead of cookies - enabling same view from anywhere
+* Update: Can set price and sales price to blank using batch update
+* Update: Smart Manager's Plugin URI
+* Update: Compatibility for PHP 5.4
+* Update: Additional information about products in exported orders list (WooCommerce)
+* Fix: Add attribute changing the product type (WooCommerce)
+* Fix: 'Visible on the product page' and 'Used for variations' for attributes getting unchecked on save (WooCommerce)
+* Fix: Duplicate action in Batch update, when increasing price and Sales price
+* Fix: Product Image not getting updated when using WordPress 3.5
+* Fix: TextBox appearing in batch update window while assigning the products to some categories
+* Fix: Search for variation works in few cases only (WooCommerce)
+* Fix: Fixes related to attribute management.
 
 = 2.9 =
 * New: Feature to set "Regular Price equal to Sale Price" & vice-versa in Batch Update
@@ -380,6 +395,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.0 =
+Many enhancements and fixes - additional fields in display, batch update and attribute management. Recommended upgrade.
 
 = 2.9 =
 New features in Batch Update, enhancements and fixes. Recommended upgrade.
