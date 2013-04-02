@@ -225,17 +225,6 @@ Ext.onReady(function () {
 		}
 	});
 
-	//save the columns state (size, visibility..) of all the three Dashboard
-//	var storeColState = function(){
-//		var editorGridStateId = editorGrid.getStateId();
-//		var state = Ext.state.Manager.get(editorGridStateId);
-//
-//		if(state != undefined){
-//			state = editorGrid.getState();
-//			Ext.state.Manager.set(editorGridStateId,state);
-//		}
-//	};
-
         var refresh_state = false; // flag to handle the refreshing of the grid
         var products_hidden_state = false; // flag to handle the hiddenchange event of the products column module
         var hidden_change = false; // flag to manage the state apply when a column is unhidden for all the modules
@@ -853,9 +842,9 @@ Ext.onReady(function () {
                         dragable:false,
 			id: 'editLink',
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-                if(record.get('post_parent') == 0) {
-                    return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
-                }
+                            if(record.get('post_parent') == 0) {
+                                return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
+                            }
 			}
 		},{
 			header: '',
@@ -969,7 +958,7 @@ Ext.onReady(function () {
 		pagingToolbar.bind(productsStore);
 
 		editorGrid.reconfigure(productsStore,productsColumnModel);
-		fieldsStore.loadData(productsFields);
+                fieldsStore.loadData(productsFields);
 
 		var firstToolbar       = batchUpdatePanel.items.items[0].items.items[0];
 		var textfield          = firstToolbar.items.items[5];
@@ -1129,6 +1118,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
             }
 
             var firstToolbar = batchUpdatePanel.items.items[0].items.items[0];
+            
             firstToolbar.items.items[0].reset();
             firstToolbar.items.items[2].reset();
 
@@ -1145,6 +1135,13 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 
             firstToolbar.items.items[11].reset();
             firstToolbar.items.items[11].hide();
+
+            firstToolbar.items.items[13].hide();
+            firstToolbar.items.items[2].show(); // As the same is hidden if the Image functionality not available
+            
+            //Code for reseting the Image button icon
+            jQuery('.x-batchimage').css('background-image', 'url(' + imgURL + 'batch_image.gif' + ')');
+            jQuery('.x-batchimage').css('background-size', '100% 100%');
         }
 
 
@@ -2492,6 +2489,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						else
 							var field_type = this.store.reader.jsonData.items[selectedFieldIndex].type;
 						var field_name = this.store.reader.jsonData.items[selectedFieldIndex].name;
+                                                
 						var actionsData = new Array();
 						var toolbarParent = this.findParentByType(batchUpdateToolbarInstance, true);
 						var comboCategoriesActionCmp = toolbarParent.get(4);
@@ -2500,9 +2498,14 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var comboWeightUnitCmp = toolbarParent.get(7);						
 						var comboRegionCmp = toolbarParent.get(9);
                                                 var textState = toolbarParent.get(11);
-						objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;;
+                                                var lblImg = toolbarParent.get(13);
+                                                var comboFieldCmp = toolbarParent.get(0);
+                                                
+                                                comboActionCmp.show(); // As the same is hidden if the Image functionality not available
+                                                
+                                                objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;;
 						regexError = getText('Only numbers are allowed'); 
-						
+                                                
 							if(SM['productsCols'][this.value] != undefined ){
 								var categoryActionType = SM['productsCols'][this.value].actionType;
 							}							
@@ -2511,18 +2514,22 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								comboWeightUnitCmp.hide();
                                                                 comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
+                                                                lblImg.hide();
 							}else if (field_type == 'string') {
 								setTextfield.hide();
 								comboWeightUnitCmp.hide();
 								comboCategoriesActionCmp.hide();
+                                                                lblImg.hide();
 							}else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping') {								
 								setTextfield.hide();
 								comboWeightUnitCmp.hide();
 								comboCategoriesActionCmp.hide();
+                                                                lblImg.hide();
 							}else if (field_name == 'Weight' || field_name == 'Variations: Weight' || field_name == 'Height' || field_name == 'Width' || field_name == 'Length' ) {
 								comboWeightUnitCmp.hide();
 								setTextfield.show();
 								comboCategoriesActionCmp.hide();
+                                                                lblImg.hide();
 							}else if(field_name == 'Orders Status' || field_name.indexOf('Country') != -1){
 								if(field_name.indexOf('Country') != -1) {
                                                                         textState.emptyText="Enter State/Region...";
@@ -2534,9 +2541,28 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								}
 								setTextfield.hide();
 								comboWeightUnitCmp.show();
+                                                                lblImg.hide();
 							}else if(field_type == 'YesNoActions'){
 								setTextfield.hide();
-							}else {
+                                                                lblImg.hide();
+							}
+                                                        else if(field_name == 'Image'){
+								if (IS_WP35) {
+                                                                    setTextfield.hide();
+                                                                    comboWeightUnitCmp.hide();
+                                                                    comboCategoriesActionCmp.hide();
+                                                                    lblImg.show();
+                                                                }
+                                                                else {
+                                                                    comboFieldCmp.setValue(getText('Select a field') + '...');
+                                                                    comboActionCmp.hide();
+                                                                    setTextfield.hide();
+                                                                    comboWeightUnitCmp.hide();
+                                                                    comboCategoriesActionCmp.hide();
+                                                                    Ext.notification.msg('Note', 'This feature is available from Wordpress 3.5 onwards');
+                                                                }
+							}
+                                                        else {
 								setTextfield.show();
                                                                 if (field_type == 'blob' || field_type == 'modStrActions') {
 									objRegExp = '';
@@ -2545,18 +2571,23 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								comboWeightUnitCmp.hide();
 								comboCategoriesActionCmp.hide();
 								actions_index = field_type;
+                                                                lblImg.hide();
 							}
+                                                        
+                                                var field_val = getText('Select a field') + '...';
+                                                
 						if(SM.activeModule == 'Orders' || SM.activeModule == 'Customers'){
-							for (j = 0; j < actions[actions_index].length; j++) {
-								actionsData[j] = new Array();
-								actionsData[j][0] = actions[actions_index][j].id;
-								actionsData[j][1] = actions[actions_index][j].name;
-								actionsData[j][2] = actions[actions_index][j].value;
-							}
+                                                        for (j = 0; j < actions[actions_index].length; j++) {
+                                                                actionsData[j] = new Array();
+                                                                actionsData[j][0] = actions[actions_index][j].id;
+                                                                actionsData[j][1] = actions[actions_index][j].name;
+                                                                actionsData[j][2] = actions[actions_index][j].value;
+                                                        }
 						actionStore.loadData(actionsData); // @todo: check whether used only for products or is it used for any other module?
-						}else if(SM.activeModule == 'Products'){
+						}else if(SM.activeModule == 'Products' && this.value != field_val){
 							actionStore.loadData(actions[SM['productsCols'][this.value].actionType]);
 						}
+                                                
 						setTextfield.reset();
 						comboActionCmp.reset();
 						comboWeightUnitCmp.reset();
@@ -2835,7 +2866,44 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 				cls: 'searchPanel',
 				hidden: true,
 				selectOnFocus: true
-			}, '->',
+			},'',{
+                            xtype: 'button',
+                            icon: imgURL + 'batch_image.gif',
+                            iconCls: 'x-batchimage',
+                            tooltip: getText('Upload Image'),
+                            image_id:'',
+                            hidden: true,
+                            handler: function (e) {
+                                        var file_frame;
+                                        
+                                        // If the media frame already exists, reopen it.
+                                        if ( file_frame ) {
+                                          file_frame.open();
+                                          return;
+                                        }
+                                        
+                                        // Create the media frame.
+                                        file_frame = wp.media.frames.file_frame = wp.media({
+                                          title: jQuery( this ).data( 'uploader_title' ),
+                                          button: {
+                                            text: jQuery( this ).data( 'uploader_button_text' )
+                                          },
+                                          multiple: false  // Set to true to allow multiple files to be selected
+                                        });
+                                        
+                                        // When an image is selected, run a callback.
+                                        file_frame.on( 'select', function() {
+                                          // We set multiple to false so only get one image from the uploader
+                                            attachment = file_frame.state().get('selection').first().toJSON();
+                                          
+                                            e.image_id = attachment['id'];
+                                            jQuery('.x-batchimage').css('background-image', 'url(' + attachment['url'] + ')');
+                                            jQuery('.x-batchimage').css('background-size', '100% 100%');
+                                        });
+                                        
+                                        file_frame.open();
+                                }
+                        }, '->',
 			{
 				icon: imgURL + 'del_row.png',
 				tooltip: getText('Delete Row'),
@@ -2864,10 +2932,13 @@ var batchUpdateToolbar = new Ext.Toolbar({
 			toolbarCount++;
 			batchUpdatePanel.add(newBatchUpdateToolbar);
 			batchUpdatePanel.doLayout();
+                        var count_toolbar = toolbarCount-1;
+                        var firstToolbar = batchUpdatePanel.items.items[count_toolbar].items.items[13];
+                        firstToolbar.hide();
 		}
 	}]
 });
-batchUpdateToolbar.get(0).get(13).hide(); //hide delete row icon from first toolbar.
+batchUpdateToolbar.get(0).get(15).hide(); //hide delete row icon from first toolbar.
 
 var batchUpdatePanel = new Ext.Panel({
 	animCollapse: true,
@@ -3067,7 +3138,16 @@ var showCustomerDetails = function(record,rowIndex){
 
 
         //code to get the width of SM w.r.to width of the browser
-        var wWidth  = document.documentElement.offsetWidth - 183;
+        
+        var wWidth = 0;
+
+        //code to handle the sizing od the Smart Manager Grid w.r.to collapse menu
+        if ( !jQuery(document.body).hasClass('folded') ) {
+            wWidth  = document.documentElement.offsetWidth - 183;
+        }
+        else {
+            wWidth  = document.documentElement.offsetWidth - 67;
+        }
     
         var variation_state=""; // Variable to handle the incVariation checkbox state
         var column_move = false;

@@ -6,10 +6,10 @@ if ( ! defined('ABSPATH') ) {
 }
 include_once (ABSPATH . 'wp-includes/wp-db.php');
 include_once (ABSPATH . 'wp-includes/functions.php');
-require_once( ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-admin/includes/product-functions.php' );     // Fix for undefined function 'wpsc_product_has_children'
-include_once (ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-core/wpsc-functions.php');
-include_once (ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-includes/purchaselogs.class.php');
-load_textdomain( 'smart-manager', ABSPATH . 'wp-content/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
+require_once( WP_CONTENT_DIR . '/plugins/wp-e-commerce/wpsc-admin/includes/product-functions.php' );     // Fix for undefined function 'wpsc_product_has_children'
+include_once (WP_CONTENT_DIR . '/plugins/wp-e-commerce/wpsc-core/wpsc-functions.php');
+include_once (WP_CONTENT_DIR . '/plugins/wp-e-commerce/wpsc-includes/purchaselogs.class.php');
+load_textdomain( 'smart-manager', WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
 
 //checking the memory limit allocated
 $mem_limit = ini_get('memory_limit');
@@ -43,7 +43,8 @@ function get_regions_ids(){ //getting the list of regions
 }
 		
 // getting the active module
-$active_module = $_POST ['active_module'];
+$active_module = (isset($_POST ['active_module']) ? $_POST ['active_module'] : '');
+//$active_module = $_POST ['active_module'];
 
 // function to return term_taxonomy_ids of a term name
 function get_term_taxonomy_ids( $term_name ) {
@@ -1015,7 +1016,7 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
-    require_once (ABSPATH . 'wp-content/plugins/wp-e-commerce/wpsc-admin/admin.php');
+    require_once (WP_CONTENT_DIR . '/plugins/wp-e-commerce/wpsc-admin/admin.php');
     $dupCnt = 0;
     $activeModule = substr( $_POST ['active_module'], 0, -1 );
     $data_temp = json_decode ( stripslashes ( $_POST ['data'] ) );
@@ -1203,7 +1204,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 function update_products($post) {
 	global $result, $wpdb;
         $_POST = $post;     // Fix: PHP 5.4
-	$edited_object = json_decode ( stripslashes ( $_POST ['edited'] ) );
+	$edited_object = json_decode ( ( $_POST ['edited'] ) );
 	$updateCnt = 1;
 	foreach ( $edited_object as $obj ) {
 		
@@ -1303,7 +1304,12 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 	global $wpdb, $current_user;
 	$current_user = wp_get_current_user();
-	if ( SMPRO != true || $current_user->roles[0] == 'administrator') {
+        if ( !isset( $current_user->roles[0] ) ) {
+            $roles = array_values( $current_user->roles );
+        } else {
+            $roles = $current_user->roles;
+        }
+	if ( SMPRO != true || $roles[0] == 'administrator') {
 		$results = array( 'Products', 'Customers_Orders' );
 	} else {
 		$results = get_dashboard_combo_store();
@@ -1318,8 +1324,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 //	$post_thumbnail_id = get_post_thumbnail_id( $_POST ['id'] );
 //	$image = isset( $post_thumbnail_id ) ? wp_get_attachment_image_src( $post_thumbnail_id, 'admin-product-thumbnails' ) : '';
 //	$thumbnail = ( $image[0] != '' ) ? $image[0] : '';
-    $image = wpsc_the_product_thumbnail( '','', $_POST ['id'], '' );
-    $thumbnail    = ( $image != '' ) ? $image : '';
+        $image = wpsc_the_product_thumbnail( '','', $_POST ['id'], '' );
+        $thumbnail    = ( $image != '' ) ? $image : '';
 	ob_clean();
         echo json_encode ( $thumbnail );
 }

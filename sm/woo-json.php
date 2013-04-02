@@ -32,7 +32,8 @@ function values( $arr ) {
 }
 
 // getting the active module
-$active_module = $_POST ['active_module'];
+$active_module = (isset($_POST ['active_module']) ? $_POST ['active_module'] : 'Products');
+//$active_module = $_POST ['active_module'];
 
 function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 	global $wpdb, $woocommerce, $post_status, $parent_sort_id, $order_by, $post_type, $variation_name, $from_variation, $parent_name, $attributes;
@@ -40,7 +41,8 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         $products = array();
         
 	// getting the active module
-	$active_module = $_POST ['active_module'];
+        $active_module = (isset($_POST ['active_module']) ? $_POST ['active_module'] : 'Products');
+//        $active_module = $_POST ['active_module'];
 	
 	if ( SMPRO == true ) variation_query_params ();
 	
@@ -180,15 +182,26 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 $search_ons = explode( ' ', $search_on );
             }
 
+            //Function to prepare the conditions for the query
+            $prepare_cond = function($search_ons,$column_nm) {
+                $cond = "";
+                foreach ($search_ons as $search_on) {
+                    $cond .= $column_nm . " LIKE '%" . $search_on . "%'";
+                    $cond .= " OR ";
+                }
+                return substr( $cond, 0, -3 );
+            };
+            
             //Query for getting the slug name for the term name typed in the search box of the products module
-            $query_terms = "SELECT slug FROM {$wpdb->prefix}terms WHERE name LIKE '%$search_on%' AND name IN ('" .implode("','",$attributes) . "');";
+            $query_terms = "SELECT slug FROM {$wpdb->prefix}terms WHERE (". $prepare_cond($search_ons,"name") .") AND name IN ('" .implode("','",$attributes) . "');";
             $records_slug = $wpdb->get_col ( $query_terms );
             $rows = $wpdb->num_rows;
             
             $search_text = $search_ons;
             
-            if($rows > 0){
-                    $search_ons = $records_slug;
+//            if($rows > 0){
+            if($rows > 0 && (!empty($records_slug))){
+                    $search_text = $records_slug;
             }
             
             //Query to get the term_taxonomy_id for the category name typed in the search text box of the products module
@@ -196,7 +209,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     JOIN {$wpdb->prefix}term_taxonomy AS wt ON (wt.term_taxonomy_id = tr.term_taxonomy_id)
                     JOIN {$wpdb->prefix}terms AS terms ON (wt.term_id = terms.term_id)
                     WHERE wt.taxonomy like 'product_cat'
-                    AND terms.name LIKE '%$search_on%'";
+                    AND (". $prepare_cond($search_ons,"terms.name") . ")";
             $results_category = $wpdb->get_col( $query_category );
             $rows_category = $wpdb->num_rows;
                 
@@ -207,23 +220,13 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 $search_category = "";
             }
             
-            $query_status = "SELECT ID FROM {$wpdb->prefix}posts 
-                        WHERE post_type IN ('product')
-                            AND post_status LIKE '%$search_on%'";
-            $results_status = $wpdb->get_col( $query_status );
-            $rows_status = $wpdb->num_rows;
-
-            if ($rows_status > 0) {
-                $search_status = " OR products.ID IN (" .implode(",",$results_status). ") OR products.post_parent IN (" .implode(",",$results_status). ")";
-            }
-            else {
-                $search_status = "";
-            }
-            
-            //Query to get the post id if title matches
+            //Query to get the post id if title or status or content or excerpt matches
             $query_title = "SELECT ID FROM {$wpdb->prefix}posts 
                         WHERE post_type IN ('product')
-                            AND post_title LIKE '%$search_on%'";
+                            AND (". $prepare_cond($search_ons,"post_title").
+                                    "OR ". $prepare_cond($search_ons,"post_status"). 
+                                    "OR ". $prepare_cond($search_ons,"post_content"). 
+                                    "OR ". $prepare_cond($search_ons,"post_excerpt") .")";
             $results_title = $wpdb->get_col( $query_title );
             $rows_title = $wpdb->num_rows;
             
@@ -233,8 +236,6 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             else {
                 $search_title = "";
             }
-            
-            //Query to get the post id if title matches
             
             $visible = stristr("Catalog & Search", $search_on);
             
@@ -270,61 +271,50 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             }
             
             
-            if ( is_array( $search_ons ) && count( $search_ons ) > 1 ) {
-            			$search_condn = " HAVING ";
+            if ( is_array( $search_ons ) && count( $search_ons ) >= 1 ) {
+            			$search_condn = " HAVING ";                    
 				foreach ( $search_ons as $search_on ) {
-                                    
-                                    if( $rows == 1 && $search_text != $search_ons ) {
-                                        $query_ids1 = "SELECT GROUP_CONCAT(post_id ORDER BY post_id SEPARATOR ',') as id FROM {$wpdb->prefix}postmeta WHERE meta_value = '$search_on' AND meta_key like 'attribute_%';";
-                                        $records_id1 = implode(",",$wpdb->get_col ( $query_ids1 ));
-                                        
-                                        $search_condn .= " products.id IN ($records_id1)";
-                                    }
-                                    
-                                    else {
-                                        $search_condn .= " (concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
-						               OR post_content LIKE '%$search_on%'
-						               OR post_excerpt LIKE '%$search_on%'
-						               
-                                                                   OR prod_othermeta_value LIKE '%$search_on%')
-                                                                   $search_status
-                                                                   $search_title
-                                                                   $search_category
-                                                                   $search_tax_visible
-							           ";
-					
-					
-                                    }
-					$search_condn .= " OR";
+                                    $search_condn .= " (concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
+                                                           OR post_content LIKE '%$search_on%'
+                                                           OR post_excerpt LIKE '%$search_on%'
+
+                                                               OR prod_othermeta_value LIKE '%$search_on%')
+
+                                                               ";
+                                    $search_condn .= " OR";
 				}
+                                
+                                if( $rows == 1 ) {
+                                    $query_ids1 = "SELECT GROUP_CONCAT(post_id ORDER BY post_id SEPARATOR ',') as id FROM {$wpdb->prefix}postmeta WHERE meta_value IN ('". implode("','",$search_text) ."') AND meta_key like 'attribute_%'";
+                                    $records_id1 = implode(",",$wpdb->get_col ( $query_ids1 ));
+
+                                    $search_condn .= " products.id IN ($records_id1)";
+                                    $search_condn .= " OR";
+                                }
                                 $search_condn_count = " AND(" . substr( $search_condn_count, 0, -2 ) . ")";
 				$search_condn = substr( $search_condn, 0, -2 );
+				$search_condn .= $search_title . $search_category .$search_tax_visible;
+                                
 			} 
                         else {
+                            $search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
+                                                   OR post_content LIKE '%$search_on%'
+                                                   OR post_excerpt LIKE '%$search_on%'
 
-                                if( $rows == 1 && $search_text != $search_ons ) {
-                                        $query_ids1 = "SELECT GROUP_CONCAT(post_id ORDER BY post_id SEPARATOR ',') as id FROM {$wpdb->prefix}postmeta WHERE meta_value = '$search_on' AND meta_key like 'attribute_%';";
-                                        $records_id1 = implode(",",$wpdb->get_col ( $query_ids1 ));
+                                                               OR prod_othermeta_value LIKE '%$search_on%'
 
-//                                        $search_condn .= " products.id IN ($records_id1)";
-                                        if ( !empty( $records_id1 ) ) 
-                                            $search_condn = " HAVING products.id IN ($records_id1)";
-				}
-                                else{
-				$search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
-					               OR post_content LIKE '%$search_on%'
-					               OR post_excerpt LIKE '%$search_on%'
-					               
-								   OR prod_othermeta_value LIKE '%$search_on%'
-								   
-                                                            $search_status
-                                                            $search_title
-                                                            $search_category
-                                                            $search_tax_visible
-						           ";
-			}
-        }
-        
+                                                        $search_title
+                                                        $search_category
+                                                        $search_tax_visible
+                                                       ";
+                            if( $rows == 1 ) {
+                                $query_ids1 = "SELECT GROUP_CONCAT(post_id ORDER BY post_id SEPARATOR ',') as id FROM {$wpdb->prefix}postmeta WHERE meta_value IN ('". implode("','",$search_text) ."') AND meta_key like 'attribute_%';";
+                                $records_id1 = implode(",",$wpdb->get_col ( $query_ids1 ));
+                                
+                                if ( !empty( $records_id1 ) ) 
+                                    $search_condn .= " OR products.id IN ($records_id1)";
+                            }
+                        }
 		} 
 
 		$from = "FROM {$wpdb->prefix}posts as products
@@ -393,11 +383,26 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 $records[$i]['thumbnail'] = ( $thumbnail[0] != '' ) ? $thumbnail[0] : false;
                 $records[$i]['_tax_status'] = (!empty($prod_meta_key_values['_tax_status']) ) ? $prod_meta_key_values['_tax_status'] : '';
 
-
+                // Setting product type for grouped products
+                if ($records[$i]['post_parent'] != 0 ) {
+                    $product_type_parent = wp_get_object_terms($records[$i]['post_parent'], 'product_type', array('fields' => 'slugs'));
+                        
+                    if ($product_type_parent[0] == "grouped") {
+                        $records[$i]['product_type'] = $product_type_parent[0];
+                    }
+                }
+                else {
+                    $records[$i]['product_type'] = $product_type[0];
+                }
+                
                 if ($show_variation === true && SMPRO) {
-                    if ($records[$i]['post_parent'] != 0) {
+                    if ( $records[$i]['post_parent'] != 0 && $product_type_parent[0] != "grouped" ) {
+                        
                         $records[$i]['post_status'] = get_post_status($records[$i]['post_parent']);
-                        $records[$i]['_regular_price'] = $records[$i]['_price'];
+                        
+                        if($_POST['IS_WOO16'] == 1) {
+                            $records[$i]['_regular_price'] = $records[$i]['_price'];
+                        }
                         $variation_names = '';
 
                         foreach ($variation as $slug) {
@@ -405,6 +410,8 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         }
                         
                         $records[$i]['post_title'] = get_the_title($records[$i]['post_parent']) . " - " . trim($variation_names, ", ");
+                        
+                        
                     } else if ($records[$i]['post_parent'] == 0 && $product_type[0] == 'variable') {
                         $records[$i]['_regular_price'] = "";
                         $records[$i]['_sale_price'] = "";
@@ -743,11 +750,16 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                         AND term_relationships.term_taxonomy_id IN ($terms_post)";
 			
 			if (isset ( $_POST ['fromDate'] )) {
-				$from_date = date('Y-m-d H:i:s',(int)strtotime($_POST ['fromDate']));
-				$to_date = isset($_POST ['toDate']) ? date('Y-m-d H:i:s',((int)strtotime($_POST ['toDate']))+86399) : date('Y-m-d H:i:s',((int)strtotime($_POST ['toDate']))+86399);
-
-				if (SMPRO == true) {
-					$where .= " AND posts.post_date BETWEEN '$from_date' AND '$to_date'";
+                                
+                                $from_date = date('Y-m-d H:i:s',(int)strtotime($_POST ['fromDate']));
+                                
+                                $date = date('Y-m-d',(int)strtotime($_POST ['toDate']));
+                                $curr_time_gmt = date('H:i:s',time()- date("Z"));
+                                $new_date = $date ." " . $curr_time_gmt;
+                                $to_date = date('Y-m-d H:i:s',((int)strtotime($new_date)) + ( get_option( 'gmt_offset' ) * HOUR_IN_SECONDS )) ;
+                                
+                                if (SMPRO == true) {
+					$where .= " AND posts.post_date BETWEEN '$from_date' AND '$to_date'";                                        
 				}
 			}
 			
@@ -964,12 +976,83 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                          GROUP BY users.ID";
                         $result_users =  $wpdb->get_results ( $query_users, 'ARRAY_A' );
                         
-			if ($num_records == 0) {
+                        if ($num_records == 0) {
 				$encoded ['totalCount'] = '';
 				$encoded ['items'] = '';
 				$encoded ['msg'] = __('No Records Found','smart-manager'); 
 			} else {			
-				foreach ( $results as $data) {
+                                foreach ( $results as $data ) {
+                                    $order_ids[] = $data['id'];
+                                }
+                                
+                                if($_POST['IS_WOO16'] != 1) {
+                                    $order_id = implode(",",$order_ids);
+                                    $query_order_items = "SELECT order_items.order_item_id,
+                                                            order_items.order_id    ,
+                                                            order_items.order_item_name AS order_prod,
+                                                            GROUP_CONCAT(order_itemmeta.meta_key
+                                                                                ORDER BY order_itemmeta.meta_id 
+                                                                                SEPARATOR '###' ) AS meta_key,
+                                                            GROUP_CONCAT(order_itemmeta.meta_value
+                                                                                ORDER BY order_itemmeta.meta_id 
+                                                                                SEPARATOR '###' ) AS meta_value
+                                                        FROM {$wpdb->prefix}woocommerce_order_items AS order_items 
+                                                            LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_itemmeta 
+                                                                ON (order_items.order_item_id = order_itemmeta.order_item_id)
+                                                        WHERE order_items.order_id IN ($order_id)
+                                                        GROUP BY order_items.order_item_id
+                                                        ORDER BY FIND_IN_SET(order_items.order_id,'$order_id')";
+                                    $results_order_items  = $wpdb->get_results ( $query_order_items , 'ARRAY_A');
+                                    
+                                    $query_variation_ids = "SELECT order_itemmeta.meta_value 
+                                                            FROM {$wpdb->prefix}woocommerce_order_items AS order_items 
+                                                               LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_itemmeta 
+                                                                   ON (order_items.order_item_id = order_itemmeta.order_item_id)
+                                                            WHERE order_itemmeta.meta_key LIKE '_variation_id'
+                                                                   AND order_itemmeta.meta_value > 0
+                                                                   AND order_items.order_id IN ($order_id)";
+                                    $result_variation_ids  = $wpdb->get_col ( $query_variation_ids );                       
+                                    
+                                    $query_variation_att = "SELECT postmeta.post_id AS post_id,
+                                                                    GROUP_CONCAT(postmeta.meta_value
+                                                                        ORDER BY postmeta.meta_id 
+                                                                        SEPARATOR ', ' ) AS meta_value
+                                                            FROM {$wpdb->prefix}postmeta AS postmeta
+                                                            WHERE postmeta.meta_key LIKE 'attribute_%'
+                                                                AND postmeta.post_id IN (". implode(",",$result_variation_ids) .")
+                                                            GROUP BY postmeta.post_id";
+//                                                                                          
+                                    $results_variation_att  = $wpdb->get_results ( $query_variation_att , 'ARRAY_A');
+                                    
+                                    $query_terms = "SELECT terms.slug as slug, terms.name as term_name
+                                              FROM {$wpdb->prefix}terms AS terms
+                                                JOIN {$wpdb->prefix}postmeta AS postmeta 
+                                                    ON ( postmeta.meta_value = terms.slug 
+                                                            AND postmeta.meta_key LIKE 'attribute_%' ) 
+                                              GROUP BY terms.slug";
+                                    $attributes_terms = $wpdb->get_results( $query_terms, 'ARRAY_A' );
+                                    
+                                    $attributes = array();
+                                    foreach ( $attributes_terms as $attributes_term ) {
+                                        $attributes[$attributes_term['slug']] = $attributes_term['term_name'];
+                                    }
+                                    
+                                    $variation_att_all = array();
+                                    
+                                    for ($i=0;$i<sizeof($results_variation_att);$i++) {
+                                        $variation_attributes = explode(", ",$results_variation_att [$i]['meta_value']);
+                                        
+                                        $attributes_final = array();
+                                        foreach ($variation_attributes as $variation_attribute) {
+                                            $attributes_final[] = (isset($attributes[$variation_attribute]) ? $attributes[$variation_attribute] : ucfirst($variation_attribute) );
+                                        }
+                                        
+                                        $results_variation_att [$i]['meta_value'] = implode(", ",$attributes_final);
+                                        $variation_att_all [$results_variation_att [$i]['post_id']] = $results_variation_att [$i]['meta_value'];
+                                    }
+                                }
+                                
+				foreach ( $results as $data ) {
 					$meta_key = explode ( '###', $data ['meta_key'] );
 					$meta_value = explode ( '###', $data ['meta_value'] );
 					
@@ -987,34 +1070,75 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                     }
                                                 }
                                                 
-						if (is_serialized($postmeta['_order_items'])) {
-							$order_items = unserialize(trim($postmeta['_order_items']));
-							foreach ( (array)$order_items as $order_item) {
-                                                                if ( isset( $order_item['item_meta'] ) && count( $order_item['item_meta'] ) > 0 ) {
-                                                                    $variation_data = array();
-                                                                    foreach ( $order_item['item_meta'] as $meta ) {
-                                                                        $variation_data['attribute_'.$meta['meta_name']] = $meta['meta_value'];
+                                                if($_POST['IS_WOO16'] == 1) {
+                                                    if (is_serialized($postmeta['_order_items'])) {
+                                                            $order_items = unserialize(trim($postmeta['_order_items']));
+                                                            foreach ( (array)$order_items as $order_item) {
+                                                                    if ( isset( $order_item['item_meta'] ) && count( $order_item['item_meta'] ) > 0 ) {
+                                                                        $variation_data = array();
+                                                                        foreach ( $order_item['item_meta'] as $meta ) {
+                                                                            $variation_data['attribute_'.$meta['meta_name']] = $meta['meta_value'];
+                                                                        }
+                                                                        $variation_details = woocommerce_get_formatted_variation( $variation_data, true );
                                                                     }
-                                                                    $variation_details = woocommerce_get_formatted_variation( $variation_data, true );
-                                                                }
+
+                                                                    $data['details'] += $order_item['qty'];
+                                                                    $data['order_total_ex_tax'] += $order_item['line_total'];
+                                                                    $product_id = ( $order_item['variation_id'] > 0 ) ? $order_item['variation_id'] : $order_item['id'];
+                                                                    $sm_sku = get_post_meta( $product_id, '_sku', true );
+                                                                    if ( ! empty( $sm_sku ) ) {
+                                                                            $sku_detail = '[SKU: ' . $sm_sku . ']';
+                                                                    } else {
+                                                                            $sku_detail = '';
+                                                                    }
+                                                                    $product_full_name = ( !empty( $variation_details ) ) ? $order_item['name'] . ' (' . $variation_details . ')' : $order_item['name'];
+                                                                    $data['products_name'] .= $product_full_name.' '.$sku_detail.'['.__('Qty','smart-manager').': '.$order_item['qty'].']['.__('Price','smart-manager').': '.($order_item['line_total']/$order_item['qty']).'], ';
+                                                            }
+                                                            isset($data['details']) ? $data['details'] .= ' items' : $data['details'] = ''; 
+                                                            $data['products_name'] = substr($data['products_name'], 0, -2);	//To remove extra comma ', ' from returned string
+                                                    } else {
+                                                            $data['details'] = 'Details';
+                                                    }
+                                                    
+                                                }
+                                                else {
+                                                    
+                                                        foreach ( $results_order_items as $order_item) {
+                                                            $prod_meta_values = explode('###', $order_item ['meta_value'] );
+                                                            $prod_meta_key = explode('###', $order_item ['meta_key'] );
+                                                            if (count($prod_meta_values) != count($prod_meta_key))
+                                                                continue;
+                                                            unset( $order_item ['meta_value'] );
+                                                            unset( $order_item ['meta_key'] );
+
+                                                            update_post_meta($index, $sku_detail, $meta_value);
                                                             
-                                                                $data['details'] += $order_item['qty'];
-                                                                $data['order_total_ex_tax'] += $order_item['line_total'];
-								$product_id = ( $order_item['variation_id'] > 0 ) ? $order_item['variation_id'] : $order_item['id'];
-								$sku = get_post_meta( $product_id, '_sku', true );
-								if ( ! empty( $sku ) ) {
-									$sku_detail = '[SKU: ' . $sku . ']';
-								} else {
-									$sku_detail = '';
-								}
-                                                                $product_full_name = ( !empty( $variation_details ) ) ? $order_item['name'] . ' (' . $variation_details . ')' : $order_item['name'];
-								$data['products_name'] .= $product_full_name.' '.$sku_detail.'['.__('Qty','smart-manager').': '.$order_item['qty'].']['.__('Price','smart-manager').': '.($order_item['line_total']/$order_item['qty']).'], ';
-							}
-							isset($data['details']) ? $data['details'] .= ' items' : $data['details'] = ''; 
-							$data['products_name'] = substr($data['products_name'], 0, -2);	//To remove extra comma ', ' from returned string
-						} else {
-							$data['details'] = 'Details';
-						}
+                                                            $prod_meta_key_values = array_combine($prod_meta_key, $prod_meta_values);
+
+                                                            
+                                                            if ($data['id'] == $order_item['order_id']) {
+
+                                                                $data['details'] += $prod_meta_key_values['_qty'];
+                                                                $data['order_total_ex_tax'] += $prod_meta_key_values['_line_total'];
+
+                                                                $product_id = ( $prod_meta_key_values['_variation_id'] > 0 ) ? $prod_meta_key_values['_variation_id'] : $prod_meta_key_values['_product_id'];
+                                                                $sm_sku = get_post_meta( $product_id, '_sku', true );
+                                                                if ( ! empty( $sm_sku ) ) {
+                                                                        $sku_detail = '[SKU: ' . $sm_sku . ']';
+                                                                } else {
+                                                                        $sku_detail = '';
+                                                                }
+                                                                
+                                                                $variation_att = $variation_att_all [$prod_meta_key_values['_variation_id']];
+                                                                
+                                                                $product_full_name = ( !empty( $variation_att ) ) ? $order_item['order_prod'] . ' (' . $variation_att . ')' : $order_item['order_prod'];
+                                                                $data['products_name'] .= $product_full_name.' '.$sku_detail.'['.__('Qty','smart-manager').': '.$prod_meta_key_values['_qty'].']['.__('Price','smart-manager').': '.($prod_meta_key_values['_line_total']/$prod_meta_key_values['_qty']).'], ';
+                                                                 
+                                                            }
+                                                        }
+                                                        isset($data['details']) ? $data['details'] .= ' items' : $data['details'] = ''; 
+                                                        $data['products_name'] = substr($data['products_name'], 0, -2);	//To remove extra comma ', ' from returned string
+                                                }
 
                                                 //Code to get the Order_Status using the $terms_name array
                                                 $data ['order_status'] = $terms_name[$data ['term_taxonomy_id']];
