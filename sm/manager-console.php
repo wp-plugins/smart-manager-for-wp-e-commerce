@@ -1,12 +1,11 @@
 <div id="editor-grid"></div>
 <?php
-global $wpdb, $woocommerce;
+global $wpdb, $woocommerce, $wp_version;
 $limit = 2;
 
-function add_jquery() {
+if ( !wp_script_is( 'jquery' ) ) {
     wp_enqueue_script( 'jquery' );
 }
-add_action('wp_enqueue_scripts', 'add_jquery');
 
 // to set javascript variable of file exists
 $fileExists = (defined('SMPRO') && SMPRO === true) ? 1 : 0;
@@ -25,7 +24,7 @@ $blog_info = get_bloginfo ( 'url' );
 if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
         $products_details_url = $site_url.'/wp-admin/post.php?post=';
 } else if (WOO_RUNNING === true) {
-        
+        $product_id = '';
 	$products_details_url = $site_url.'/wp-admin/post.php?action=edit&post='.$product_id;
 }
 
@@ -188,9 +187,9 @@ $products_cols['id']['colName']    ='id';
 $products_cols['id']['tableName']  ="{$wpdb->prefix}posts";
 
 $products_cols['image']['name']       =__( 'Image', $sm_domain );
-$products_cols['image']['actionType'] ='';
+$products_cols['image']['actionType'] ='setStrActions';
 $products_cols['image']['colName']    ='thumbnail';
-$products_cols['image']['tableName']  ="{$wpdb->prefix}posts";
+$products_cols['image']['tableName']  ="{$wpdb->prefix}postmeta";
 
 $products_cols['name']['name']      =__( 'Name', $sm_domain );
 $products_cols['name']['actionType']='modStrActions';
@@ -367,7 +366,7 @@ if (WPSC_RUNNING === true) {
 																					'_billing_city', '_billing_state', '_billing_country','_billing_postcode',
 																					'_billing_email', '_billing_phone')";
 	$customerFieldsResults = $wpdb->get_results ($customerFieldsQuery);
-	$cnt = 0;
+        $cnt = 0;
 	foreach ($customerFieldsResults as $obj) {
 		$customerFields ['items'] [$cnt] ['id'] = $cnt;
 		$customerFields ['items'] [$cnt] ['name'] = __( ucwords(str_replace('_', ' ', substr($obj->meta_key, 9))), 'smart-manager' );
@@ -575,11 +574,17 @@ if ( isset( $attribute ) ) {
 // EOF Product category
 // BOF Products Fields
 
+        $timezone = get_option( 'gmt_offset' );
+
 	//getting customers fieldnames END
 	echo "<script type='text/javascript'>
 
-	var isWPSC37            = '" . IS_WPSC37 . "';
-	var isWPSC38            = '" . IS_WPSC38 . "';
+	
+	var isWPSC37            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC37 : '') . "';
+        var isWPSC38            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC38 : '') . "';
+        var IS_WOO16            =  '" . ((WOO_RUNNING === true) ? IS_WOO16 : '') . "';
+        var IS_WP35             =  '" . ((version_compare ( $wp_version, '3.5', '>=' )) ? IS_WP35 : '') . "';
+        var time_zone           = '" . $timezone . "';
 	
 	var ordersFields        =  " . $encodedOrdersFields . ";
 	var customersFields     =  " . $encodedCustomersFields . ";
@@ -596,24 +601,25 @@ if ( MULTISITE == 1 ) {
 	
 if (WPSC_RUNNING === true) {
 	echo "
-	var regions             =  " . $encodedRegions . ";
+        var regions             =  " . $encodedRegions . ";
 	var ordersStatus        =  " . $encodedOrderStatus . ";
 	var weightUnits         =  " . $encodedWeightUnits . ";
 	var wpscUploadUrl       =  '" . WPSC_UPLOAD_URL . "';";
+        
 } else {
 	echo "
-	var regions             =  '" . $encodedRegions . "';
-	var ordersStatus        =  '" . $encodedOrderStatus . "';
-	var weightUnits         =  '" . $encodedWeightUnits . "';
+        var regions             =  '" . (isset($encodedRegions) ? $encodedRegions : '') . "';
+	var ordersStatus        =  '" . (isset($encodedOrderStatus) ? $encodedOrderStatus : '') . "';
+	var weightUnits         =  '" . (isset($encodedWeightUnits) ? $encodedWeightUnits : '') . "';
 	var attribute           =  '" . $attribute  . "';";
 }
 	echo "
-	var newCatName          = '" . $cat_name . "';
+	var newCatName          = '" . (isset($cat_name) ? $cat_name : '') . "';
 	var fileExists          = '" . $fileExists . "';
 	var wpscRunning         = '" . $wpsc . "';
 	var wooRunning          = '" . $woo . "';
 	var wpsc_woo			= '" . $wpsc_woo . "';
-	var newCatId            = '" . $cat_id . "';
+	var newCatId            = '" . (isset($cat_id) ? $cat_id : '') . "';
 	var jsonURL             = '" . JSON_URL . "';
 	var imgURL              = '" . IMG_URL . "';
 	var productsDetailsLink = '" . $products_details_url . "';	
@@ -690,6 +696,7 @@ if (WPSC_RUNNING === true) {
 		lang.important_			= '" . __('Important:',$sm_domain) . "';
 		lang.for_more_than_one_values__use_pipe_____as_delimiter	= '" . __('For more than one values, use pipe (|) as delimiter',$sm_domain) . "';
 		lang.delete_row			= '" . __('Delete Row',$sm_domain) . "';
+		lang.upload_image		= '" . __('Upload Image',$sm_domain) . "';
 		lang.add_row			= '" . __('Add Row',$sm_domain) . "';
 		lang.add_a_new_row			= '" . __('Add a new row',$sm_domain) . "';
 		lang.update				= '" . __('Update',$sm_domain) . "';
@@ -825,61 +832,61 @@ if (WPSC_RUNNING === true) {
 			SM.productsCols.id.colName                 = 'id';
 			
 			SM.productsCols.name.colName               = 'name';
-			SM.productsCols.name.tableName             = '" . WPSC_TABLE_PRODUCT_LIST . "';
+			SM.productsCols.name.tableName             = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
 			
 			SM.productsCols.price.colName              = 'price';
-			SM.productsCols.price.tableName            = '" . WPSC_TABLE_PRODUCT_LIST . "';
+			SM.productsCols.price.tableName            = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
 			SM.productsCols.price.updateColName        = '';
 			 
 			SM.productsCols.salePrice.colName          = 'sale_price';
-			SM.productsCols.salePrice.tableName        = '" . WPSC_TABLE_PRODUCT_LIST . "';
+			SM.productsCols.salePrice.tableName        = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
 			SM.productsCols.salePrice.updateColName    = 'special_price';
 			
 			SM.productsCols.inventory.colName          = 'quantity'; 
-			SM.productsCols.inventory.tableName        = '" . WPSC_TABLE_PRODUCT_LIST . "';
+			SM.productsCols.inventory.tableName        = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
 			
 			SM.productsCols.sku.colName                = 'sku';
-			SM.productsCols.sku.tableName              = '" . WPSC_TABLE_PRODUCTMETA . "';	
+			SM.productsCols.sku.tableName              = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCTMETA : '') . "';	
 			SM.productsCols.sku.updateColName    	   = 'meta_value';
 		
-			SM.productsCols.weight.tableName 		    = '" . WPSC_TABLE_PRODUCT_LIST . "';	
+			SM.productsCols.weight.tableName 		    = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';	
 			
 			SM.productsCols.publish.colName             = 'publish';	
-			SM.productsCols.publish.tableName           = '" . WPSC_TABLE_PRODUCT_LIST . "';
+			SM.productsCols.publish.tableName           = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
 			
-			SM.productsCols.disregardShipping.tableName  = '" . WPSC_TABLE_PRODUCT_LIST . "';
+			SM.productsCols.disregardShipping.tableName  = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
 			        
 			SM.productsCols.desc.colName               = 'description';
-			SM.productsCols.desc.tableName             = '" . WPSC_TABLE_PRODUCT_LIST . "';
+			SM.productsCols.desc.tableName             = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
 			
 			SM.productsCols.addDesc.colName            = 'additional_description';
-			SM.productsCols.addDesc.tableName          = '" . WPSC_TABLE_PRODUCT_LIST . "';
+			SM.productsCols.addDesc.tableName          = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
 				
 			SM.productsCols.pnp.colName                = 'pnp';
-			SM.productsCols.pnp.tableName              = '" . WPSC_TABLE_PRODUCT_LIST . "';
+			SM.productsCols.pnp.tableName              = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
 			
 			SM.productsCols.intPnp.colName             = 'international_pnp';
-			SM.productsCols.intPnp.tableName           = '" . WPSC_TABLE_PRODUCT_LIST . "';
+			SM.productsCols.intPnp.tableName           = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
 			
 			SM.productsCols.qtyLimited.colName         = 'quantity_limited';
-			SM.productsCols.qtyLimited.tableName       = '" . WPSC_TABLE_PRODUCT_LIST . "';	
+			SM.productsCols.qtyLimited.tableName       = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';	
 			
 			SM.productsCols.oos.colName       		   = 'unpublish_oos';
-			SM.productsCols.oos.tableName       	   = '" . WPSC_TABLE_PRODUCTMETA . "';
+			SM.productsCols.oos.tableName       	   = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCTMETA : '') . "';
 			SM.productsCols.oos.updateColName    	   = 'meta_value'; 
 			
 			SM.productsCols.variationsPrice		   	   = {
 															name       :'Variations: Price', 
 															colName    :'price',
 															actionType :'modIntPercentActions',
-															tableName  :'".WPSC_TABLE_VARIATION_PROPERTIES."'
+															tableName  :'". (WPSC_RUNNING === true ? WPSC_TABLE_VARIATION_PROPERTIES : '') ."'
 														 };
 							
 			SM.productsCols.variationsWeight	   	   = {
 															name       :'Variations: Weight',
 															colName    :'weight',
 															actionType :'modIntPercentActions',
-															tableName  :'".WPSC_TABLE_VARIATION_PROPERTIES."'
+															tableName  :'". (WPSC_RUNNING === true ? WPSC_TABLE_VARIATION_PROPERTIES : '') ."'
 														 };
 		}
 	}
@@ -932,7 +939,7 @@ if (WPSC_RUNNING === true) {
         }
 	
 	</script>";
-		
+                
 ?>
 <!-- Smart Manager FB Like Button -->
 <div class="wrap"><br />

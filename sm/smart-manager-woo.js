@@ -184,13 +184,13 @@ Ext.onReady(function () {
 	//number format in which the amounts in the grid will be displayed.
 	var amountRenderer = Ext.util.Format.numberRenderer('0,0.00'),
 		
-		//setting Date fields.
+                //setting Date fields.
 		fromDateTxt    = new Ext.form.TextField({emptyText:'From Date',readOnly: true,width: 80, id:'fromDateTxtId'}),
 		toDateTxt      = new Ext.form.TextField({emptyText:'To Date',readOnly: true,width: 80, id:'toDateTxtId'}),
-		now            = new Date(),
-		initDate       = new Date(0),
+		now            = new Date(),            
+                initDate       = new Date(0),
 		lastMonDate    = new Date(now.getFullYear(), now.getMonth()-1, now.getDate()+1);
-	
+        
 	fromDateTxt.setValue(lastMonDate.format('M j Y'));
 	toDateTxt.setValue(now.format('M j Y'));
 	
@@ -640,8 +640,8 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			tooltip: getText('Price'),
 			renderer: amountRenderer,
                         width: 70,
-			editor: new fm.TextField({
-				allowBlank: false,
+			editor: new fm.NumberField({
+				allowBlank: true,
                                 allowNegative: true,
                                 width: 70
 			})
@@ -844,7 +844,8 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			dataIndex: 'edit_url',
                         dragable:false,
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-                if(record.get('post_parent') == 0) {
+                        
+                        if(record.get('post_parent') == 0 || record['json']['product_type'] == "grouped") {
                     return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
                 }
 			}
@@ -922,7 +923,8 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			start: 0,
 			limit: limit,
 			viewCols: Ext.encode(productsViewCols),
-			incVariation: SM.incVariation
+			incVariation: SM.incVariation,
+                        IS_WOO16: IS_WOO16
 		},
 		dirty: false,
 		pruneModifiedRecords: true,
@@ -1040,7 +1042,7 @@ var pagingToolbar = new Ext.PagingToolbar({
                     width: 0, 
                     height: 0, 
                     css: 'display:none;visibility:hidden;height:0px;', 
-                    src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
+                    src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&IS_WOO16='+IS_WOO16+''
                 }); 
 			}
 		}
@@ -1100,7 +1102,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 				cmd:'saveData',
 				active_module: SM.activeModule,
 				incVariation: SM.incVariation,
-				edited:Ext.encode(edited)				
+				edited:Ext.encode(edited),
+                                IS_WOO16: IS_WOO16
 			}};
 			Ext.Ajax.request(o);
 	};
@@ -1129,6 +1132,13 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 
             firstToolbar.items.items[8].reset();
             firstToolbar.items.items[8].hide();
+            
+            firstToolbar.items.items[9].hide();
+            firstToolbar.items.items[2].show(); // As the same is hidden if the Image functionality not available
+            
+            //Code for reseting the Image button icon
+            jQuery('.x-batchimage').css('background-image', 'url(' + imgURL + 'batch_image.gif' + ')');
+            jQuery('.x-batchimage').css('background-size', '100% 100%');
         }
 
         // Function to duplicate the Selected Products
@@ -1824,42 +1834,51 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var comboCountriesCmp = toolbarParent.get(4);
 						var selectedActionvalue = comboActionCmp.value;
 						var textField2Cmp      = toolbarParent.get(8);
+                                                var lblImg = toolbarParent.get(9);
+                                                var comboFieldCmp = toolbarParent.get(0);
 						
 						toolbarParent.get(5).hide();			//to hide extra space on batchUpdateToolbar
-						
+						comboActionCmp.show(); // As the same is hidden if the Image functionality not available
+                                                
 						objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;;
 						regexError = getText('Only numbers are allowed');
 						
 							if(SM['productsCols'][this.value] != undefined ){
 								var categoryActionType = SM['productsCols'][this.value].actionType;
 							}							
-                            setTextfield.emptyText="Enter the Value...";
+                                                        setTextfield.emptyText="Enter the Value...";
 							if (field_type == 'category' || categoryActionType == 'category_actions') {
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
+                                                                lblImg.hide();
 							} else if(colName == '_tax_status' || colName == '_visibility'){
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
+                                                                lblImg.hide();
 							} else if(field_type == 'attribute_action'){
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
+                                                                lblImg.hide();
 							} else if (field_type == 'string') {
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
+                                                                lblImg.hide();
 							} else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping') {								
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
+                                                                lblImg.hide();
 							} else if (field_name == 'Weight' || field_name == 'Variations: Weight'||field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
 								setTextfield.show();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
+                                                                lblImg.hide();
 							} else if(field_name == 'Order Status'){
 								actions_index = field_type;
 								setTextfield.hide();
@@ -1867,6 +1886,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
                                                                 comboCountriesCmp.hide();
 								comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
+                                                                lblImg.hide();
 							} else if (field_name.indexOf('Country') != -1) {
 								actions_index = 'bigint';
 								setTextfield.hide();
@@ -1875,6 +1895,23 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								comboCategoriesActionCmp.hide();
 								comboCountriesCmp.show();
 								comboCountriesCmp.reset();
+                                                                lblImg.hide();
+							} else if (field_name == 'Image') {
+                                                                if (IS_WP35) {
+                                                                    setTextfield.hide();
+                                                                    textField2Cmp.hide();
+                                                                    comboCategoriesActionCmp.hide();
+                                                                    lblImg.show();
+                                                                }
+                                                                else {
+                                                                    comboFieldCmp.setValue(getText('Select a field') + '...');
+                                                                    comboActionCmp.hide();
+                                                                    setTextfield.hide();
+                                                                    textField2Cmp.hide();
+                                                                    comboCategoriesActionCmp.hide();
+                                                                    Ext.notification.msg('Note', 'This feature is available from Wordpress 3.5 onwards');
+                                                                }
+								
 							} else {
 								setTextfield.show();
 								textField2Cmp.hide();
@@ -1885,9 +1922,10 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								comboCountriesCmp.hide();
 								comboCategoriesActionCmp.hide();
 								actions_index = field_type;
+                                                                lblImg.hide();
 							}
 						
-						if(SM.activeModule == 'Orders' || SM.activeModule == 'Customers'){
+                                                    if(SM.activeModule == 'Orders' || SM.activeModule == 'Customers'){
 							for (j = 0; j < actions[actions_index].length; j++) {
 								actionsData[j] = new Array();
 								actionsData[j][0] = actions[actions_index][j].id;
@@ -1900,7 +1938,9 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							setTextfield.regex = '';
 							setTextfield.regexText = '';	
 						}else if(SM.activeModule == 'Products'){
-							if ( this.value.substring( 0, 14 ) != 'groupAttribute'){
+                                                        
+                                                        var field_val = getText('Select a field') + '...';
+                                                        if ( this.value.substring( 0, 14 ) != 'groupAttribute' && this.value != field_val){
 								actionStore.loadData(actions[SM['productsCols'][this.value].actionType]);
 							}
 							// @todo apply regex accordign to the req
@@ -1965,7 +2005,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 									} else {
 										actionStore.loadData(attributeArray);
 									}
-								} else {
+                                                                } else {
 									// on swapping between the toolbars	
 									actionStore.loadData(actions[SM['productsCols'][selectedValue].actionType]);
 								}
@@ -1979,14 +2019,14 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var textField1Cmp      = toolbarParent.get(6);
 						var selectedFieldIndex = comboFieldCmp.selectedIndex;
 						var selectedValue      = comboFieldCmp.value;
-						var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
+                                                var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
 						var selectedActionvalue = comboactionCmp.value;
 						var comboCategoriesActionCmp = toolbarParent.get(7);
 						var textField2Cmp      = toolbarParent.get(8);
 						var comboactionvalue   = comboactionCmp.value;
                                                 var combofieldvalue    = comboFieldCmp.value;
 						
-                                                if(SM.activeModule == 'Products') {
+                                                if(SM.activeModule == 'Products' && field_name != 'Image') {
                                                     textField1Cmp.show();
                                                 }
                                                 
@@ -2235,7 +2275,45 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 					}
 				},
 				selectOnFocus: true
-			}, '->',
+			},{
+                            xtype: 'button',
+                            icon: imgURL + 'batch_image.gif',
+                            iconCls: 'x-batchimage',
+                            tooltip: getText('Upload Image'),
+                            image_id:'',
+                            hidden: true,
+                            handler: function (e) {
+                                        var file_frame;
+                                        
+                                        // If the media frame already exists, reopen it.
+                                        if ( file_frame ) {
+                                          file_frame.open();
+                                          return;
+                                        }
+                                        
+                                        // Create the media frame.
+                                        file_frame = wp.media.frames.file_frame = wp.media({
+                                          title: jQuery( this ).data( 'uploader_title' ),
+                                          button: {
+                                            text: jQuery( this ).data( 'uploader_button_text' )
+                                          },
+                                          multiple: false  // Set to true to allow multiple files to be selected
+                                        });
+                                        
+                                        // When an image is selected, run a callback.
+                                        file_frame.on( 'select', function() {
+                                          // We set multiple to false so only get one image from the uploader
+                                            attachment = file_frame.state().get('selection').first().toJSON();
+                                          
+                                            e.image_id = attachment['id'];
+                                            
+                                            jQuery('.x-batchimage').css('background-image', 'url(' + attachment['url'] + ')');
+                                            jQuery('.x-batchimage').css('background-size', '100% 100%');
+                                        });
+                                        
+                                        file_frame.open();
+                                }
+                        }, '->',
 			{
 				icon: imgURL + 'del_row.png',
 				tooltip: getText('Delete Row'),
@@ -2264,10 +2342,14 @@ var batchUpdateToolbar = new Ext.Toolbar({
 			toolbarCount++;
 			batchUpdatePanel.add(newBatchUpdateToolbar);
 			batchUpdatePanel.doLayout();
+                        
+                        var count_toolbar = toolbarCount-1;
+                        var firstToolbar = batchUpdatePanel.items.items[count_toolbar].items.items[9];
+                        firstToolbar.hide();
 		}
 	}]
 });
-batchUpdateToolbar.get(0).get(10).hide(); //hide delete row icon from first toolbar.
+batchUpdateToolbar.get(0).get(11).hide(); //hide delete row icon from first toolbar.
 
 
 var batchUpdatePanel = new Ext.Panel({
@@ -2665,7 +2747,8 @@ var showCustomerDetails = function(record,rowIndex){
 			cmd: 'getData',
 			active_module: 'Customers',
 			start: 0,
-			limit: limit			
+			limit: limit,
+                        IS_WOO16: IS_WOO16
 		},
 		dirty:false,
 		pruneModifiedRecords: true
@@ -3052,7 +3135,8 @@ var showCustomerDetails = function(record,rowIndex){
 			cmd: 'getData',
 			active_module: 'Orders',
 			start: 0,
-			limit: limit
+			limit: limit,
+                        IS_WOO16: IS_WOO16
 		},
 		dirty:false,
 		pruneModifiedRecords: true
@@ -3126,8 +3210,18 @@ var showCustomerDetails = function(record,rowIndex){
 	
 	// ======= orders =====
 
+        
+
         //code to get the width of SM w.r.to width of the browser
-        var wWidth  = document.documentElement.offsetWidth - 183;
+
+        var wWidth = 0;
+
+        if ( !jQuery(document.body).hasClass('folded') ) {
+            wWidth  = document.documentElement.offsetWidth - 183;
+        }
+        else {
+            wWidth  = document.documentElement.offsetWidth - 67;
+        }   
 	
         var variation_state=""; // Variable to handle the incVariation checkbox state
         var column_move = false;
@@ -3310,14 +3404,14 @@ var showCustomerDetails = function(record,rowIndex){
 							html: '<iframe src='+ productsDetailsLink + '' + record.id +' style="width:100%;height:100%;border:none;"><p> ' + getText('Your browser does not support iframes.') + '</p></iframe>'
 						});
 						// To disable Product's details window for product variations
-						if(record.get('post_parent') == 0){
+						if(record.get('post_parent') == 0 || record['json']['product_type'] == "grouped"){
 							productsDetailsWindow.show('editLink');
 						}
 					
 					// show Inherit option only for the product variations otherwise show only Published & Draft 	
 					}else if(columnIndex == publishColumnIndex || columnIndex == nameColumnIndex || columnIndex == salePriceFromColumnIndex || columnIndex == salePriceToColumnIndex || columnIndex == descColumnIndex || columnIndex == addDescColumnIndex || columnIndex == visibilityColumnIndex || columnIndex == taxStatusColumnIndex){
 						if(fileExists == 1){
-							if(record.get('post_parent') == 0){
+							if(record.get('post_parent') == 0  || record['json']['product_type'] == "grouped"){
 								productsColumnModel.setEditable(columnIndex,true);
 								productsColumnModel.getColumnById('publish').editor = newProductStatusCombo;
 							}else{

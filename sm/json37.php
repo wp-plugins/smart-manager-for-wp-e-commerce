@@ -4,7 +4,7 @@ if ( ! defined('ABSPATH') ) {
 }
 include_once (ABSPATH . 'wp-includes/wp-db.php');
 include_once (ABSPATH . 'wp-includes/functions.php');
-load_textdomain( 'smart-manager', ABSPATH . 'wp-content/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
+load_textdomain( 'smart-manager', WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
 
 global $wpdb;
 $limit = 10;
@@ -641,7 +641,12 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 	global $wpdb, $current_user;
 	$current_user = wp_get_current_user();
-	if ( SMPRO != true || $current_user->roles[0] == 'administrator') {
+        if ( !isset( $current_user->roles[0] ) ) {
+            $roles = array_values( $current_user->roles );
+        } else {
+            $roles = $current_user->roles;
+        }
+	if ( SMPRO != true || $roles[0] == 'administrator') {
 		$results = array( 'Products', 'Customers_Orders' );
 	} else {
 		$results = get_dashboard_combo_store();
