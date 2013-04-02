@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.5.1
-Stable tag: 3.1.1
+Stable tag: 3.1.2
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -102,6 +102,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.1.2 =
+* Fix: "Syntax Error: Unexpected token )"
 
 = 3.1 =
 * New: Compatibility with WooCommerce 2.0+
@@ -404,6 +407,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.1.2 =
+Fix for "Syntax Error: Unexpected token )". Recommended upgrade.
 
 = 3.1 =
 Improved auto-update & support for grouped products. Other minor fixes. Recommended upgrade.

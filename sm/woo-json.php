@@ -1636,5 +1636,5 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 	ob_clean();
         echo json_encode ( $thumbnail );
 }
-ob_clean();
+ob_end_flush();
 ?>
