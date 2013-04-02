@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
 Requires at least: 2.0.2
 Tested up to: 3.5.1
-Stable tag: 3.0
+Stable tag: 3.1
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -102,6 +102,15 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.1 =
+* New: Compatibility with WooCommerce 2.0+
+* New: Support for Grouped products
+* New: Image Batch Update Functionality
+* New: Create/post support ticket from plugin 
+* Update: Minor update in auto-update process
+* Update: Compatible with 'WP_DEBUG' enabled mode
+* Fix: Other minor fixes (rounding of prices, order handling for different time-zones)
 
 = 3.0 =
 * New: Additional columns (discounts, taxes, coupon codes, order notes etc.) introduced in Order's dashboard (WooCommerce)
@@ -395,6 +404,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.1 =
+Improved auto-update & support for grouped products. Other minor fixes. Recommended upgrade.
 
 = 3.0 =
 Many enhancements and fixes - additional fields in display, batch update and attribute management. Recommended upgrade.
