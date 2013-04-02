@@ -183,7 +183,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             }
 
             //Function to prepare the conditions for the query
-            $prepare_cond = function($search_ons,$column_nm) {
+            function prepare_cond($search_ons,$column_nm) {
                 $cond = "";
                 foreach ($search_ons as $search_on) {
                     $cond .= $column_nm . " LIKE '%" . $search_on . "%'";
@@ -193,7 +193,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             };
             
             //Query for getting the slug name for the term name typed in the search box of the products module
-            $query_terms = "SELECT slug FROM {$wpdb->prefix}terms WHERE (". $prepare_cond($search_ons,"name") .") AND name IN ('" .implode("','",$attributes) . "');";
+            $query_terms = "SELECT slug FROM {$wpdb->prefix}terms WHERE (". prepare_cond($search_ons,"name") .") AND name IN ('" .implode("','",$attributes) . "');";
             $records_slug = $wpdb->get_col ( $query_terms );
             $rows = $wpdb->num_rows;
             
@@ -209,7 +209,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     JOIN {$wpdb->prefix}term_taxonomy AS wt ON (wt.term_taxonomy_id = tr.term_taxonomy_id)
                     JOIN {$wpdb->prefix}terms AS terms ON (wt.term_id = terms.term_id)
                     WHERE wt.taxonomy like 'product_cat'
-                    AND (". $prepare_cond($search_ons,"terms.name") . ")";
+                    AND (". prepare_cond($search_ons,"terms.name") . ")";
             $results_category = $wpdb->get_col( $query_category );
             $rows_category = $wpdb->num_rows;
                 
@@ -223,10 +223,10 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             //Query to get the post id if title or status or content or excerpt matches
             $query_title = "SELECT ID FROM {$wpdb->prefix}posts 
                         WHERE post_type IN ('product')
-                            AND (". $prepare_cond($search_ons,"post_title").
-                                    "OR ". $prepare_cond($search_ons,"post_status"). 
-                                    "OR ". $prepare_cond($search_ons,"post_content"). 
-                                    "OR ". $prepare_cond($search_ons,"post_excerpt") .")";
+                            AND (". prepare_cond($search_ons,"post_title").
+                                    "OR ". prepare_cond($search_ons,"post_status"). 
+                                    "OR ". prepare_cond($search_ons,"post_content"). 
+                                    "OR ". prepare_cond($search_ons,"post_excerpt") .")";
             $results_title = $wpdb->get_col( $query_title );
             $rows_title = $wpdb->num_rows;
             
@@ -1636,5 +1636,5 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 	ob_clean();
         echo json_encode ( $thumbnail );
 }
-ob_end_flush();
+ob_clean();
 ?>
