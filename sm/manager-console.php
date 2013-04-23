@@ -575,14 +575,16 @@ if ( isset( $attribute ) ) {
 // BOF Products Fields
 
         $timezone = get_option( 'gmt_offset' );
-
+        
+//        var IS_WOO20            =  '" . ((WOO_RUNNING === true) ? IS_WOO20 : '') . "';
+        
 	//getting customers fieldnames END
 	echo "<script type='text/javascript'>
 
 	
 	var isWPSC37            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC37 : '') . "';
         var isWPSC38            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC38 : '') . "';
-        var IS_WOO16            =  '" . ((WOO_RUNNING === true) ? IS_WOO16 : '') . "';
+        var SM_IS_WOO16            =  '" . ((WOO_RUNNING === true) ? SM_IS_WOO16 : '') . "';
         var IS_WP35             =  '" . ((version_compare ( $wp_version, '3.5', '>=' )) ? IS_WP35 : '') . "';
         var time_zone           = '" . $timezone . "';
 	
@@ -923,7 +925,8 @@ if (WPSC_RUNNING === true) {
 
                 //Condition to skip the Description, Additional Description and Group column from SM Batch Update
                 
-		echo "if(value.value != 'group' && value.value != 'desc' && value.value != 'addDesc'){
+//		echo "if(value.value != 'group' && value.value != 'desc' && value.value != 'addDesc'){
+		echo "if(value.value != 'group'){
 				productsFields.items.push(value);
 				productsFields.totalCount = ++j;
 			}
