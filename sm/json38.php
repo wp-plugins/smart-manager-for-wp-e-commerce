@@ -130,7 +130,7 @@ function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
                                 AND `post_status` = 'publish' 
                                 AND `post_parent`=0 
                                 AND `ID` NOT IN ( SELECT distinct `post_parent` 
-                                                  FROM wp_posts WHERE `post_parent`>0)";
+                                                  FROM {$wpdb->prefix}posts WHERE `post_parent`>0)";
                 
                 $result_ids = $wpdb->get_col ( $query_ids );
                 $num_ids = $wpdb->num_rows;

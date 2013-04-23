@@ -924,7 +924,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			limit: limit,
 			viewCols: Ext.encode(productsViewCols),
 			incVariation: SM.incVariation,
-                        IS_WOO16: IS_WOO16
+                        SM_IS_WOO16: SM_IS_WOO16
 		},
 		dirty: false,
 		pruneModifiedRecords: true,
@@ -965,7 +965,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 
 		incvariation = editorGrid.getTopToolbar().get('incVariation').fireEvent('getState');
                 editorGrid.reconfigure(productsStore,productsColumnModel);
-		fieldsStore.loadData(productsFields);
+                fieldsStore.loadData(productsFields);
 
 		var firstToolbar       = batchUpdatePanel.items.items[0].items.items[0];
 		var textfield          = firstToolbar.items.items[5];
@@ -1030,20 +1030,20 @@ var pagingToolbar = new Ext.PagingToolbar({
 		ref: 'exportButton',
 		scope: this,
 		listeners: { 
-			click: function () { 
+			click: function () {
 				if ( fileExists != 1 ) {
 					Ext.notification.msg('Smart Manager', getText('Export CSV feature is available only in Pro version') ); 
 					return;
 				}
-				Ext.DomHelper.append(Ext.getBody(), { 
-                    tag: 'iframe', 
-                    id:'downloadIframe', 
-                    frameBorder: 0, 
-                    width: 0, 
-                    height: 0, 
-                    css: 'display:none;visibility:hidden;height:0px;', 
-                    src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&IS_WOO16='+IS_WOO16+''
-                }); 
+                                Ext.DomHelper.append(Ext.getBody(), { 
+                                    tag: 'iframe', 
+                                    id:'downloadIframe', 
+                                    frameBorder: 0, 
+                                    width: 0, 
+                                    height: 0, 
+                                    css: 'display:none;visibility:hidden;height:0px;', 
+                                    src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
+                                }); 
 			}
 		}
 	}],
@@ -1103,7 +1103,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 				active_module: SM.activeModule,
 				incVariation: SM.incVariation,
 				edited:Ext.encode(edited),
-                                IS_WOO16: IS_WOO16
+                                SM_IS_WOO16: SM_IS_WOO16
 			}};
 			Ext.Ajax.request(o);
 	};
@@ -2748,7 +2748,7 @@ var showCustomerDetails = function(record,rowIndex){
 			active_module: 'Customers',
 			start: 0,
 			limit: limit,
-                        IS_WOO16: IS_WOO16
+                        SM_IS_WOO16: SM_IS_WOO16
 		},
 		dirty:false,
 		pruneModifiedRecords: true
@@ -3136,7 +3136,7 @@ var showCustomerDetails = function(record,rowIndex){
 			active_module: 'Orders',
 			start: 0,
 			limit: limit,
-                        IS_WOO16: IS_WOO16
+                        SM_IS_WOO16: SM_IS_WOO16
 		},
 		dirty:false,
 		pruneModifiedRecords: true

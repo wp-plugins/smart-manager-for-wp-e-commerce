@@ -3,8 +3,9 @@ ob_start();
 if ( ! defined('ABSPATH') ) {
     include_once ('../../../../wp-load.php');
 }
-include_once (ABSPATH . 'wp-content/plugins/woocommerce/admin/includes/duplicate_product.php');
-load_textdomain( 'smart-manager', ABSPATH . 'wp-content/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
+
+include_once (WP_CONTENT_DIR . '/plugins/woocommerce/admin/includes/duplicate_product.php');
+load_textdomain( 'smart-manager', WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
 
 $mem_limit = ini_get('memory_limit');
 if(intval(substr($mem_limit,0,strlen($mem_limit)-1)) < 64 ){
@@ -400,7 +401,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         
                         $records[$i]['post_status'] = get_post_status($records[$i]['post_parent']);
                         
-                        if($_POST['IS_WOO16'] == 1) {
+                        if($_POST['SM_IS_WOO16'] == "true") {
                             $records[$i]['_regular_price'] = $records[$i]['_price'];
                         }
                         $variation_names = '';
@@ -985,7 +986,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                     $order_ids[] = $data['id'];
                                 }
                                 
-                                if($_POST['IS_WOO16'] != 1) {
+                                if($_POST['SM_IS_WOO16'] == "false") {
                                     $order_id = implode(",",$order_ids);
                                     $query_order_items = "SELECT order_items.order_item_id,
                                                             order_items.order_id    ,
@@ -1070,7 +1071,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                     }
                                                 }
                                                 
-                                                if($_POST['IS_WOO16'] == 1) {
+                                                if($_POST['SM_IS_WOO16'] == "true") {
                                                     if (is_serialized($postmeta['_order_items'])) {
                                                             $order_items = unserialize(trim($postmeta['_order_items']));
                                                             foreach ( (array)$order_items as $order_item) {
@@ -1172,7 +1173,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
-	$encoded = get_data_woo ( $_POST, $offset, $limit );
+        $encoded = get_data_woo ( $_POST, $offset, $limit );
 	ob_clean();
         echo json_encode ( $encoded );
 	unset($encoded);
@@ -1221,7 +1222,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
 
 
 if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
-        
         $sm_domain = 'smart-manager';
 	$encoded = get_data_woo ( $_GET, $offset, $limit, true );
 	$data = $encoded ['items'];

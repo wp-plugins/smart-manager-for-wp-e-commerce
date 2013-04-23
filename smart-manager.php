@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.1.2
+Version: 3.1.3
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013 Store Apps All rights reserved.
@@ -105,8 +105,12 @@ if (is_plugin_active( $old_plugin )) {
                 // Including Scripts for using the wordpress new media manager
                 if (version_compare ( $wp_version, '3.5', '>=' )) {
                     define ( 'IS_WP35', true);
-                    wp_enqueue_media();
-                    wp_enqueue_script( 'custom-header' );
+                    
+                    if ( $_GET['page'] == "smart-manager-woo" || $_GET['page'] == "smart-manager-wpsc") {
+                        wp_enqueue_media();
+                        wp_enqueue_script( 'custom-header' );
+                    }
+                    
                 }
                 
                 wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
@@ -129,8 +133,16 @@ if (is_plugin_active( $old_plugin )) {
                         
 			// checking the version for WooCommerce plugin
 			define ( 'IS_WOO13', version_compare ( WOOCOMMERCE_VERSION, '1.4', '<' ) );
-			define ( 'IS_WOO16', version_compare ( WOOCOMMERCE_VERSION, '2.0', '<' ) );
-
+			
+                        if (version_compare ( WOOCOMMERCE_VERSION, '2.0', '<' )) {
+                            define ( 'SM_IS_WOO16', "true" );
+                        }
+                        else {
+                            define ( 'SM_IS_WOO16', "false" );
+                        }
+                        
+//			define ( 'IS_WOO20', version_compare ( WOOCOMMERCE_VERSION, '2.0', '>=' ) );
+                        
 		}                
 		wp_register_style ( 'sm_ext_all', plugins_url ( '/ext/ext-all.css', __FILE__ ), array (), $ext_version );
 		wp_register_style ( 'sm_main', plugins_url ( '/sm/smart-manager.css', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
@@ -465,7 +477,7 @@ function smart_show_console() {
                             $error_message = "<b>" . __( 'Smart Manager', 'smart-manager' ) . "</b> " . __( 'add-on requires', 'smart-manager' ) . " " .'<a href="http://www.storeapps.org/wpec/">' . __( 'WP e-Commerce', 'smart-manager' ) . "</a>" . " " . __( 'plugin or', 'smart-manager' ) . " " . '<a href="http://www.storeapps.org/woocommerce/">' . __( 'WooCommerce', 'smart-manager' ) . "</a>" . " " . __( 'plugin. Please install and activate it.', 'smart-manager' );
                         }
                     } else if (file_exists( WP_PLUGIN_DIR . '/wp-e-commerce/wp-shopping-cart.php' )) {
-                        if (is_plugin_active( '/wp-e-commerce/wp-shopping-cart.php' )) {
+                        if (is_plugin_active( 'wp-e-commerce/wp-shopping-cart.php' )) {
                             require_once (WPSC_FILE_PATH . '/wp-shopping-cart.php');
                             if (IS_WPSC37 || IS_WPSC38) {
                                 if (file_exists( $base_path . 'manager-console.php' )) {
