@@ -1,10 +1,10 @@
 === Smart Manager for e-Commerce ===
 Contributors: niravmehta, ratnakar.dubey, rupali, tarun
 Donate link: http://www.storeapps.org/
-Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers
+Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager
 Requires at least: 2.0.2
 Tested up to: 3.5.1
-Stable tag: 3.1.2
+Stable tag: 3.1.3
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -102,6 +102,12 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.1.3 =
+* Fix: Featured image of WooCommerce not working
+* Fix: Message 'WP e-Commerce not activated' een if it was activated
+* Fix: Duplicate data in packing slip (WPeC)
+* Fix: Batch Update not working in some scenarios (Woocommerce)
 
 = 3.1.2 =
 * Fix: "Syntax Error: Unexpected token )"
@@ -408,8 +414,8 @@ It also gives the warm feeling of supporting further development of the plugin.
 
 == Upgrade Notice ==
 
-= 3.1.2 =
-Fix for "Syntax Error: Unexpected token )". Recommended upgrade.
+= 3.1.3 =
+Important fixes for Batch Update & other minor fixes. Recommended upgrade.
 
 = 3.1 =
 Improved auto-update & support for grouped products. Other minor fixes. Recommended upgrade.
