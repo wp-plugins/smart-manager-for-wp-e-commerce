@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager
 Requires at least: 2.0.2
 Tested up to: 3.5.1
-Stable tag: 3.1.3
+Stable tag: 3.1.4
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -103,9 +103,16 @@ It also gives the warm feeling of supporting further development of the plugin.
 
 == Changelog ==
 
+= 3.1.4 =
+* Update: Compatibility with WP e-Commerce 3.8.10
+* Update: Compatibility with Woocommerce 2.0.9
+* Fix: Sales Price not getting set to blank (WooCommerce)
+* Fix: 'Coupons Used' column not showing data in the Orders Module (WooCommerce)
+* Fix: 'Unexpected Error' with PHP 5.4 (WPeC)
+
 = 3.1.3 =
 * Fix: Featured image of WooCommerce not working
-* Fix: Message 'WP e-Commerce not activated' een if it was activated
+* Fix: Message 'WP e-Commerce not activated' even if it was activated
 * Fix: Duplicate data in packing slip (WPeC)
 * Fix: Batch Update not working in some scenarios (Woocommerce)
 
@@ -413,6 +420,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.1.4 =
+Compatibility release for WPeC 3.8.10 & WooCommerce 2.0.9 along with some fixes. Recommended upgrade.
 
 = 3.1.3 =
 Important fixes for Batch Update & other minor fixes. Recommended upgrade.
