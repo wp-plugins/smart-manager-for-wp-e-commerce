@@ -4,8 +4,8 @@ if ( ! defined('ABSPATH') ) {
     include_once ('../../../../wp-load.php');
 }
 
-include_once (WP_CONTENT_DIR . '/plugins/woocommerce/admin/includes/duplicate_product.php');
-load_textdomain( 'smart-manager', WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
+include_once (WP_PLUGIN_DIR . '/woocommerce/admin/includes/duplicate_product.php');
+load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
 
 $mem_limit = ini_get('memory_limit');
 if(intval(substr($mem_limit,0,strlen($mem_limit)-1)) < 64 ){
@@ -21,9 +21,9 @@ $offset = (isset ( $_POST ['start'] )) ? $_POST ['start'] : 0;
 $limit = (isset ( $_POST ['limit'] )) ? $_POST ['limit'] : 100;
 
 // For pro version check if the required file exists
-if (file_exists ( WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/woo.php' )) {
+if (file_exists ( WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/pro/woo.php' )) {
 	define ( 'SMPRO', true );
-	include_once (WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/woo.php');
+	include_once (WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/pro/woo.php');
 } else {
 	define ( 'SMPRO', false );
 }
@@ -348,6 +348,10 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         } else {
 
             for ($i = 0; $i < $num_rows; $i++) {
+
+                $records[$i]['post_content'] = str_replace('"','\'',$records[$i]['post_content']);
+                $records[$i]['post_excerpt'] = str_replace('"','\'',$records[$i]['post_excerpt']);                
+
                 $prod_meta_values = explode('###', $records[$i]['prod_othermeta_value']);
                 $prod_meta_key = explode('###', $records[$i]['prod_othermeta_key']);
                 if (count($prod_meta_values) != count($prod_meta_key))
@@ -465,28 +469,28 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                     AND post_id IN ($terms_post)";
                 $post_id_guest = $wpdb->get_col($query_post_guest); 
                 $num_guest 	 =  $wpdb->num_rows;
-                        
             
+
               if($num_guest > 0) {
-            $query_max_id="SELECT GROUP_CONCAT(distinct postmeta1.post_ID 
-                                    ORDER BY posts.post_date DESC SEPARATOR ',' ) AS all_id,
-                           GROUP_CONCAT(postmeta2.meta_value 
-                                         ORDER BY posts.post_date DESC SEPARATOR ',' ) AS order_total,     
-                                    date_format(max(posts.post_date),'%b %e %Y, %r') AS date,
-                           count(postmeta1.post_id) as count,
-                           sum(postmeta2.meta_value) as total
-                        
-                           FROM {$wpdb->prefix}postmeta AS postmeta1
-                                        JOIN {$wpdb->prefix}posts AS posts ON (posts.ID = postmeta1.post_id)
-                               INNER JOIN {$wpdb->prefix}postmeta AS postmeta2
-                                   ON (postmeta2.post_ID = postmeta1.post_ID AND postmeta2.meta_key IN ('_order_total'))
+                $query_max_id="SELECT GROUP_CONCAT(distinct postmeta1.post_ID 
+                                        ORDER BY posts.post_date DESC SEPARATOR ',' ) AS all_id,
+                               GROUP_CONCAT(postmeta2.meta_value 
+                                             ORDER BY posts.post_date DESC SEPARATOR ',' ) AS order_total,     
+                                        date_format(max(posts.post_date),'%b %e %Y, %r') AS date,
+                               count(postmeta1.post_id) as count,
+                               sum(postmeta2.meta_value) as total
+                            
+                               FROM {$wpdb->prefix}postmeta AS postmeta1
+                                            JOIN {$wpdb->prefix}posts AS posts ON (posts.ID = postmeta1.post_id)
+                                   INNER JOIN {$wpdb->prefix}postmeta AS postmeta2
+                                       ON (postmeta2.post_ID = postmeta1.post_ID AND postmeta2.meta_key IN ('_order_total'))
 
-                           WHERE postmeta1.meta_key IN ('_billing_email')
-                                    AND postmeta1.post_ID IN (". implode(",",$post_id_guest) . ")                           
-                           GROUP BY postmeta1.meta_value
-                               ORDER BY date desc";
+                               WHERE postmeta1.meta_key IN ('_billing_email')
+                                        AND postmeta1.post_ID IN (". implode(",",$post_id_guest) . ")                           
+                               GROUP BY postmeta1.meta_value
+                                   ORDER BY date desc";
 
-            $result_max_id   =  $wpdb->get_results ( $query_max_id, 'ARRAY_A' );
+                $result_max_id   =  $wpdb->get_results ( $query_max_id, 'ARRAY_A' );
               }
             
             //Query for getting the max of post id for all the Registered Customers
@@ -520,6 +524,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             $result_max_user   =  $wpdb->get_results ( $query_max_user , 'ARRAY_A' );
             }
             
+
             //Code for generating the total orders, count of orders , max ids and last order total arrays
             for ($i=0;$i<sizeof($result_max_id);$i++) {
                 
@@ -535,10 +540,13 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 
             }
 
-            $j=sizeof($max_ids);
-            $k=sizeof($order_count);
-            $l=sizeof($order_total);
-            $m=sizeof($last_order_total);
+            if (!empty($result_max_id)) {
+                $j=sizeof($max_ids);
+                $k=sizeof($order_count);
+                $l=sizeof($order_total);
+                $m=sizeof($last_order_total);    
+            }
+            
             
             for ( $i=0;$i<sizeof($result_max_user);$i++,$j++,$k++,$l++,$m++ ) {
                 
@@ -553,7 +561,8 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             }
             
             $max_id = implode(",",$max_ids);
-            
+
+
             $customers_query = "SELECT SQL_CALC_FOUND_ROWS
                                      DISTINCT(GROUP_CONCAT( postmeta.meta_value
                                      ORDER BY postmeta.meta_id SEPARATOR '###' ) )AS meta_value,
@@ -711,6 +720,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
               
                 $terms = $wpdb->get_results ( $query_terms,'ARRAY_A');
                 
+
                 
                 
                 for ($i=0;$i<sizeof($terms);$i++) {
@@ -765,7 +775,8 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 			}
 			
 			if (SMPRO == true && isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
-				$search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
+				$search_statuses = explode( '\"', trim ( $_POST ['searchText'] ) );
+                $search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
                         
                                 //Query for getting the user_id based on the email enetered in the Search Box
                                 $query_user_email     = "SELECT id FROM {$wpdb->prefix}users 
@@ -808,8 +819,21 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                 
                                 
                                 $query_terms = "SELECT term_taxonomy_id FROM {$wpdb->prefix}term_taxonomy
-                                                WHERE term_id IN (SELECT term_id FROM {$wpdb->prefix}terms
-                                                                    WHERE name like '%$search_on%')";
+                                                WHERE term_id IN (SELECT term_id FROM {$wpdb->prefix}terms";
+                                                                     // name like '%$search_on%')
+                                // $search_statuses = explode( '\"', $search_on );
+                                if ( !empty( $search_statuses ) ) {
+                                    $query_terms .= " WHERE";
+                                    foreach ( $search_statuses as $search_status ) {
+                                        $search_status = trim( $search_status );
+                                        if ( !empty( $search_status ) ) {
+                                            $query_terms .= " name like '%$search_status%' OR";
+                                        }
+                                    }
+                                    $query_terms = trim( $query_terms, ' OR' );
+                                }
+                                $query_terms .= ")";
+                                
                                 $result_terms = implode(",",$wpdb->get_col ( $query_terms ));
                                 $num_terms    = $wpdb->num_rows;
                                 
@@ -978,10 +1002,10 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         $result_users =  $wpdb->get_results ( $query_users, 'ARRAY_A' );
                         
                         if ($num_records == 0) {
-				$encoded ['totalCount'] = '';
-				$encoded ['items'] = '';
-				$encoded ['msg'] = __('No Records Found','smart-manager'); 
-			} else {			
+            				$encoded ['totalCount'] = '';
+            				$encoded ['items'] = '';
+            				$encoded ['msg'] = __('No Records Found','smart-manager'); 
+            			} else {			
                                 foreach ( $results as $data ) {
                                     $order_ids[] = $data['id'];
                                 }
@@ -1001,10 +1025,30 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                             LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_itemmeta 
                                                                 ON (order_items.order_item_id = order_itemmeta.order_item_id)
                                                         WHERE order_items.order_id IN ($order_id)
+                                                            AND order_items.order_item_type LIKE 'line_item'
                                                         GROUP BY order_items.order_item_id
                                                         ORDER BY FIND_IN_SET(order_items.order_id,'$order_id')";
                                     $results_order_items  = $wpdb->get_results ( $query_order_items , 'ARRAY_A');
-                                    
+
+                                    $query_order_coupons = "SELECT order_id,
+                                                                GROUP_CONCAT(order_item_name
+                                                                                    ORDER BY order_item_id 
+                                                                                    SEPARATOR ', ' ) AS coupon_used
+                                                            FROM {$wpdb->prefix}woocommerce_order_items
+                                                            WHERE order_id IN ($order_id)
+                                                                  AND order_item_type LIKE 'coupon'
+                                                            GROUP BY order_id
+                                                            ORDER BY FIND_IN_SET(order_id,'$order_id')";
+                                    $results_order_coupons  = $wpdb->get_results ( $query_order_coupons , 'ARRAY_A');                                                            
+                                    $num_rows_coupons = $wpdb->num_rows;
+
+                                    if ($num_rows_coupons > 0) {
+                                        $order_coupons = array();
+                                        foreach ($results_order_coupons as $results_order_coupon) {
+                                            $order_coupons[$results_order_coupon['order_id']] = $results_order_coupon['coupon_used'];
+                                        }    
+                                    }
+
                                     $query_variation_ids = "SELECT order_itemmeta.meta_value 
                                                             FROM {$wpdb->prefix}woocommerce_order_items AS order_items 
                                                                LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_itemmeta 
@@ -1103,43 +1147,49 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                     
                                                 }
                                                 else {
-                                                    
-                                                        foreach ( $results_order_items as $order_item) {
-                                                            $prod_meta_values = explode('###', $order_item ['meta_value'] );
-                                                            $prod_meta_key = explode('###', $order_item ['meta_key'] );
-                                                            if (count($prod_meta_values) != count($prod_meta_key))
-                                                                continue;
-                                                            unset( $order_item ['meta_value'] );
-                                                            unset( $order_item ['meta_key'] );
+                                                        if (!empty($results_order_items)) {
+                                                            foreach ( $results_order_items as $order_item) {
+                                                                $prod_meta_values = explode('###', $order_item ['meta_value'] );
+                                                                $prod_meta_key = explode('###', $order_item ['meta_key'] );
+                                                                if (count($prod_meta_values) != count($prod_meta_key))
+                                                                    continue;
+                                                                unset( $order_item ['meta_value'] );
+                                                                unset( $order_item ['meta_key'] );
 
-                                                            update_post_meta($index, $sku_detail, $meta_value);
+                                                                update_post_meta($index, $sku_detail, $meta_value);
+                                                                
+                                                                $prod_meta_key_values = array_combine($prod_meta_key, $prod_meta_values);
+
+                                                                
+                                                                if ($data['id'] == $order_item['order_id']) {
+
+                                                                    $data['details'] += $prod_meta_key_values['_qty'];
+                                                                    $data['order_total_ex_tax'] += $prod_meta_key_values['_line_total'];
+
+                                                                    $product_id = ( $prod_meta_key_values['_variation_id'] > 0 ) ? $prod_meta_key_values['_variation_id'] : $prod_meta_key_values['_product_id'];
+                                                                    $sm_sku = get_post_meta( $product_id, '_sku', true );
+                                                                    if ( ! empty( $sm_sku ) ) {
+                                                                            $sku_detail = '[SKU: ' . $sm_sku . ']';
+                                                                    } else {
+                                                                            $sku_detail = '';
+                                                                    }
+                                                                    
+                                                                    $variation_att = $variation_att_all [$prod_meta_key_values['_variation_id']];
+                                                                    
+                                                                    $product_full_name = ( !empty( $variation_att ) ) ? $order_item['order_prod'] . ' (' . $variation_att . ')' : $order_item['order_prod'];
+                                                                    $data['products_name'] .= $product_full_name.' '.$sku_detail.'['.__('Qty','smart-manager').': '.$prod_meta_key_values['_qty'].']['.__('Price','smart-manager').': '.($prod_meta_key_values['_line_total']/$prod_meta_key_values['_qty']).'], ';
                                                             
-                                                            $prod_meta_key_values = array_combine($prod_meta_key, $prod_meta_values);
+                                                                    $data['coupons'] = (isset($order_coupons[$order_item['order_id']])) ? $order_coupons[$order_item['order_id']] : "";
 
-                                                            
-                                                            if ($data['id'] == $order_item['order_id']) {
-
-                                                                $data['details'] += $prod_meta_key_values['_qty'];
-                                                                $data['order_total_ex_tax'] += $prod_meta_key_values['_line_total'];
-
-                                                                $product_id = ( $prod_meta_key_values['_variation_id'] > 0 ) ? $prod_meta_key_values['_variation_id'] : $prod_meta_key_values['_product_id'];
-                                                                $sm_sku = get_post_meta( $product_id, '_sku', true );
-                                                                if ( ! empty( $sm_sku ) ) {
-                                                                        $sku_detail = '[SKU: ' . $sm_sku . ']';
-                                                                } else {
-                                                                        $sku_detail = '';
                                                                 }
-                                                                
-                                                                $variation_att = $variation_att_all [$prod_meta_key_values['_variation_id']];
-                                                                
-                                                                $product_full_name = ( !empty( $variation_att ) ) ? $order_item['order_prod'] . ' (' . $variation_att . ')' : $order_item['order_prod'];
-                                                                $data['products_name'] .= $product_full_name.' '.$sku_detail.'['.__('Qty','smart-manager').': '.$prod_meta_key_values['_qty'].']['.__('Price','smart-manager').': '.($prod_meta_key_values['_line_total']/$prod_meta_key_values['_qty']).'], ';
-                                                                 
                                                             }
+                                                            isset($data['details']) ? $data['details'] .= ' items' : $data['details'] = '';
+                                                            $data['products_name'] = substr($data['products_name'], 0, -2); //To remove extra comma ', ' from returned string                                                                              
                                                         }
-                                                        isset($data['details']) ? $data['details'] .= ' items' : $data['details'] = ''; 
-                                                        $data['products_name'] = substr($data['products_name'], 0, -2);	//To remove extra comma ', ' from returned string
+                                                        
+
                                                 }
+
 
                                                 //Code to get the Order_Status using the $terms_name array
                                                 $data ['order_status'] = $terms_name[$data ['term_taxonomy_id']];

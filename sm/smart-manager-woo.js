@@ -272,7 +272,7 @@ Ext.onReady(function () {
         
         //Function to get all the states on load
         jQuery(document).ready(function()
-        {
+        {	
           jQuery.ajax({
                 type : 'POST',
                 url : jsonURL,
@@ -844,7 +844,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			dataIndex: 'edit_url',
                         dragable:false,
 			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-                        
+            
                         if(record.get('post_parent') == 0 || record['json']['product_type'] == "grouped") {
                     return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
                 }
@@ -1103,7 +1103,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 				active_module: SM.activeModule,
 				incVariation: SM.incVariation,
 				edited:Ext.encode(edited),
-                                SM_IS_WOO16: SM_IS_WOO16
+                SM_IS_WOO16: SM_IS_WOO16
 			}};
 			Ext.Ajax.request(o);
 	};
@@ -1579,7 +1579,8 @@ SM.searchTextField = new Ext.form.TextField({
 		width: '100%'
 	},
 	params: {
-		cmd: 'searchText'
+		cmd: 'searchText',
+		SM_IS_WOO16: SM_IS_WOO16
 	},
 	emptyText: getText('Search') + '...', 
 	enableKeyEvents: true,
@@ -1675,7 +1676,8 @@ var searchLogic = function () {
 			incVariation:SM.incVariation,
 			start: 0,
 			limit: limit,
-			viewCols: Ext.encode(productsViewCols)
+			viewCols: Ext.encode(productsViewCols),
+			SM_IS_WOO16: SM_IS_WOO16
 		}
 	};
 	Ext.Ajax.request(o);

@@ -4,12 +4,14 @@ ob_start();
 if ( ! defined('ABSPATH') ) {
     include_once ('../../../../wp-load.php');
 }
+
 include_once (ABSPATH . 'wp-includes/wp-db.php');
 include_once (ABSPATH . 'wp-includes/functions.php');
-require_once( WP_CONTENT_DIR . '/plugins/wp-e-commerce/wpsc-admin/includes/product-functions.php' );     // Fix for undefined function 'wpsc_product_has_children'
-include_once (WP_CONTENT_DIR . '/plugins/wp-e-commerce/wpsc-core/wpsc-functions.php');
-include_once (WP_CONTENT_DIR . '/plugins/wp-e-commerce/wpsc-includes/purchaselogs.class.php');
-load_textdomain( 'smart-manager', WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
+include_once (ABSPATH . 'wp-admin/includes/screen.php'); // Fix to handle the WPeC 3.8.10 and Higher versions
+require_once( WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-admin/includes/product-functions.php' );     // Fix for undefined function 'wpsc_product_has_children'
+include_once (WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-core/wpsc-functions.php');
+include_once (WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-includes/purchaselogs.class.php');
+load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
 
 //checking the memory limit allocated
 $mem_limit = ini_get('memory_limit');
@@ -22,11 +24,11 @@ $encoded = array ();
 
 $offset = (isset ( $_POST ['start'] )) ? $_POST ['start'] : 0;
 $limit = (isset ( $_POST ['limit'] )) ? $_POST ['limit'] : 100;
-	
+
 // For pro version check if the required file exists
-if (file_exists ( WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/sm38.php' )) {
+if (file_exists ( WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/pro/sm38.php' )) {
 	define ( 'SMPRO', true );
-	include_once ( WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/sm38.php' );
+	include_once ( WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/pro/sm38.php' );
 } else {
 	define ( 'SMPRO', false );
 }
@@ -43,7 +45,8 @@ function get_regions_ids(){ //getting the list of regions
 }
 		
 // getting the active module
-$active_module = (isset($_POST ['active_module']) ? $_POST ['active_module'] : '');
+
+$active_module = (isset($_POST ['active_module']) ? $_POST ['active_module'] : 'Products');
 //$active_module = $_POST ['active_module'];
 
 // function to return term_taxonomy_ids of a term name
@@ -97,7 +100,8 @@ function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
 
         
 	// getting the active module
-	$active_module = $_POST ['active_module'];
+	// $active_module = $_POST ['active_module'];
+        $active_module = (isset($_POST ['active_module']) ? $_POST ['active_module'] : 'Products');
 
 	if ( SMPRO == true ) variation_query_params ();
 	
@@ -239,7 +243,8 @@ function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
 		
 		$query = "$select $from_where $group_by $search_condn $order_by $limit_string;";
 		$records = $wpdb->get_results ( $query );
-                $num_rows = $wpdb->num_rows;
+        $num_rows = $wpdb->num_rows;
+
 
         //To get the total count
         $recordcount_query = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
@@ -251,6 +256,10 @@ function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
 			$encoded ['msg'] = __( 'No Records Found', 'smart-manager' ); 
 		} else {
 			foreach ( $records as &$record ) {
+
+				$record->post_content = str_replace('"','\'',$record->post_content);
+				$record->post_excerpt = str_replace('"','\'',$record->post_excerpt);
+
 				if ( intval($record->post_parent) == 0 ) {
                                     $category_terms = wp_get_object_terms($record->id, 'wpsc_product_category', array( 'fields' => 'names', 'orderby' => 'name', 'order' => 'ASC' ));
                                     $record->category = implode( ', ', $category_terms );			// To hide category name from Product's variations
@@ -1016,7 +1025,9 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
-    require_once (WP_CONTENT_DIR . '/plugins/wp-e-commerce/wpsc-admin/admin.php');
+    
+    require_once (WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-admin/admin.php');
+
     $dupCnt = 0;
     $activeModule = substr( $_POST ['active_module'], 0, -1 );
     $data_temp = json_decode ( stripslashes ( $_POST ['data'] ) );
@@ -1110,8 +1121,10 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
     /*Code for handling the remmaing ajax request which actully calls the 
      function for duplicating the products */
     else {
+
         $count = $_POST ['count'];
         $data = json_decode ( stripslashes ( $_POST ['dup_data'] ) );
+
         $data_count = $_POST ['fdupcnt'] - $_POST ['dupcnt'];
 
         for ($i=1;$i<=$count;$i++) {
@@ -1303,6 +1316,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 	global $wpdb, $current_user;
+
 	$current_user = wp_get_current_user();
         if ( !isset( $current_user->roles[0] ) ) {
             $roles = array_values( $current_user->roles );

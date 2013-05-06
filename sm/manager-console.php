@@ -4,7 +4,7 @@ global $wpdb, $woocommerce, $wp_version;
 $limit = 2;
 
 if ( !wp_script_is( 'jquery' ) ) {
-    wp_enqueue_script( 'jquery' );
+	wp_enqueue_script( 'jquery' );
 }
 
 // to set javascript variable of file exists
@@ -367,17 +367,23 @@ if (WPSC_RUNNING === true) {
 																					'_billing_email', '_billing_phone')";
 	$customerFieldsResults = $wpdb->get_results ($customerFieldsQuery);
         $cnt = 0;
-	foreach ($customerFieldsResults as $obj) {
-		$customerFields ['items'] [$cnt] ['id'] = $cnt;
-		$customerFields ['items'] [$cnt] ['name'] = __( ucwords(str_replace('_', ' ', substr($obj->meta_key, 9))), 'smart-manager' );
-		if ($customerFields ['items'] [$cnt] ['name'] == 'Country') {
-			$customerFields ['items'] [$cnt] ['type'] = 'bigint';
-		} else {
-			$customerFields ['items'] [$cnt] ['type'] = 'blob';
-		}
-		$customerFields ['items'] [$cnt] ['value'] = $obj->meta_key . ",`{$wpdb->prefix}postmeta`";
-		$customerFields ['totalCount'] = $cnt ++;
-	}
+    if (!empty($customerFieldsResults)) {
+    	foreach ($customerFieldsResults as $obj) {
+			$customerFields ['items'] [$cnt] ['id'] = $cnt;
+			$customerFields ['items'] [$cnt] ['name'] = __( ucwords(str_replace('_', ' ', substr($obj->meta_key, 9))), 'smart-manager' );
+			if ($customerFields ['items'] [$cnt] ['name'] == 'Country') {
+				$customerFields ['items'] [$cnt] ['type'] = 'bigint';
+			} else {
+				$customerFields ['items'] [$cnt] ['type'] = 'blob';
+			}
+			$customerFields ['items'] [$cnt] ['value'] = $obj->meta_key . ",`{$wpdb->prefix}postmeta`";
+			$customerFields ['totalCount'] = $cnt ++;
+		}	
+    }    
+    else {
+    	$customerFields = 0;
+    }
+	
 	
 	$encodedCustomersFields = json_encode ( $customerFields );
 	$count = 0;
@@ -579,6 +585,7 @@ if ( isset( $attribute ) ) {
 //        var IS_WOO20            =  '" . ((WOO_RUNNING === true) ? IS_WOO20 : '') . "';
         
 	//getting customers fieldnames END
+
 	echo "<script type='text/javascript'>
 
 	
