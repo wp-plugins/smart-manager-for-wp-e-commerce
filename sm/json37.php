@@ -4,7 +4,7 @@ if ( ! defined('ABSPATH') ) {
 }
 include_once (ABSPATH . 'wp-includes/wp-db.php');
 include_once (ABSPATH . 'wp-includes/functions.php');
-load_textdomain( 'smart-manager', WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
+load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
 
 global $wpdb;
 $limit = 10;
@@ -21,9 +21,9 @@ if (isset ( $_POST ['limit'] ))
 	$limit = $wpdb->_real_escape($_POST ['limit']);
 	
 // For pro version check if the required file exists
-if (file_exists ( WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/sm37.php' )) {
+if (file_exists ( WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/pro/sm37.php' )) {
 	define ( 'SMPRO', true );
-	include_once ( WP_CONTENT_DIR . '/plugins/smart-manager-for-wp-e-commerce/pro/sm37.php' );
+	include_once ( WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/pro/sm37.php' );
 } else {
 	define ( 'SMPRO', false );
 }

@@ -270,6 +270,7 @@ Ext.onReady(function () {
             
         }
         
+
         //Function to get all the states on load
         jQuery(document).ready(function()
         {
@@ -283,8 +284,8 @@ Ext.onReady(function () {
                             op : 'get'
                 },
                 success: function(response) {
-                    var myJsonObj    = Ext.decode(response);
-                    
+                	var myJsonObj    = Ext.decode(response);
+
                     SM.products_state = Ext.decode(myJsonObj['Products']);
                     SM.customers_state = Ext.decode(myJsonObj['Customers']);
                     SM.orders_state = Ext.decode(myJsonObj['Orders']);
