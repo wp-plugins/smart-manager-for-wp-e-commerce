@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.1.4
+Version: 3.2
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013 Store Apps All rights reserved.
@@ -109,6 +109,7 @@ if (is_plugin_active( $old_plugin )) {
                     if ( isset($_GET['page']) && ($_GET['page'] == "smart-manager-woo" || $_GET['page'] == "smart-manager-wpsc")) {
                         wp_enqueue_media();
                         wp_enqueue_script( 'custom-header' );
+                        // wp_enqueue_script( 'media-upload' );
                     }
                     
                 }
@@ -400,7 +401,7 @@ function smart_show_console() {
                             
                         }
 //			printf ( __ ( '%1s%2s%3s<a href="%4s" target=_storeapps>Docs</a>' , 'smart-manager'), $before_plug_page, $plug_page, $after_plug_page, "http://www.storeapps.org/support/documentation/" );
-			printf ( __ ( '%1s<a href="%4s" target=_storeapps>Docs</a>' , 'smart-manager'), $before_plug_page, "http://www.storeapps.org/support/documentation/" );
+			printf ( __ ( '%1s<a href="%4s" target="_blank">Docs</a>' , 'smart-manager'), $before_plug_page, "http://www.storeapps.org/support/documentation/smart-manager" );
 			?>
 			</span><?php
 		_e( '10x productivity gains with store administration. Quickly find and update products, orders and customers', 'smart-manager' );

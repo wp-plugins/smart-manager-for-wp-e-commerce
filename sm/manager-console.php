@@ -649,7 +649,7 @@ if (WPSC_RUNNING === true) {
 		lang.smart_manager     	= '" . __('Smart Manager',$sm_domain) . "';
 		lang.add_product_feature_is_available_only_in_pro_version  = '" . __('Add product feature is available only in Pro version',$sm_domain) . "';
 		lang.print		        = '" . __('Print',$sm_domain) . "';
-		lang.print_packing_slips = '" . __('Print Packing Slips',$sm_domain) . "';
+		lang.print_order = '" . __('Print Order',$sm_domain) . "';
 		lang.print_preview_feature_is_available_only_in_pro_version	= '" . __('Print Preview feature is available only in Pro version',$sm_domain) . "';
 		lang.delete         	= '" . __('Delete',$sm_domain) . "';
 		lang.delete_the_selected_items = '" . __('Delete the selected items',$sm_domain) . "'; 
