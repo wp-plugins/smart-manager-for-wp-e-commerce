@@ -411,7 +411,7 @@ msgid "Print"
 msgstr "Imprimer"
 
 #: sm/manager-console.php:620
-msgid "Print Packing Slips"
+msgid "Print Order"
 msgstr "Imprimer les bordereaux de livraison"
 
 #: sm/manager-console.php:621

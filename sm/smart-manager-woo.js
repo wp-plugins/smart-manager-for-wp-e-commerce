@@ -49,6 +49,15 @@ var	categories         = new Array(), //an array for category combobox in batchu
 
 
 Ext.onReady(function () {
+
+	//Sunny
+
+	var now 		      = new Date();
+	var lastMonDate       = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate() + 1);
+	var search_timeout_id = 0; 			//timeout for sending request while searching.
+	var dateFormat        = 'M d Y';
+
+
 	try{
 		if(wpsc_woo != 1){
 			//Stateful
@@ -186,8 +195,172 @@ Ext.onReady(function () {
 		
                 //setting Date fields.
 		fromDateTxt    = new Ext.form.TextField({emptyText:'From Date',readOnly: true,width: 80, id:'fromDateTxtId'}),
-		toDateTxt      = new Ext.form.TextField({emptyText:'To Date',readOnly: true,width: 80, id:'toDateTxtId'}),
-		now            = new Date(),            
+		toDateTxt      = new Ext.form.TextField({emptyText:'To Date',readOnly: true,width: 80, id:'toDateTxtId'
+	}),
+		toComboSearchBox = new Ext.form.ComboBox({
+
+		id: 'ComboSearch',
+        mode: 'local',
+		width : 100,
+        store: new Ext.data.ArrayStore({
+            autoDestroy: true,
+			forceSelection: true,
+            fields: ['value','name'],
+            data: [
+                   ['TODAY',      'Today'],
+					['YESTERDAY',  'Yesterday'],
+					['THIS_WEEK',  'This Week'],
+					['LAST_WEEK',  'Last Week'],
+					['THIS_MONTH', 'This Month'],
+					['LAST_MONTH', 'Last Month'],
+					['3_MONTHS',   '3 Months'],
+					['6_MONTHS',   '6 Months'],
+					['THIS_YEAR',  'This Year'],
+					['LAST_YEAR',  'Last Year']
+                  ]
+        }),
+        value: 'Select Date',
+		displayField: 'name',
+		valueField: 'value',
+		triggerAction: 'all',
+		editable: false,
+		style: {
+			fontSize: '14px',
+			paddingLeft: '2px'
+		},
+		forceSelection: true,
+		listeners: {
+		select: function () {
+				var dateValue = this.value;
+				
+				if(fileExists == 0){
+				
+					Ext.notification.msg('Smart Manager',"Available only in Pro version" );
+
+				}else{
+					proSelectDate(dateValue);
+					searchLogic();
+				}
+				
+			}
+
+	}
+});
+
+
+	proSelectDate = function (dateValue){
+		
+	var fromDate,toDate,
+		now = new Date();
+
+
+	switch (dateValue){
+
+		case 'TODAY':
+		fromDate = now;
+		fromDate = fromDate.format('M j Y');
+		toDate 	 = now;
+		toDate = toDate.format('M j Y');
+		break;
+
+		case 'YESTERDAY':
+		fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+		fromDate = fromDate.format('M j Y');
+		toDate 	 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+		toDate = toDate.format('M j Y');
+		break;
+
+		case 'THIS_WEEK':
+		fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (now.getDay() - 1));
+		fromDate = fromDate.format('M j Y');
+		toDate 	 = now;
+		toDate = toDate.format('M j Y');
+		break;
+
+		case 'LAST_WEEK':
+		fromDate = new Date(now.getFullYear(), now.getMonth(), (now.getDate() - (now.getDay() - 1) - 7));
+		fromDate = fromDate.format('M j Y');
+		toDate   = new Date(now.getFullYear(), now.getMonth(), (now.getDate() - (now.getDay() - 1) - 1));
+		toDate = toDate.format('M j Y');
+		break;
+
+		case 'LAST_SEVEN_DAYS':
+		fromDate = SM.checkFromDate;
+		fromDate = fromDate.format('M j Y');
+		toDate   = SM.checkToDate;
+		toDate = toDate.format('M j Y');
+		break;
+
+		case 'THIS_MONTH':
+		fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+		fromDate = fromDate.format('M j Y');
+		toDate 	 = now;
+		toDate = toDate.format('M j Y');
+		break;
+
+		case 'LAST_MONTH':
+		fromDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
+		fromDate = fromDate.format('M j Y');
+		toDate   = new Date(now.getFullYear(), now.getMonth(), 0);
+		toDate = toDate.format('M j Y');
+		break;
+
+		case '3_MONTHS':
+		fromDate = new Date(now.getFullYear(), now.getMonth()-2, 1);
+		fromDate = fromDate.format('M j Y');
+		toDate 	 = now;
+		toDate = toDate.format('M j Y');
+		break;
+
+		case '6_MONTHS':
+		fromDate = new Date(now.getFullYear(), now.getMonth()-5, 1);
+		fromDate = fromDate.format('M j Y');
+		toDate 	 = now;
+		toDate = toDate.format('M j Y');
+		break;
+
+		case 'THIS_YEAR':
+		fromDate = new Date(now.getFullYear(), 0, 1);
+		fromDate = fromDate.format('M j Y');
+		toDate 	 = now;
+		toDate = toDate.format('M j Y');
+		break;
+
+		case 'LAST_YEAR':
+		fromDate = new Date(now.getFullYear() - 1, 0, 1);
+		fromDate = fromDate.format('M j Y');
+		toDate 	 = new Date(now.getFullYear(), 0, 0);
+		toDate = toDate.format('M j Y');
+		break;
+
+		case 'LAST_SEVEN_DAYS':
+		fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+		fromDate = fromDate.format('M j Y');
+		toDate 	 = now;
+		toDate = toDate.format('M j Y');
+		break;
+
+		default:
+		fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+		fromDate = fromDate.format('M j Y');
+		toDate 	 = now;
+		toDate = toDate.format('M j Y');
+		break;
+	}
+
+
+	fromDateTxt.setValue(fromDate);
+	toDateTxt.setValue(toDate);
+	
+
+};
+	SM.checkFromDate = new Date( now.getFullYear(), now.getMonth(), ( now.getDate() - 29 ) ); //for exactly 30 days limit
+	SM.checkFromDate = SM.checkFromDate.format('M j Y');
+	SM.checkToDate   = now;
+	SM.checkToDate = SM.checkToDate.format('M j Y');
+
+
+				now            = new Date(),            
                 initDate       = new Date(0),
 		lastMonDate    = new Date(now.getFullYear(), now.getMonth()-1, now.getDate()+1);
         
@@ -375,7 +548,7 @@ Ext.onReady(function () {
 	};
 
 	//creates new 'Print' Button & a vertical Separator and is added to the pagingtoolbar.
-	var showPrintButton = function(){
+	var wooShowPrintButton = function(){
 		if(typeof pagingToolbar.printButton == 'undefined' && typeof Ext.getCmp('printSeparator') == 'undefined'){
 			var printSeparator = new Ext.Toolbar.Separator({
 				id: 'printSeparator'
@@ -383,7 +556,7 @@ Ext.onReady(function () {
 
 			var printButton = new Ext.Button({
 				text: getText('Print'),
-				tooltip: getText('Print Packing Slips'),
+				tooltip: getText('Print Order'),
 				disabled: true,
 				ref: 'printButton',
 				id: 'printButton',
@@ -726,7 +899,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			header: SM.productsCols.weight.name,
 			id: 'weight',
 			colSpan: 2,
-                        width: 60,
+            width: 60,
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.weight.colName,
@@ -900,10 +1073,10 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 				{name: SM.productsCols.group.colName,             type: 'string'},
 				{name: SM.productsCols.desc.colName,              type: 'string'},
 				{name: SM.productsCols.addDesc.colName,           type: 'string'},
-				{name: SM.productsCols.weight.colName,            type: 'float'},
-				{name: SM.productsCols.height.colName,            type: 'float'},
-				{name: SM.productsCols.width.colName,             type: 'float'},
-				{name: SM.productsCols.lengthCol.colName,         type: 'float'},
+				{name: SM.productsCols.weight.colName,            type: 'string'},
+				{name: SM.productsCols.height.colName,            type: 'string'},
+				{name: SM.productsCols.width.colName,             type: 'string'},
+				{name: SM.productsCols.lengthCol.colName,         type: 'string'},
 				{name: SM.productsCols.post_parent.colName,	      type: 'int'},
 				{name: SM.productsCols.image.colName,	      	  type: 'string'},
 				{name: SM.productsCols.taxStatus.colName,	      type: 'string'},
@@ -2816,18 +2989,21 @@ var showCustomerDetails = function(record,rowIndex){
 // ======= orders ======
 	var fromDateMenu = new Ext.menu.DateMenu({
 		handler: function(dp, date){
+			toComboSearchBox.reset();
 			if ( fileExists != 1 ) {
 				Ext.notification.msg('Smart Manager', getText('Filter through Date feature is available only in Pro version') );
 				return;
 			}
 			fromDateTxt.setValue(date.format('M j Y'));
-			searchLogic();
+				searchLogic();
+
 		},
 		maxDate: now
 	});
 
 	var toDateMenu = new Ext.menu.DateMenu({
 		handler: function(dp, date){
+			toComboSearchBox.reset();
 			if ( fileExists != 1 ) {
 				Ext.notification.msg('Smart Manager', getText('Filter through Date feature is available only in Pro version') );
 				return;
@@ -3188,6 +3364,7 @@ var showCustomerDetails = function(record,rowIndex){
 			hideAddProductButton();
 			hideDeleteButton();
 			
+			wooShowPrintButton();
 			showDeleteButton();
 			pagingToolbar.doLayout(true,true);
 						
@@ -3254,6 +3431,7 @@ var showCustomerDetails = function(record,rowIndex){
 			{xtype: 'tbspacer',id:'afterComboTbspacer', width: 15},
 		   {text:'From:', id: 'fromTextId'},fromDateTxt,{icon: imgURL + 'calendar.gif', menu: fromDateMenu, id:'fromDateMenuId'},
 			{text:'To:', id:'toTextId'},toDateTxt,{icon: imgURL + 'calendar.gif', menu: toDateMenu, id:'toDateMenuId'},
+			toComboSearchBox,
 			{xtype: 'tbspacer', id:'afterDateMenuTbspacer', width: 15},
 			SM.searchTextField,{ icon: imgURL + 'search.png', id:'searchIconId' },
 //			{xtype: 'tbspacer',width: 10, id:'afterSearchId'}

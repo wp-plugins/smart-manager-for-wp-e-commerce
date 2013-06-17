@@ -151,6 +151,7 @@ function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
 		
 		$select = "SELECT SQL_CALC_FOUND_ROWS products.id,
 					products.post_title,
+					products.post_title as post_title_search,
 					products.post_content,
 					products.post_excerpt,
 					products.post_status,
@@ -195,7 +196,7 @@ function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
 				$term_taxonomy_ids = get_term_taxonomy_ids( '"' . implode( '","', $search_ons ) . '"' );
                                 $search_condn = " HAVING ";
 				foreach ( $search_ons as $search_on ) {
-					$search_condn .= " concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
+					$search_condn .= " concat(' ',REPLACE(REPLACE(post_title_search,'(',''),')','')) LIKE '%$search_on%'
 						               OR post_content LIKE '%$search_on%'
 						               OR post_excerpt LIKE '%$search_on%'
 						               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
@@ -212,7 +213,7 @@ function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
                                 $search_condn = substr( $search_condn, 0, -2 );
 			} else {
 				$term_taxonomy_ids = get_term_taxonomy_ids( '"' . $search_on . '"' );
-                                $search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title,'(',''),')','')) LIKE '%$search_on%'
+                                $search_condn = " HAVING concat(' ',REPLACE(REPLACE(post_title_search,'(',''),')','')) LIKE '%$search_on%'
 						               OR post_content LIKE '%$search_on%'
 						               OR post_excerpt LIKE '%$search_on%'
 						               OR if(post_status = 'publish','Published',post_status) LIKE '$search_on%'
@@ -244,7 +245,6 @@ function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
 		$query = "$select $from_where $group_by $search_condn $order_by $limit_string;";
 		$records = $wpdb->get_results ( $query );
         $num_rows = $wpdb->num_rows;
-
 
         //To get the total count
         $recordcount_query = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
@@ -1005,7 +1005,7 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 	if ( $active_module == 'Products' ) {
 		$_GET['viewCols'] = json_encode( array_keys( $columns_header ) );
 	}
-        
+    ini_set('max_execution_time', 300);   
 	$encoded = get_data_wpsc_38 ( $_GET, $offset, $limit, true );
 	$data = $encoded ['items'];
 	unset($encoded);

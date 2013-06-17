@@ -582,7 +582,7 @@ msgid "Print"
 msgstr "Print"
 
 #: sm/manager-console.php:618
-msgid "Print Packing Slips"
+msgid "Print Order"
 msgstr "Print pakkelabels"
 
 #: sm/manager-console.php:619
