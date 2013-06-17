@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager
 Requires at least: 2.0.2
 Tested up to: 3.5.1
-Stable tag: 3.1.4
+Stable tag: 3.2
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -102,6 +102,12 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.2 =
+* New: Smart Date combobox will give option to filter orders based on Today, yesterday, this week, last week & so on...
+* New: Print Invoice feature for WooCommerce Orders (also available for Bulk)
+* Update: Compatibility with latest version of WPeC & WooCommerce
+* Fix: Some minor fixes
 
 = 3.1.4 =
 * Update: Compatibility with WP e-Commerce 3.8.10
@@ -286,7 +292,7 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Misc improvements and fixes 
 
 = 1.7 =
-* New: Batch Packing Slips Printing
+* New: Batch Invoice / Packing Slips Printing
 * New: All popup windows are now collapsible and have better shadow effect ;-)
 * Fixed: Grid jumped to first page on saving records
 * Fixed: Product search not showing any results in certain cases
@@ -421,6 +427,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 
 == Upgrade Notice ==
 
+= 3.2 =
+Compatibility with latest version of WPeC & WooCommerce & some new features. Recommended upgrade.
+
 = 3.1.4 =
 Compatibility release for WPeC 3.8.10 & WooCommerce 2.0.9 along with some fixes. Recommended upgrade.
 
@@ -479,7 +488,7 @@ WooCommerce customers and orders support added.
 WooCommerce support added. Batch update for entire store possible now. 
 
 = 1.7 =
-Adds Batch Packing Slips printing. Recommended upgrade.
+Adds Batch Invoice / Packing Slips printing. Recommended upgrade.
 
 = 1.6 =
 Bug fixes. Recommended upgrade.
