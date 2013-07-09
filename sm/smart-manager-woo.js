@@ -39,7 +39,6 @@ var	categories         = new Array(), //an array for category combobox in batchu
 	cellClicked        = false,  	  //flag to check if any cell is clicked in the editor grid.
 	search_timeout_id  = 0, 		  //timeout for sending request while searching.
 	colModelTimeoutId  = 0, 		  //timeout to reconfigure the grid.
-	limit 		   = 100,		  //per page records limit.
 	editorGrid         = '',
 	weightUnitStore    = '',
 	showOrdersView     = '',
@@ -50,13 +49,12 @@ var	categories         = new Array(), //an array for category combobox in batchu
 
 Ext.onReady(function () {
 
-	//Sunny
-
 	var now 		      = new Date();
 	var lastMonDate       = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate() + 1);
 	var search_timeout_id = 0; 			//timeout for sending request while searching.
+	var updated			  = parseInt( updated_data );
 	var dateFormat        = 'M d Y';
-
+	var limit 		   	   = parseInt( sm_record_limit );		  //per page records limit.
 
 	try{
 		if(wpsc_woo != 1){
@@ -372,20 +370,23 @@ Ext.onReady(function () {
 		checkOnly: true,
 		listeners: {
 			selectionchange: function (sm) {
-				if (sm.getCount()) {					
-					pagingToolbar.batchButton.enable();
+				if (sm.getCount()) {
+
+					if(fileExists == 1) {
+						pagingToolbar.batchButton.enable();
+                    	editorGrid.getTopToolbar().get('duplicateButton').enable();	
+                    	if(pagingToolbar.hasOwnProperty('printButton'))
+							pagingToolbar.printButton.enable();
+					}					
 					
-                                        editorGrid.getTopToolbar().get('duplicateButton').enable();
-                                        
 					if(pagingToolbar.hasOwnProperty('deleteButton'))
 					pagingToolbar.deleteButton.enable();
 					
-					if(pagingToolbar.hasOwnProperty('printButton'))
-					pagingToolbar.printButton.enable();
+					
 				} else {					
 					pagingToolbar.batchButton.disable();
 					
-                                        editorGrid.getTopToolbar().get('duplicateButton').disable();
+                    editorGrid.getTopToolbar().get('duplicateButton').disable();
                                         
 					if(pagingToolbar.hasOwnProperty('deleteButton'))
 					pagingToolbar.deleteButton.disable();
@@ -645,6 +646,48 @@ Ext.onReady(function () {
 		valueField: 'value',
 		displayField: 'name'
 	});	
+
+//Variations
+		var getVariations = function (params,columnModel,store){
+        if ( editorGrid.loadMask != undefined ) editorGrid.loadMask.show();
+        var o = {
+		url: jsonURL,
+		method: 'post',
+		callback: function (options, success, response) {
+                editorGrid.loadMask.show();
+			if (true !== success) {
+				Ext.notification.msg('Failed',response.responseText);
+				return;
+			}
+
+			try{
+				if(typeof(response.responseText) != 'undefined'){
+					var result = response.responseText;
+					    result = result.trim();
+					    result = SM.escapeCharacters(result);
+					var myJsonObj = Ext.decode(result);
+
+					var records_cnt = myJsonObj.totalCount;
+					if (records_cnt == 0){
+						myJsonObj.items = '';
+					}
+                                        store.loadData(myJsonObj);
+					if(SM.incVariation == false){
+						columnModel.setHidden(SM.typeColIndex,true);
+					}else{
+						columnModel.setHidden(SM.typeColIndex,false);
+					}
+				}
+			} catch (e) {
+				return;
+			}
+		},
+		scope: this,
+		params: params
+	};
+	Ext.Ajax.request(o);
+}
+
 	
 	// product status combo box
 	var productStatusCombo = new Ext.form.ComboBox({
@@ -768,6 +811,8 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
         
 	var productsColumnModel = new Ext.ProductsColumnModel({
                 
+
+
 		columns: [editorGridSelectionModel,
 		{
 			header: '',
@@ -1109,7 +1154,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 				editorGridSelectionModel.clearSelections();
 				pagingToolbar.saveButton.disable();
 				productsColumnModel.getColumnById('publish').editor = productStatusCombo;
-                                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;   // Tarun
+                                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;  
                                 productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
 			}
 		}
@@ -1147,8 +1192,20 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 
 	/* ====================== Products ==================== */
 
+var updation_progress = updated + 1;
 	
 //	==== common ====
+
+
+//Function to handle the enabling and disabling the functionality for lite version
+var sm_disabled_lite = function () {
+	if ( fileExists != 1 ) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
 
 var pagingToolbar = new Ext.PagingToolbar({
 	id: 'pagingToolbar',
@@ -1201,11 +1258,12 @@ var pagingToolbar = new Ext.PagingToolbar({
 		icon: imgURL + 'export_csv.gif',
 		id: 'exportCsvButton',
 		ref: 'exportButton',
+		disabled: sm_disabled_lite(),
 		scope: this,
 		listeners: { 
 			click: function () {
 				if ( fileExists != 1 ) {
-					Ext.notification.msg('Smart Manager', getText('Export CSV feature is available only in Pro version') ); 
+					// Ext.notification.msg('Smart Manager', getText('Export CSV feature is available only in Pro version') ); 
 					return;
 				}
                                 Ext.DomHelper.append(Ext.getBody(), { 
@@ -1240,12 +1298,18 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		var modifiedRecords = store.getModifiedRecords();		
 		if(!modifiedRecords.length) {
 			return;
+		} else if ( ( modifiedRecords.length >= updation_progress ) && ( fileExists == 0 ) ) {
+			Ext.notification.msg('Note', 'For editing more records upgrade to Pro');
+			return;
 		}
 		var edited  = [];
 		Ext.each(modifiedRecords, function(r, i){
 			if(r.get('id') == ''){
 				r.data.category = newCatId;
 			}
+
+		var records = r.get('id');
+		
 			edited.push(r.data);
 		});
 
@@ -1258,6 +1322,10 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 					Ext.notification.msg('Failed',response.responseText);
 					return;
 				}try{
+
+					row_index_save_lite = [];
+					flag_save_lite = 0;
+					
 					store.commitChanges();					
 					pagingToolbar.saveButton.disable();
 					Ext.notification.msg('Success', myJsonObj.msg);
@@ -1581,8 +1649,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                 text: getText('Selected Products'),
                                 handler: function(){
                                     if ( fileExists != 1 ) {
-					Ext.notification.msg('Smart Manager', getText('Duplicate Product feature is available only in Pro version') ); 
-					return;
+										// Ext.notification.msg('Smart Manager', getText('Duplicate Product feature is available only in Pro version') ); 
+										return;
                                     }
                                     else{
                                         duplicateRecords('selected');
@@ -1592,8 +1660,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                 text: getText('Duplicate Store'),
                                 handler: function(){
                                     if ( fileExists != 1 ) {
-					Ext.notification.msg('Smart Manager', getText('Duplicate Store feature is available only in Pro version') ); 
-					return;
+										// Ext.notification.msg('Smart Manager', getText('Duplicate Store feature is available only in Pro version') ); 
+										return;
                                     }
                                     else{
                                         duplicateRecords('store');
@@ -1759,10 +1827,10 @@ SM.searchTextField = new Ext.form.TextField({
 	enableKeyEvents: true,
 	listeners: {
 		keyup: function () {
-			if ( fileExists != 1 ) {
+			/*if ( fileExists != 1 ) {
 				Ext.notification.msg('Smart Manager', getText('Search feature is available only in Pro version') );
 				return;
-			}			
+			}	*/		
 			//set a store depending on the active Module
 			store = productsStore;
 			var modifiedRecords = store.getModifiedRecords();
@@ -2194,7 +2262,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var textField1Cmp      = toolbarParent.get(6);
 						var selectedFieldIndex = comboFieldCmp.selectedIndex;
 						var selectedValue      = comboFieldCmp.value;
-                                                var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
+                        var field_name = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].name;
 						var selectedActionvalue = comboactionCmp.value;
 						var comboCategoriesActionCmp = toolbarParent.get(7);
 						var textField2Cmp      = toolbarParent.get(8);
@@ -2220,8 +2288,11 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								textField1Cmp.reset();
 								textField2Cmp.reset();
 							} else {
-								comboCategoriesActionCmp.show();
+
+								comboCategoriesActionCmp.hide();
 								comboCategoriesActionCmp.reset();
+								textField2Cmp.emptyText = getText('Enter Attribute Name') + '...';
+								textField2Cmp.reset();
 								textField1Cmp.hide();
 								textField2Cmp.hide();
 								var object = {
@@ -2234,7 +2305,11 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 														Ext.notification.msg('Failed',response.responseText) ;
 														return;
 													} try{
-														if ( myJsonObj != '' ) {
+
+														if ( myJsonObj[0][2] == 'text' && field_name == 'Add Attribute' ) {
+															textField2Cmp.show();
+														} else if ( myJsonObj != '' ) {
+															comboCategoriesActionCmp.show();
 															categoryStore.loadData(myJsonObj);
 														}
 														return;
@@ -2845,7 +2920,7 @@ var showCustomerDetails = function(record,rowIndex){
 				allowNegative: false
 			}),
 			width: 150		
-        },{     // Tarun
+        },{     
             header: getText('Total Number Of Orders'),
             id: 'total_count',
             dataIndex: 'count_orders',
@@ -2884,8 +2959,8 @@ var showCustomerDetails = function(record,rowIndex){
 		totPurDataType = 'string';
 		customersColumnModel.columns[customersColumnModel.findColumnIndex('_order_total')].align = 'center';
 		customersColumnModel.columns[customersColumnModel.findColumnIndex('last_order')].align = 'center';
-        customersColumnModel.columns[customersColumnModel.findColumnIndex('count_orders')].align = 'center';    // Tarun
-        customersColumnModel.columns[customersColumnModel.findColumnIndex('total_orders')].align = 'center';    // Tarun
+        customersColumnModel.columns[customersColumnModel.findColumnIndex('count_orders')].align = 'center';    
+        customersColumnModel.columns[customersColumnModel.findColumnIndex('total_orders')].align = 'center';    
 	}else{
 		totPurDataType = 'float';
 	}
@@ -2908,8 +2983,8 @@ var showCustomerDetails = function(record,rowIndex){
 		{name:'_billing_phone', type:'string'},	
 		{name:'_order_total',type:totPurDataType},		
 		{name:'last_order', type:'string'},
-        {name:'count_orders',type:totPurDataType},  // Tarun
-        {name:'total_orders',type:totPurDataType}   // Tarun
+        {name:'count_orders',type:totPurDataType},  
+        {name:'total_orders',type:totPurDataType}   
 
 		]
 	});
@@ -2939,16 +3014,14 @@ var showCustomerDetails = function(record,rowIndex){
 			//initial steps when store: customers is loaded
 			SM.activeModule = 'Customers';
 			SM.dashboardComboBox.setValue(SM.activeModule);
-			
-			if(fileExists == 1)	{
-				customersColumnModel.setEditable(1,true);
-				customersColumnModel.setEditable(2,true);
-				customersColumnModel.setEditable(3,true);
-				customersColumnModel.setEditable(4,true);
-				customersColumnModel.setEditable(5,true);
-				customersColumnModel.setEditable(6,true);
-				customersColumnModel.setEditable(11,true);
-			}
+
+			customersColumnModel.setEditable(1,true);
+			customersColumnModel.setEditable(2,true);
+			customersColumnModel.setEditable(3,true);
+			customersColumnModel.setEditable(4,true);
+			customersColumnModel.setEditable(5,true);
+			customersColumnModel.setEditable(6,true);
+			customersColumnModel.setEditable(11,true);
 			
 			if(cellClicked == false){
 				ordersStore.baseParams.searchText = ''; //clear the baseParams for ordersStore
@@ -3332,14 +3405,13 @@ var showCustomerDetails = function(record,rowIndex){
 			SM.activeModule = 'Orders';
 			SM.dashboardComboBox.setValue(SM.activeModule);
 
-			if(fileExists == 1)	{
-				ordersColumnModel.setEditable(7,true);
-				ordersColumnModel.setEditable(9,true);
-				ordersColumnModel.setEditable(10,true);
-				ordersColumnModel.setEditable(11,true);
-				ordersColumnModel.setEditable(12,true);
-				ordersColumnModel.setEditable(13,true);
-			}
+			ordersColumnModel.setEditable(7,true);
+			ordersColumnModel.setEditable(9,true);
+			ordersColumnModel.setEditable(10,true);
+			ordersColumnModel.setEditable(11,true);
+			ordersColumnModel.setEditable(12,true);
+			ordersColumnModel.setEditable(13,true);
+
 			if(cellClicked == false){
 				SM.searchTextField.reset(); //to reset the searchTextField
 				fromDateTxt.setValue(lastMonDate.format('M j Y'));
@@ -3407,6 +3479,9 @@ var showCustomerDetails = function(record,rowIndex){
 
 	// Grid panel for the records to display
 	
+	var flag_save_lite = 0;
+	var row_index_save_lite = new Array();
+
 	editorGrid = new Ext.grid.EditorGridPanel({
 	stateId : 'productsEditorGridPanelWoo',
 	stateEvents : ['viewready','beforerender','columnresize', 'columnmove', 'columnvisible', 'columnsort','reconfigure'],
@@ -3462,14 +3537,10 @@ var showCustomerDetails = function(record,rowIndex){
 			 	listeners: {
 			 		check : function(checkbox, bool) {
 			 			if ( SM.activeModule == 'Products' ) {
-				 			if(fileExists == 1){
-                                                                mask.show();
-                                                                SM.incVariation  = bool;
+		                        mask.show();
+		                        SM.incVariation  = bool;
 				 				productsStore.setBaseParam('incVariation', SM.incVariation);
 				 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
-				 			}else{
-				 				Ext.notification.msg('Smart Manager', getText('Show Variations feature is available only in Pro version'));
-				 			}
 			 			}
 			 		}
 			 	}
@@ -3481,10 +3552,16 @@ var showCustomerDetails = function(record,rowIndex){
                         autoScroll:true,
 	listeners: {
 		beforerender: function(grid) {
+
                     	var object = {
 						url:jsonURL
 						,method:'post'
 						,callback: function(options, success, response)	{
+
+							// if ( fileExists != 1) {
+							// 	exportCsvButton.fireEvent('disable', this);
+							// }
+
 							var myJsonObj = Ext.decode(response.responseText);
 							var dashboardComboStore = new Array();
 							for ( var i = 0; i < myJsonObj.length; i++) {
@@ -3534,7 +3611,7 @@ var showCustomerDetails = function(record,rowIndex){
 					salePriceToColumnIndex    = productsColumnModel.findColumnIndex(SM.productsCols.salePriceTo.colName),
 					descColumnIndex        	  = productsColumnModel.findColumnIndex(SM.productsCols.desc.colName),
 					addDescColumnIndex        = productsColumnModel.findColumnIndex(SM.productsCols.addDesc.colName),
-                                        visibilityColumnIndex     = productsColumnModel.findColumnIndex(SM.productsCols.visibility.colName),    // Tarun
+                                        visibilityColumnIndex     = productsColumnModel.findColumnIndex(SM.productsCols.visibility.colName),
                     taxStatusColumnIndex      = productsColumnModel.findColumnIndex(SM.productsCols.taxStatus.colName);
 
 				if(SM.activeModule == 'Orders'){
@@ -3590,7 +3667,6 @@ var showCustomerDetails = function(record,rowIndex){
 					
 					// show Inherit option only for the product variations otherwise show only Published & Draft 	
 					}else if(columnIndex == publishColumnIndex || columnIndex == nameColumnIndex || columnIndex == salePriceFromColumnIndex || columnIndex == salePriceToColumnIndex || columnIndex == descColumnIndex || columnIndex == addDescColumnIndex || columnIndex == visibilityColumnIndex || columnIndex == taxStatusColumnIndex){
-						if(fileExists == 1){
 							if(record.get('post_parent') == 0  || record['json']['product_type'] == "grouped"){
 								productsColumnModel.setEditable(columnIndex,true);
 								productsColumnModel.getColumnById('publish').editor = newProductStatusCombo;
@@ -3598,19 +3674,15 @@ var showCustomerDetails = function(record,rowIndex){
 								productsColumnModel.getColumnById('publish').editor = productStatusCombo;
 								productsColumnModel.setEditable(columnIndex,false);
 							}
-						}
 					} else if (columnIndex == visibilityColumnIndex){
-						if(fileExists == 1){
 							if(record.get('post_parent') == 0){
 								productsColumnModel.setEditable(columnIndex,true);
-                                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;   // Tarun
+                                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;   
 							}else{
-                                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;   // Tarun
+                                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;   
 								productsColumnModel.setEditable(columnIndex,false);
 							}
-						}
 					} else if (columnIndex == taxStatusColumnIndex){
-						if(fileExists == 1){
 							if(record.get('post_parent') == 0){
 								productsColumnModel.setEditable(columnIndex,true);
                                 productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
@@ -3618,7 +3690,6 @@ var showCustomerDetails = function(record,rowIndex){
                                 productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
 								productsColumnModel.setEditable(columnIndex,false);
 							}
-						}
 					} else if ( columnIndex == editImageColumnIndex ) {
 						var productsImageWindow = new Ext.Window({
 							collapsible:true,
@@ -3633,10 +3704,6 @@ var showCustomerDetails = function(record,rowIndex){
 							resizeable: true,
 							animateTarget: 'image',
 							listeners: {
-								beforeshow: function() {
-									if ( fileExists != 1 )
-										this.setTitle( getText('Manage your Product Images - Available only in Pro version') );
-								},
 								maximize: function () {
 									this.setPosition( 0, 30 );
 								},
@@ -3663,7 +3730,7 @@ var showCustomerDetails = function(record,rowIndex){
 									Ext.Ajax.request(object);
 								}
 							},
-							html: ( fileExists == 1 ) ? '<iframe src="'+ site_url + '/wp-admin/media-upload.php?post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;"><p> ' + getText('Your browser does not support iframes.') + '</p></iframe>' : ''
+							html: '<iframe src="'+ site_url + '/wp-admin/media-upload.php?post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;"><p> ' + getText('Your browser does not support iframes.') + '</p></iframe>'
 						});
 						productsImageWindow.show('image');
 					}
@@ -3852,9 +3919,36 @@ var showCustomerDetails = function(record,rowIndex){
         columnmove: function(e) {
             state_apply = true;
         },
-                
+        
+        beforeedit: function(e) {
+
+        	if(flag_save_lite == 0) {
+        		row_index_save_lite[e.row]= 1;
+        	}
+
+        	if(SM.activeModule == 'Orders')
+			store = ordersStore;
+			else if(SM.activeModule == 'Products')
+			store = productsStore;
+			else
+			store = customersStore;
+			
+			var modifiedRecords = store.getModifiedRecords();
+
+			if( modifiedRecords.length >= updated && !( row_index_save_lite[e.row] ) && ( fileExists == 0 ) ) {
+				Ext.notification.msg('Note', 'For editing more records upgrade to Pro');
+				return false;
+			} else {
+				return true;
+			}
+        },
+
         // after each edit record enable the save button.
         afteredit: function(e) {
+        		if (flag_save_lite > 0) {
+        			row_index_save_lite[e.row]= 1;	
+        		}
+        		flag_save_lite++;				
                 pagingToolbar.saveButton.enable();
         }
     }

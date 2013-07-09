@@ -98,12 +98,24 @@ function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
             $country_data[$country_result['isocode']] = $country_result['country'];
         }
 
+//Code to handle the show variations query
+function variation_query_params(){
+	global $wpdb,$post_status,$parent_sort_id,$order_by;
+	$post_status    = "('publish', 'draft','inherit') AND products.ID NOT IN 
+							( SELECT product.ID FROM {$wpdb->prefix}posts AS product 
+							LEFT JOIN {$wpdb->prefix}posts AS product_variation 
+							ON product_variation.ID = product.post_parent 
+							WHERE product_variation.post_status = 'trash' ) ";
+	$parent_sort_id = " ,if(products.post_parent = 0,products.id,products.post_parent - 1 + (products.id)/pow(10,char_length(cast(products.id as char)))	) as parent_sort_id";
+	$order_by       = " ORDER BY parent_sort_id desc";
+}
+
         
 	// getting the active module
 	// $active_module = $_POST ['active_module'];
         $active_module = (isset($_POST ['active_module']) ? $_POST ['active_module'] : 'Products');
 
-	if ( SMPRO == true ) variation_query_params ();
+	 variation_query_params ();
 	
 	if ( $is_export === true ) {
 		$limit_string = "";
@@ -120,7 +132,7 @@ function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
 	if ($active_module == 'Products') { // <-products
 
 		$wpsc_default_image = WP_PLUGIN_URL . '/wp-e-commerce/wpsc-theme/wpsc-images/noimage.png';
-		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] == 'true' && SMPRO == true) {
+		if (isset ( $_POST ['incVariation'] ) && $_POST ['incVariation'] == 'true') {
 			$show_variation = true;
 		} else { // query params for non-variation products
 			$show_variation = false;
@@ -477,7 +489,6 @@ elseif ($active_module == 'Orders') {
                                                 wtpl.totalprice AS amount, 
                                                 wtpl.processed AS order_status, 
                                                 wtpl.user_ID AS customer_id, 
-                                                date_format(FROM_UNIXTIME(wtpl.date),'%b %e %Y, %r') AS date,
                                                 wtpl.date AS unixdate,
                                                 wtpl.notes,
                                                 wtpl.track_id,
@@ -537,7 +548,7 @@ elseif ($active_module == 'Orders') {
                 
                 $query = $purchase_logs_select_query . $purchase_logs_from_query . $where . $search_condn_purchase_logs . " GROUP BY wtpl.id ORDER BY wtpl.id DESC $limit_string";
                 $results = $wpdb->get_results( $query, 'ARRAY_A' );
-                
+
                 if ( empty( $results ) ) {
                     
                     for ($i=0;$i<sizeof($result_shipping);$i++) {
@@ -573,7 +584,7 @@ elseif ($active_module == 'Orders') {
 			$encoded ['items'] = '';
 			$encoded ['msg'] = __( 'No Records Found', 'smart-manager' );
 		} else {			
-                                
+                         
                         foreach ( $results as $data ) {
                             if ( $matched_checkout_form_details && !isset( $checkout_form_details[$data['id']] ) ) continue;
 				
@@ -586,7 +597,9 @@ elseif ($active_module == 'Orders') {
                                 $name_emailid [0] = "<font class=blue>". $checkout_form_data['billingfirstname']."</font>";
                                 $name_emailid [1] = "<font class=blue>". $checkout_form_data['billinglastname']."</font>";
                                 $name_emailid [2] = "(".$checkout_form_data['billingemail'].")"; //email comes at 7th position.
-					$data['name'] 	  = implode ( ' ', $name_emailid ); //in front end,splitting is done with this space.
+								$data['name'] 	  = implode ( ' ', $name_emailid ); //in front end,splitting is done with this space.
+
+								$data['date'] = gmdate('Y-m-d H:i:s', $data['unixdate'] ); //Code to display the order date in GMT format
 
                                 if ($data['customer_id'] > 0) {
                                     $data['reg_email'] = $user_email[$data['customer_id']];
@@ -1252,6 +1265,369 @@ function update_orders($post) {
     return $result;
 }
 
+// Data required for insert and update product detials.
+function data_for_insert_update($post) {
+	global $result, $wpdb, $user_ID;
+	require_once (WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-admin/includes/product-functions.php');
+	$_POST = $post;     // Fix: PHP 5.4
+	$selected_object = json_decode ( $_POST ['selected'] );
+	$edited_object   = json_decode ( $_POST ['edited'] );
+	$objectArray 	 = array ();
+	
+	if (is_array ( $edited_object )) {
+		foreach ( $edited_object as $obj ) {
+			array_push ( $objectArray, $obj );
+		}
+	}
+	
+	if (is_array ( $selected_object )) {
+		foreach ( $selected_object as $obj ) {
+			if (! in_array ( $obj, $objectArray ))
+				array_push ( $objectArray, $obj );
+		}
+	}
+	
+	$insertCnt = 1;
+	$updateCnt = 1;
+	$result ['updated'] = 0;
+	$result ['inserted'] = 0;
+	$result ['productId'] = array ();	
+
+	if (is_array ( $objectArray )) {
+		foreach ( $objectArray as $obj ) {
+			if ( isset ( $obj->id ) && $obj->id != '' ) {
+				$post = get_post ( $obj->id );
+			}
+			// Default $post Array used only to INSERT new post & get postId which will be used as productId.
+			// FOR wp_insert_post FUNCTION
+			$post = array (
+			'ID' 			 => $obj->id, 			  																		//Are you updating an existing post?
+			'menu_order' 	 => ( isset( $post->menu_order ) ) ? $post->menu_order : 0, 									// If new post is a page, sets the order should it appear in the tabs.
+			'comment_status' => ( isset( $post->comment_status ) ) ? $post->comment_status : 'closed', 				  		// 'closed' means no comments.
+			'ping_status' 	 => ( isset( $post->ping_status ) ) ? $post->ping_status : 'closed', 							// 'closed' means pingbacks or trackbacks turned off
+			'pinged' 		 => ( isset( $post->pinged ) ) ? $post->pinged : '', 											// ?
+			'post_author' 	 => ( isset( $post->post_author ) ) ? $post->post_author : $user_ID, 							// The user ID number of the author.
+			'post_category'  => '', 																						// Add some categories.
+			'post_content'   => $obj->post_content, 																		// The full text of the post. short description 
+			'post_date' 	 => isset($post->post_date) ? $post->post_date : '', 											// The time post was made.
+			'post_date_gmt'  => isset($post->post_date_gmt) ? $post->post_date_gmt : '',   									// The time post was made, in GMT.
+			'post_excerpt'   => $obj->post_excerpt, 																		// For all your post excerpt needs. 
+			'post_name'      => ( isset( $post->post_name ) ) ? $post->post_name : '', 										// The name (slug) for your post
+			'post_parent'    => $obj->post_parent, 																			// Sets the parent of the new post.
+			'post_password'  => ( isset( $post->post_password ) ) ? $post->post_password : '', 								// password for post?
+			'post_title'     => $obj->post_title, 																			// The title of your post. Product Name
+			'post_status'    => $obj->post_status, 		  																	// Set the status of the new post.
+			'post_type'      => 'wpsc-product', 																			// You may want to insert a regular post, page, link, a menu item or some custom post type
+//		    'tags_input'     => [ '<tag>, <tag>, <...>' ]   																// For tags.
+			'to_ping' 		 => ( isset( $post->to_ping ) ) ? $post->to_ping : '', 											//'guid'		
+			'post_content_filtered' => ( isset( $post->post_content_filtered ) ) ? $post->post_content_filtered : '' 
+			);
+			
+			//Default $data Array
+			//FOR wpsc_pre_update FUNCTION & FOR wpsc_admin_submit_product FUNCTION
+			$data = array (
+			'post_author' 		=> $user_ID,
+			'post_date' 		=> date ( 'Y-m-d H:i:s' ),
+			'post_date_gmt' 	=> gmdate ( 'Y-m-d H:i:s' ),
+			'post_content'  	=> $obj->post_content, 
+			'post_title' 		=> $obj->post_title,
+			'post_excerpt'  	=> $obj->post_excerpt, // @todo: $obj->additional_description or $obj->post_excerpt also check if it is used only for wpsc_admin_submit_product function because currently this value is filled in this function only.
+			'post_status'   	=> $obj->post_status, 
+			'post_type' 	 	=> 'wpsc-product', 
+			'comment_status' 	=> 'closed', 
+			'ping_status' 	 	=> 'closed', 
+			'post_password'  	=> '', 
+			'post_name' 	 	=> '', 				//strtolower($obj->post_title), @todo check tne function which gives post_name.
+			'to_ping' 	     	=> '', 
+			'pinged' 		 	=> '', 
+			'post_modified'  	=> date ( 'Y-m-d H:i:s' ), 
+			'post_modified_gmt' => gmdate ( 'Y-m-d H:i:s' ), 
+			'post_parent' 	 	=> $obj->post_parent, 
+			'menu_order' 	 	=> 0, 
+			'guid' 			 	=> '',    // 'guid'					=> $guid
+			'post_content_filtered' => ''
+			);			
+						
+			//FOR wpsc_pre_update FUNCTION & FOR wpsc_admin_submit_product FUNCTION
+			//(not passed as an argument but used in the function)
+			$_POST = array (
+						'original_publish' => $obj->post_status, 
+						'publish' 		   => $obj->post_status, 
+						'tax_input' 	   => Array (
+														'product_tag' 			=> 1, 						  // product_tag
+														'wpsc_product_category' => Array (0 => $obj->category ), // product category
+														'wpsc-variation' 		=> Array (0 => 0 ) 			  // product variation
+													), 
+			'meta' => Array (
+							'_wpsc_price' 		  	 	=> $obj->_wpsc_price, 
+							'_wpsc_special_price' 	 	=> $obj->_wpsc_special_price, 
+							'_wpsc_sku' 		  	 	=> $obj->_wpsc_sku, 
+							'_wpsc_stock' 		  	 	=> $obj->_wpsc_stock, 
+							'_wpsc_product_metadata' 	=> Array (
+															'wpec_taxes_taxable_amount' => '', 
+															'external_link' 		    => '', 
+															'external_link_text' 		=> '', 
+															'external_link_target' 		=> '', 
+															'weight' 				    => $obj->weight, 
+															'weight_unit' 				=> $obj->weight_unit,
+															'display_weight_as'         => $obj->weight_unit,
+															'dimensions' => Array (
+																					'height' 	  => $obj->height, 
+																					'height_unit' => $obj->height_unit, 
+																					'width' 	  => $obj->width, 
+																					'width_unit'  => $obj->width_unit, 
+																					'length' 	  => $obj->length, 
+																					'length_unit' => $obj->length_unit 
+																				  ), 
+															'shipping' 		 		  => Array ('local' => $obj->local, 'international' => $obj->international ), 
+															'no_shipping' 	 		  => $obj->no_shipping, 
+															'merchant_notes' 		  => '', 
+															'engraved' 		 		  => 0, 
+															'can_have_uploaded_image' => 0, 
+															'enable_comments' 		  => '' 
+																)
+								),
+			'table_rate_price' 		 => Array ('quantity' => Array (0 => '' ), 'table_price' => Array (0 => '' )),
+			'ID' 			   		 => '', 
+			'product_id' 	   		 => '', 
+			'post_title' 	   		 => $obj->post_title, 
+			'content' 		   		 => $obj->post_content, 
+			'additional_description' => $obj->post_excerpt  // $obj->post_excerpt or $obj->additional_description
+			); 
+
+			
+			if ($obj->id == '') {
+				$result ['inserted'] = 1;
+				$product_id 		 = wp_insert_post ( $post );
+
+				$guid 				  = site_url () . '/?post_type=wpsc-product&p=' . $product_id;
+				
+				$data ['guid'] 		  = $guid;
+				$_POST ['product_id'] = $product_id;
+				$_POST ['ID'] 		  = $product_id;
+				$data_value 		  = wpsc_pre_update ( $data, $_POST );
+				$inserted_product_id  = wpsc_admin_submit_product ( $product_id, $data );
+				
+				$product_meta = $_POST ['meta'];
+				if ($product_meta != null) {
+					foreach ( ( array ) $product_meta as $key => $value ) {						
+						$bool = update_post_meta ( $inserted_product_id, $key, $value, $prev_value = '' );
+						if ($bool == true)
+						$success = true;
+					}
+				}
+				
+				if ((isset ( $inserted_product_id ) && $inserted_product_id != 0) || $success == true){
+					$result ['result'] = true;
+				}
+				array_push ( $result ['productId'], $inserted_product_id );
+				
+				if ($result ['result'])
+					$result ['insertCnt'] = $insertCnt ++;
+									
+			} else {
+				if (in_array ( $obj, $edited_object )) {
+					$result ['updated'] = 1; // setting a flag to check on whether updated or inserted.
+
+					//this will update the current product since we are already 
+					//passing the id while forming the $post array
+					$product_id 		  = wp_insert_post ( $post ); 
+					$_POST ['product_id'] = $product_id;					
+					$_POST ['ID'] 		  = $product_id;
+
+					// insert the product weight in pound unit since wp-e-commerce does the same.
+					$_POST['meta']['_wpsc_product_metadata']['weight'] = wpsc_convert_weight($_POST['meta']['_wpsc_product_metadata']['weight'], $_POST['meta']['_wpsc_product_metadata']['weight_unit'], "pound",true);
+					
+					// get the actual array of post meta from the database and overwrite it with the new values 
+					// so that the keys of the array will be maintained and will get the proper serialized value.
+					// helpful files: processing.functions.php, display-items.page.php, display-items-functions.php
+					$product_meta_values = get_post_meta( $product_id, '_wpsc_product_metadata', true );					
+					$_POST['meta']['_wpsc_product_metadata'] = array_merge((array)$product_meta_values,$_POST['meta']['_wpsc_product_metadata']);
+					$product_meta = $_POST['meta'];
+					
+					if ($product_meta != null) {
+						foreach ( ( array ) $product_meta as $key => $value ) {
+							$bool = update_post_meta ( $product_id, $key, $value, $prev_value = '' );
+							if ($bool == true)
+								$success = true;
+						}
+					}
+					
+					if ($product_id == $obj->id || $success == true) {
+						$result ['result'] 	  = 1;
+						$result ['updateCnt'] = $updateCnt ++;
+					}
+				}
+			}			
+		}
+	}
+	return $result;
+}
+// Update order deatils including customer shipping details
+function data_for_update_orders($post) {
+	global $wpdb; // to use as global
+	$_POST = $post;     // Fix: PHP 5.4
+        $edited_object = json_decode ( $_POST ['edited'] );
+	
+	$query = "SELECT id,unique_name
+  	 		  FROM " . WPSC_TABLE_CHECKOUT_FORMS . " 
+			  WHERE unique_name IN ('shippingfirstname', 'shippinglastname', 'shippingaddress', 'shippingcity', 'shippingpostcode')
+			  AND active = 1 
+			  GROUP BY unique_name 
+			  ORDER BY id";
+	$result = $wpdb->get_results ( $query, 'ARRAY_A' );
+	
+	if (count ( $result ) >= 1) {
+		foreach ( $result as $key => $arr_value )
+			$id_uniquename [$arr_value ['unique_name']] = $arr_value ['id'];
+	}
+	
+	$ordersCnt = 1;
+	foreach ( $edited_object as $obj ) {
+		$query = "UPDATE `". WPSC_TABLE_PURCHASE_LOGS . "`
+						   SET 	processed ='".$wpdb->_real_escape($obj->order_status)."',
+								    notes ='".$wpdb->_real_escape($obj->notes)."',
+								 track_id ='".$wpdb->_real_escape($obj->track_id)."'
+				   				 WHERE id ='".$wpdb->_real_escape($obj->id)."'";
+		$update_result = $wpdb->query ( $query );
+
+		foreach ( $id_uniquename as $uniquename => $form_id ) {
+			$update_value = $wpdb->_real_escape($obj->$uniquename);
+
+			//$key contains unique name
+
+			$query = "UPDATE `" . WPSC_TABLE_SUBMITED_FORM_DATA . "`
+				         SET value   = '" . $update_value . "'
+				       WHERE form_id = $form_id
+				         AND log_id  = '{$wpdb->_real_escape($obj->id)}'";
+			$update_result = $wpdb->query ( $query );
+		}
+		$result ['updateCnt'] = $ordersCnt ++;
+		unset ( $ship_country_info ); // unsetting the $ship_country_info
+	}
+	$result ['result'] = true;
+	$result ['updated'] = 1;
+	return $result;
+}
+// Update customers details
+function update_customers($post) {
+	global $wpdb;
+	$_POST = $post;     // Fix: PHP 5.4
+	$query = "SELECT isocode,country FROM `" . WPSC_TABLE_CURRENCY_LIST . "` ORDER BY `country` ASC";
+	$results = $wpdb->get_results ( $query, 'ARRAY_A' );
+	foreach($results as $result )
+	$isocode_country [$result ['isocode']] = $result ['country'];
+
+	$sql 	= "SELECT * FROM  `". WPSC_TABLE_REGION_TAX ."` ";
+	$result_regions = $wpdb->get_results( $sql, 'ARRAY_A' );
+
+	if (count($result_regions) >= 1) {
+		foreach ($result_regions as $key => $arr_value)
+		$regions [$arr_value ['id']] = $arr_value ['name'];
+	}
+	
+	$query  = "SELECT id,unique_name 
+			   FROM " . WPSC_TABLE_CHECKOUT_FORMS . " 
+			   WHERE unique_name in ('billingfirstname', 'billinglastname', 'billingaddress', 'billingcity', 'billingpostcode', 'billingphone', 'billingemail') 
+			   AND active = 1 
+			   GROUP BY unique_name 
+			   ORDER BY id";
+	
+	$result = $wpdb->get_results( $query, 'ARRAY_A' );
+	if ( count($result) >= 1 ){
+		foreach ($result as $key => $arr_value)
+		$id_uniquename [$arr_value ['unique_name']] = $arr_value ['id'];
+	}
+
+	$affected_rows  = 0;	
+	$edited_objects = json_decode ( $_POST ['edited'] );
+		
+	foreach ($edited_objects as $obj){
+        
+            //Code for handling the update for Registered Customers
+            if($obj->id > 0) {
+                
+                $modified = $obj->modified;
+                
+                if (!(is_null($modified->billingfirstname))) {
+                    $query_fname = "UPDATE $wpdb->usermeta SET meta_value ='" . $obj->billingfirstname
+                    ."'WHERE meta_key = 'first_name' AND user_id = $obj->id ";
+                    $result_fname = $wpdb->query($query_fname);
+                }
+                
+                if (!(is_null($modified->billinglastname))) {
+                    $query_lname = "UPDATE $wpdb->usermeta SET meta_value ='". $obj->billinglastname
+                    ."'WHERE meta_key = 'last_name' AND user_id = $obj->id ";
+                    $result_lname = $wpdb->query($query_lname);
+                }
+                
+                if (!(is_null($modified->billingemail))) {
+                    $query_email = "UPDATE $wpdb->users SET user_email ='". $obj->billingemail
+                    ."'WHERE ID = $obj->id ";
+                    $result_email = $wpdb->query($query_email);
+                }
+                
+                $query = "SELECT meta_value FROM $wpdb->usermeta 
+                    WHERE meta_key = 'wpshpcrt_usr_profile' AND user_id = $obj->id ";
+                $result1 = $wpdb->get_results($query, 'ARRAY_A');
+                $unserialized = unserialize($result1[0]['meta_value']);
+                
+                $unserialized[2] = $obj->billingfirstname;
+                $unserialized[3] = $obj->billinglastname;
+                $unserialized[4] = $obj->billingaddress;
+                $unserialized[5] = $obj->billingcity;
+                $unserialized[6] = $obj->billingstate;
+                $unserialized[8] = $obj->billingpostcode;
+                $unserialized[9] = $obj->billingemail;
+                $unserialized[18] = $obj->billingphone;
+            
+                $serialized = serialize($unserialized);
+                
+                $query_serialised = "UPDATE $wpdb->usermeta SET meta_value ='". $serialized
+                    ."'WHERE meta_key = 'wpshpcrt_usr_profile' AND user_id = $obj->id ";
+                
+                $result_serialised = $wpdb->query($query_serialised);
+                
+                $affected_rows ++; // update counter to get the total number of customers updated
+                
+            }
+            else {    
+		$old_email_id = $wpdb->_real_escape( $obj->Old_Email_Id );
+		foreach ((array)$id_uniquename as $uniquename => $form_id ) {
+			$update_value = $wpdb->_real_escape( $obj->$uniquename );
+			
+			//$key contains unique name
+			$query = "UPDATE " . WPSC_TABLE_SUBMITED_FORM_DATA . " s1,
+						     " . WPSC_TABLE_SUBMITED_FORM_DATA . " s2,
+						     " . WPSC_TABLE_PURCHASE_LOGS . "
+
+			          SET s1.value   = '$update_value'
+				         		 
+				      WHERE s1.form_id =  $form_id
+		         	  AND ".WPSC_TABLE_PURCHASE_LOGS.".id = s1.log_id
+		         	  AND s1.log_id  = '" . $wpdb->_real_escape( $obj->last_order_id ) . "'";
+			$update_result = $wpdb->query($query);
+
+			if ($update_result) {
+			$affected_rows ++;
+		}
+	}
+            }
+	}
+	
+	$result = array ();
+	if ($affected_rows >= 1) {
+		$result ['result'] = true;
+		$result ['updateCnt'] = count ( $edited_objects );
+	} else {
+		$result ['result'] = true;
+		$result ['updateCnt'] = 0;
+	}
+	$result ['updated'] = 1;
+	return $result;
+}
+
+
 // For updating product,orders and customers details.
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
     
@@ -1267,15 +1643,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
         }
     
 	if ($active_module == 'Products') {
-		if (SMPRO == true)
 			$result = data_for_insert_update ( $_POST );
-		else
-			$result = update_products ( $_POST );
 	} elseif ($active_module == 'Orders') {
-        if (SMPRO == true)
             $result = data_for_update_orders ( $_POST );
-        else
-            $result = update_orders ( $_POST );
     } elseif ($active_module == 'Customers') {
         $result = update_customers ( $_POST );
     }

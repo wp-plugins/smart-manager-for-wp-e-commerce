@@ -39,7 +39,6 @@ var	categories         = new Array(), //an array for category combobox in batchu
 	cellClicked        = false,  	  //flag to check if any cell is clicked in the editor grid.
 	search_timeout_id  = 0, 		  //timeout for sending request while searching.
 	colModelTimeoutId  = 0, 		  //timeout to reconfigure the grid.
-	limit              = 100,		  //per page records limit.
 	editorGrid         = '',
 	showOrdersView     = '',
 	showCustomersView  = '',
@@ -53,7 +52,9 @@ Ext.onReady(function () {
 	var now 		      = new Date();
 	var lastMonDate       = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate() + 1);
 	var search_timeout_id = 0; 			//timeout for sending request while searching.
+	var updated	  		  = parseInt( updated_data );
 	var dateFormat        = 'M d Y';
+	var limit 		   	  = parseInt( sm_record_limit );
 	
 	try{
 		//Stateful
@@ -367,15 +368,16 @@ Ext.onReady(function () {
 		listeners: {
 			selectionchange: function (sm) {
 				if (sm.getCount()) {					
-					pagingToolbar.batchButton.enable();
-					
-                                        editorGrid.getTopToolbar().get('duplicateButton').enable();
+					if(fileExists == 1) {
+						pagingToolbar.batchButton.enable();
+                    	editorGrid.getTopToolbar().get('duplicateButton').enable();	
+                    	if(pagingToolbar.hasOwnProperty('printButton'))
+							pagingToolbar.printButton.enable();
+					}	
                                         
 					if(pagingToolbar.hasOwnProperty('deleteButton'))
 					pagingToolbar.deleteButton.enable();
 					
-					if(pagingToolbar.hasOwnProperty('printButton'))
-					pagingToolbar.printButton.enable();
 				} else {					
 					pagingToolbar.batchButton.disable();
 					
@@ -1108,7 +1110,7 @@ Ext.onReady(function () {
 	var showProductsView = function(){
 		productsStore.baseParams.searchText = ''; //clear the baseParams for productsStore
 		SM.searchTextField.reset(); 			  //to reset the searchTextField
-		
+
 		hidePrintButton();
 		hideDeleteButton();
 		showAddProductButton();
@@ -1139,6 +1141,59 @@ Ext.onReady(function () {
 
 	
 //	==== common ====
+
+//Variations
+		var getVariations = function (params,columnModel,store){
+        if ( editorGrid.loadMask != undefined ) editorGrid.loadMask.show();
+        var o = {
+		url: jsonURL,
+		method: 'post',
+		callback: function (options, success, response) {
+                editorGrid.loadMask.show();
+			if (true !== success) {
+				Ext.notification.msg('Failed',response.responseText);
+				return;
+			}
+
+			try{
+				if(typeof(response.responseText) != 'undefined'){
+					var result = response.responseText;
+					    result = result.trim();
+					    result = SM.escapeCharacters(result);
+					var myJsonObj = Ext.decode(result);
+
+					var records_cnt = myJsonObj.totalCount;
+					if (records_cnt == 0){
+						myJsonObj.items = '';
+					}
+                                        store.loadData(myJsonObj);
+					if(SM.incVariation == false){
+						columnModel.setHidden(SM.typeColIndex,true);
+					}else{
+						columnModel.setHidden(SM.typeColIndex,false);
+					}
+				}
+			} catch (e) {
+				return;
+			}
+		},
+		scope: this,
+		params: params
+	};
+	Ext.Ajax.request(o);
+}
+
+var updation_progress = updated + 1;
+
+//Function to handle the enabling and disabling the functionality for lite version
+var sm_disabled_lite = function () {
+	if ( fileExists != 1 ) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
 
 var pagingToolbar = new Ext.PagingToolbar({
 	id: 'pagingToolbar',
@@ -1191,6 +1246,7 @@ var pagingToolbar = new Ext.PagingToolbar({
 		icon: imgURL + 'export_csv.gif',
 		id: 'exportCsvButton',
 		ref: 'exportButton',
+		disabled: sm_disabled_lite(),
 		scope: this,
 		listeners: { 
 			click: function () { 
@@ -1229,6 +1285,9 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		var modifiedRecords = store.getModifiedRecords();		
 		if(!modifiedRecords.length) {
 			return;
+		}else if ( ( modifiedRecords.length >= updation_progress ) && ( fileExists == 0 ) ) {
+			Ext.notification.msg('Note', 'For editing more records upgrade to Pro');
+			return;
 		}
 		var edited  = [];
 		Ext.each(modifiedRecords, function(r, i){
@@ -1253,6 +1312,10 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 					Ext.notification.msg('Failed',response.responseText);
 					return;
 				}try{
+
+					row_index_save_lite = [];
+					flag_save_lite = 0;
+
 					store.commitChanges();					
 					pagingToolbar.saveButton.disable();
 					Ext.notification.msg('Success', myJsonObj.msg);
@@ -2397,15 +2460,14 @@ if(isWPSC38 == '1'){
 			SM.activeModule = 'Orders';
 			SM.dashboardComboBox.setValue(SM.activeModule);
 			
-			if(fileExists == 1)	{
-				ordersColumnModel.setEditable(6,true);
-				ordersColumnModel.setEditable(8,true);
-				ordersColumnModel.setEditable(9,true);
-				ordersColumnModel.setEditable(10,true);
-				ordersColumnModel.setEditable(11,true);
-				ordersColumnModel.setEditable(12,true);
-				ordersColumnModel.setEditable(13,true);
-			}
+			ordersColumnModel.setEditable(6,true);
+			ordersColumnModel.setEditable(8,true);
+			ordersColumnModel.setEditable(9,true);
+			ordersColumnModel.setEditable(10,true);
+			ordersColumnModel.setEditable(11,true);
+			ordersColumnModel.setEditable(12,true);
+			ordersColumnModel.setEditable(13,true);
+			
 			
 			if(cellClicked == false){
 				SM.searchTextField.reset(); //to reset the searchTextField
@@ -2476,11 +2538,11 @@ SM.searchTextField = new Ext.form.TextField({
 	emptyText: getText('Search') + '...', 
 	enableKeyEvents: true,
 	listeners: {
-		keyup: function () {
-			if ( fileExists != 1 ) {
+		keyup: function () {/*
+		if ( fileExists != 1 ) {
 				Ext.notification.msg('Smart Manager', getText('Search feature is available only in Pro version') );
 				return;
-			}			
+			}			*/
 			//set a store depending on the active Module
 			if(SM.activeModule == 'Orders')
 			store = ordersStore;
@@ -3319,6 +3381,9 @@ var showCustomerDetails = function(record,rowIndex){
     
         var variation_state=""; // Variable to handle the incVariation checkbox state
         var column_move = false;
+        var flag_save_lite = 0;
+		var row_index_save_lite = new Array();
+
 
 	// Grid panel for the records to display
 	editorGrid = new Ext.grid.EditorGridPanel({
@@ -3377,14 +3442,11 @@ var showCustomerDetails = function(record,rowIndex){
 			 			if ( SM.activeModule == 'Products' ) {
 				 			if ( isWPSC37 == true ) {
 				 				Ext.notification.msg('Smart Manager', getText('Show Variations feature is available only for WPeC 3.8+') );
-				 			}else if(fileExists == 1){
-                                                                mask.show();
-				 				SM.incVariation  = bool;
-				 				productsStore.setBaseParam('incVariation', SM.incVariation);
-				 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
-				 			}else{
-				 				Ext.notification.msg('Smart Manager', getText('Show Variations feature is available only in Pro version') );
 				 			}
+                            mask.show();
+			 				SM.incVariation  = bool;
+			 				productsStore.setBaseParam('incVariation', SM.incVariation);
+			 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
 			 			}
 			 		}
 			 	}
@@ -3494,7 +3556,6 @@ var showCustomerDetails = function(record,rowIndex){
 						
 					// show Inherit option only for the product variations otherwise show only Published & Draft 	
 					}else if(columnIndex == publishColumnIndex){						
-						if(fileExists == 1){
 							if(record.get('post_parent') == 0){
 								productsColumnModel.setEditable(columnIndex,true);
 								productsColumnModel.getColumnById('publish').editor = newProductStatusCombo;
@@ -3502,7 +3563,6 @@ var showCustomerDetails = function(record,rowIndex){
 								productsColumnModel.getColumnById('publish').editor = productStatusCombo;
 								productsColumnModel.setEditable(columnIndex,false);
 							}
-						}
 					} else if ( columnIndex == editImageColumnIndex ) {
 						if ( isWPSC37 != 1 ) {
 							var productsImageWindow = new Ext.Window({
@@ -3518,10 +3578,7 @@ var showCustomerDetails = function(record,rowIndex){
 								resizeable: true,
 								animateTarget: 'image',
 								listeners: {
-									beforeshow: function() {
-										if ( fileExists != 1 ) 
-											this.setTitle(  getText('Manage your Product Images - Available only in Pro version') );
-									},
+									
 									maximize: function () {
 										this.setPosition( 0, 30 );
 									},
@@ -3548,7 +3605,7 @@ var showCustomerDetails = function(record,rowIndex){
 										Ext.Ajax.request(object);
 									}
 								},
-								html: ( fileExists == 1 ) ? '<iframe src="'+ site_url + '/wp-admin/media-upload.php?parent_page=wpsc-edit-products&post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;">< p>' + getText('Your browser does not support iframes.') +'</p></iframe>' : ''
+								html: '<iframe src="'+ site_url + '/wp-admin/media-upload.php?parent_page=wpsc-edit-products&post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;">< p>' + getText('Your browser does not support iframes.') +'</p></iframe>'
 							});
 							productsImageWindow.show('image');
 						}
@@ -3739,9 +3796,39 @@ var showCustomerDetails = function(record,rowIndex){
             state_apply = true;
         },
 
+   
+        beforeedit: function(e) {
+
+        	if(flag_save_lite == 0) {
+        		row_index_save_lite[e.row]= 1;
+        	}
+        	
+        	if(SM.activeModule == 'Orders')
+			store = ordersStore;
+			else if(SM.activeModule == 'Products')
+			store = productsStore;
+			else
+			store = customersStore;
+			
+			var modifiedRecords = store.getModifiedRecords();
+
+			if( modifiedRecords.length >= updated && !( row_index_save_lite[e.row] ) && ( fileExists == 0 ) ) {
+				Ext.notification.msg('Note', 'For editing more records upgrade to Pro');
+				return false;
+			} else {
+				return true;
+			}
+        },
+
         // after each edit record enable the save button.
         afteredit: function(e) {
-            pagingToolbar.saveButton.enable();
+
+        		if (flag_save_lite > 0) {
+        			row_index_save_lite[e.row]= 1;	
+        		}
+        		
+        		flag_save_lite++;	
+                pagingToolbar.saveButton.enable();
         }
     }
 });
@@ -3760,15 +3847,6 @@ if(fileExists == 1){
 		Ext.notification.msg('Smart Manager', getText('Batch Update feature is available only in Pro version') );
 	};
 	
-	//disable inline editing for products
-	var productsColumnCount = productsColumnModel.getColumnCount();
-	for(var i=5; i<productsColumnCount; i++)
-	productsColumnModel.setEditable(i,false);
-
-	//disable inline editing for customers
-	var customersColumnCount = customersColumnModel.getColumnCount();
-	for(var i=1; i<customersColumnCount; i++)
-		customersColumnModel.setEditable(i,false);	
 }
 
 	}catch(e){
