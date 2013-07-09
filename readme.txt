@@ -1,61 +1,72 @@
-=== Smart Manager for e-Commerce ===
-Contributors: niravmehta, ratnakar.dubey, rupali, tarun
+=== Smart Manager for e-Commerce - WooCommerce and WPeC extension ===
+Contributors: storeapps, niravmehta, ratnakar.dubey, rupali, tarun.parswani, sunny.thangaraj
 Donate link: http://www.storeapps.org/
-Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager
+Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager, extension, premium, free, download
 Requires at least: 2.0.2
-Tested up to: 3.5.1
-Stable tag: 3.2
+Tested up to: 3.5.2
+Stable tag: 3.3
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
 
 == Description ==
 Smart Manager is a unique, revolutionary tool that gives you the **power to efficiently manage products, 
-product variations, customers and orders** using the popular WordPress e-Commerce plugin 
-from GetShopped / Instinct or WooCommerce from WooThemes.
+product variations, customers and orders** using the popular WordPress e-Commerce plugins WooCommerce from WooThemes 
+and WPeC from GetShopped / Instinct.
 
 As a business owner, **your time is better spent on marketing and customer service** than on store administration. 
-Unfortunately store administration with WordPress e-Commerce can take significant time. Day after day.
+Unfortunately store administration with WooCommerce / WPeC can take significant time. Day after day.
 
 Smart Manager will **boost your productivity 10x** in managing products, customers and orders. 
 You can browse, search, and manage multiple products, customers or orders using a **familiar, single page, 
 spreadsheet like** interface. 
-
-Paid versions also allow managing product variations (for WPeC 3.8+ & WooCommerce 1.4+), inline editing for all fields and adding items. 
-It also provides **Smart Batch Update** to change multiple fields on multiple items - all 
-**at once with zero errors**. 
  
 You will discover a new way of store administration with this add-on. 
 
-It frees you up from mundane housekeeping tasks. So you can spend that time on anything that makes you more 
+Smart Manager frees you up from mundane housekeeping tasks. So you can spend that time on anything that makes you more 
 money. Use that time to leverage social media for higher sales, or develop deeper customer relationships. 
 Use that time to develop a new product, or simply present it to your family.
 
 Smart Manager works with WooCommerce latest versions and both WP e-Commerce 3.7 and 3.8.
 
-Highlights:
-
-* Convenient Browsing & Searching - Eliminate Extra Clicks And Long Wait Times
-* Inline Product/Order/Customer Management - Get Productive Right Away
-* Product Variations management in Pro version
+**What Can You Do With The Free "Lite" Version**
+* Convenient Spreadsheet Like Browsing - Eliminate Extra Clicks And Long Wait Times
+* Easy Search - easily locate products / customers / orders
+* Inline Product/Order/Customer Editing - Get Productive Right Away (Lite edition: up to 3 rows at a time)
+* See and manage Product Variations
 * Quick, In-page detail view for Products/Orders/Customers
-* Print multiple packing slips in one go (WPeC)
-* Fast And Reliable Batch Updates With Intelligent Update Actions
-* Note: Some of these features are only in Pro version
+* Delete single / multiple products or orders at once
 
-Customer Feedback:
+**A Lot More In Paid Versions**
+* Unlimited Inline Editing for Products, Orders and Customers
+* Fast And Reliable Batch Updates With Intelligent Update Actions - update multiple items at once
+* Print packing slips / orders for multiple orders in one go
+* Add your own logo for packing slips / order printing
+* On Customers dashboard - view total sales for each customer and their last order details.
+* Export to CSV for all dashboards - products, customers, orders. Works even with search results.
+* Add / Duplicate single / multiple products at once. You can even duplicate the enitre store in one click.
+* Manage All Orders - not limited to one month, plus Smart Date filters
+* Access Control - Manage privileges for different WordPress user roles - what can they do within Smart Manager and what they can't
+* Premium Support and Automatic Upgrades for full year
+
+
+**Customer Feedback**
 
 * Just bought this Genius Add-on... It's going to save me hundreds of hours a year...
 * I find it extremely useful and very well done. 
 * Great looking plugin! :D I would recommend your plugin to my customers and readers.
 * I just took a look at Smart Manager and it looks way awesome!
 
-Thousands of customers are extremely happy with Smart Manager! Checkout our website for more details.
+Thousands of customers like you are extremely happy with Smart Manager! Checkout our website for more details.
+
+**More than 75,000 downloads and counting***
+
+Available Translations: Dutch, Brazilian Portugese, French
 
 
 == Installation ==
 
-1. Ensure you have latest version of [WP e-Commerce](http://www.getshopped.org) or [WooCommerce](http://www.woothemes.com/woocommerce/) plugin installed
+1. Ensure you have latest version of [WooCommerce](http://www.woothemes.com/woocommerce/) or [WP e-Commerce](http://www.getshopped.org) plugin installed
 2. Unzip and upload contents of the plugin to your `/wp-content/plugins/` directory
 3. Activate the plugin through the 'Plugins' menu in WordPress
 4. Click on 'Smart Manager' option within WordPress admin sidebar menu
@@ -77,16 +88,17 @@ Smart Manager works best in Firefox, Chrome. Currently it is not compatible with
 = What do I get in this free version? =
 
 Spreadsheet like view of products, customers and orders. Search and navigation, 
-limited inline editing for products, ability to delete multiple items at 
+limited inline editing, ability to delete multiple items at 
 once, a quick edit link to WP e-Commerce / WooCommerce editing screen.
 
 = What do the paid versions give me? =
 
-Paid versions (Pro, Multisite and Developer) allow managing product variations 
-(WPeC 3.8+ or WooCommerce 1.4+ required), inline editing on all fields right within the spreadsheet 
-view and a powerful Batch Update screen where you can apply multiple smart update 
-actions to selected / all items. For Customers, you can see total sales for each 
-customer and their last order details. You can also export data into CSV.
+Paid versions (Pro, Multisite and Developer) unlimited managing product variations, 
+full inline editing right within the spreadsheet view and a powerful Batch Update 
+screen where you can apply multiple smart update actions to selected / all items. 
+You can also add / duplicate products or the entire store. For Customers, you can 
+see total sales for each customer and their last order details. You can also 
+export data into CSV and print orders / packing slips.
 
 It also gives the warm feeling of supporting further development of the plugin.
 
@@ -102,6 +114,13 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.3 =
+* Update: Provision to add store logo in 'Print Order' functionality
+* Update: Support for attribute handling of text type in Batch Update (WooCommerce)
+* Update: More features in Lite version - inline editing for up to 3 rows at a time, search
+* Update: Compatibility with latest versions of WordPress, WPeC & WooCommerce
+* Fix: Some minor fixes
 
 = 3.2 =
 * New: Smart Date combobox will give option to filter orders based on Today, yesterday, this week, last week & so on...
@@ -426,6 +445,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.3 =
+Compatibility with latest version of WordPress, WPeC & WooCommerce & some new features. Recommended upgrade.
 
 = 3.2 =
 Compatibility with latest version of WPeC & WooCommerce & some new features. Recommended upgrade.
