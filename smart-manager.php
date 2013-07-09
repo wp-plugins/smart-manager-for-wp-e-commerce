@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.2
+Version: 3.3
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013 Store Apps All rights reserved.
@@ -106,7 +106,7 @@ if (is_plugin_active( $old_plugin )) {
                 if (version_compare ( $wp_version, '3.5', '>=' )) {
                     define ( 'IS_WP35', true);
                     
-                    if ( isset($_GET['page']) && ($_GET['page'] == "smart-manager-woo" || $_GET['page'] == "smart-manager-wpsc")) {
+                    if ( isset($_GET['page']) && ($_GET['page'] == "smart-manager-woo" || $_GET['page'] == "smart-manager-wpsc" || $_GET['page'] == "smart-manager-settings")) {
                         wp_enqueue_media();
                         wp_enqueue_script( 'custom-header' );
                         // wp_enqueue_script( 'media-upload' );
@@ -317,7 +317,7 @@ if (is_admin()) {
 	
 	function smart_add_privilege_page() {
 //		$page = add_submenu_page( 'options-general.php', 'Smart Manager', 'Smart Manager', 10, 'smart-manager-privilege', 'smart_show_privilege_page' );
-		$page = add_submenu_page( 'options-general.php', 'Smart Manager', 'Smart Manager', 'activate_plugins', 'smart-manager-privilege', 'smart_show_privilege_page' );
+		$page = add_submenu_page( 'options-general.php', 'Smart Manager', 'Smart Manager', 'activate_plugins', 'smart-manager-settings', 'smart_show_privilege_page' );
 		
                 $sm_action = (isset($_GET['action']) ? $_GET['action'] : '');
                 if ($sm_action != 'sm-settings') { // not be include for settings page
@@ -396,7 +396,7 @@ function smart_show_console() {
                             $before_plug_page = '<a href="edit.php#TB_inline?max-height=420px&inlineId=smart_manager_post_query_form" title="Send your query" class="thickbox" id="support_link">Need Help?</a> <sup style="vertical-align: super;color:red;">New</sup> | ';
                            
                             if (is_super_admin()) {
-                                $before_plug_page .= '<a href="options-general.php?page=smart-manager-privilege">Manage Privileges</a> | ';
+                                $before_plug_page .= '<a href="options-general.php?page=smart-manager-settings">Settings</a> | ';
                             }
                             
                         }
@@ -440,7 +440,7 @@ function smart_show_console() {
 			?>
 <div id="message" class="updated fade">
 <p><?php
-			printf( ('<b>' . __( 'Important:', 'smart-manager' ) . '</b> ' . __( 'Upgrading to Pro gives you powerful features and helps us continue innovating.', 'smart-manager' ) . " " . '<a href="%1s" target=_storeapps>' . " " .__( 'Learn more about Pro version here', 'smart-manager' ) . '</a> ' . __( 'or take a', 'smart-manager' ) . " " . '<a href="%2s" target=_livedemo>' . " " . __( 'Live Demo here', 'smart-manager' ) . '</a>'), 'http://storeapps.org/', 'http://demo.storeapps.org/' );
+			printf( ('<b>' . __( 'Important:', 'smart-manager' ) . '</b> ' . __( 'Upgrading to Pro gives you powerful features like \'<i>Batch Update</i>\' , \'<i>Export CSV</i>\' , \'<i>Duplicate Products</i>\' &amp; many more...', 'smart-manager' ) . " " . '<br /><a href="%1s" target=_storeapps>' . " " .__( 'Learn more about Pro version here', 'smart-manager' ) . '</a> ' . __( 'or take a', 'smart-manager' ) . " " . '<a href="%2s" target=_livedemo>' . " " . __( 'Live Demo here', 'smart-manager' ) . '</a>'), 'http://www.storeapps.org/product/smart-manager', 'http://demo.storeapps.org/?p=1' );
 			?></p>
 </div>
 <?php

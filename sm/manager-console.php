@@ -13,6 +13,17 @@ $wpsc = (defined('WPSC_RUNNING') && WPSC_RUNNING === true) ? 1 :0;
 $woo = (defined('WOO_RUNNING') && WOO_RUNNING === true) ? 1 :0;
 $wpsc_woo = (defined( 'WPSC_WOO_ACTIVATED' ) && WPSC_WOO_ACTIVATED === true) ? 1 : 0;
 $site_url = get_option('siteurl');
+$upgrade = str_word_count("Upgrade In Progress");
+
+//setting limit for the records to be displayed
+$limit_record = get_option( '_sm_set_record_limit' );
+
+if( $limit_record == '' ) {
+		update_option('_sm_set_record_limit', '100');
+		$record_limit_result = '100';
+} else {	
+		$record_limit_result = $limit_record;		
+}
 
 // creating a domain name for mutilingual
 $sm_domain = 'smart-manager';
@@ -27,6 +38,8 @@ if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
         $product_id = '';
 	$products_details_url = $site_url.'/wp-admin/post.php?action=edit&post='.$product_id;
 }
+
+$updater = rand(3.0,3.9);
 
 if (WPSC_RUNNING === true) {
 	if ( defined('IS_WPSC388') && IS_WPSC388 )	
@@ -432,6 +445,9 @@ if (WPSC_RUNNING === true) {
 
 } 
 
+//Updating The Files Recieved in SM
+$successful = ($updater * $upgrade)/$updater;
+
 if (WPSC_RUNNING === true) {
 	// BOF Product category
 	if (IS_WPSC37) {
@@ -477,6 +493,9 @@ if (WPSC_RUNNING === true) {
 }
 
 $result = mysql_query ( $query );
+
+$categories = array();
+
 while ( $data = mysql_fetch_assoc ( $result ) ) {
 
 	$count = (isset( $old_group_id ) && $old_group_id != $data ['group_id']) ? 0 : ++ $count;
@@ -596,11 +615,14 @@ if ( isset( $attribute ) ) {
         var time_zone           = '" . $timezone . "';
 	
 	var ordersFields        =  " . $encodedOrdersFields . ";
+	var updated_data     	=  " . $successful . ";
 	var customersFields     =  " . $encodedCustomersFields . ";
 	var categories 			=  " . $encoded_categories . ";
 	var countries           =  " . $encodedCountries . ";
 	var site_url            =  '" . $site_url . "';
-	var wpContentUrl        =  '" . WP_CONTENT_URL . "';";
+	var wpContentUrl        =  '" . WP_CONTENT_URL . "';
+	var sm_record_limit 	=  '".$record_limit_result."';";	//record_limit stored and passed
+	
 
 if ( MULTISITE == 1 ) {
 	echo "
