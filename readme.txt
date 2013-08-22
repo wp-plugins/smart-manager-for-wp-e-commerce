@@ -1,10 +1,10 @@
 === Smart Manager for e-Commerce - WooCommerce and WPeC extension ===
-Contributors: storeapps, niravmehta, ratnakar.dubey, rupali, tarun.parswani, sunny.thangaraj
+Contributors: storeapps, niravmehta, ratnakar.dubey, rupali, Tarun.Parswani, sunny.thangaraj
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager, extension, premium, free, download
 Requires at least: 2.0.2
-Tested up to: 3.5.2
-Stable tag: 3.3
+Tested up to: 3.6
+Stable tag: 3.4
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -30,6 +30,7 @@ Use that time to develop a new product, or simply present it to your family.
 Smart Manager works with WooCommerce latest versions and both WP e-Commerce 3.7 and 3.8.
 
 **What Can You Do With The Free "Lite" Version**
+
 * Convenient Spreadsheet Like Browsing - Eliminate Extra Clicks And Long Wait Times
 * Easy Search - easily locate products / customers / orders
 * Inline Product/Order/Customer Editing - Get Productive Right Away (Lite edition: up to 3 rows at a time)
@@ -38,6 +39,7 @@ Smart Manager works with WooCommerce latest versions and both WP e-Commerce 3.7 
 * Delete single / multiple products or orders at once
 
 **A Lot More In Paid Versions**
+
 * Unlimited Inline Editing for Products, Orders and Customers
 * Fast And Reliable Batch Updates With Intelligent Update Actions - update multiple items at once
 * Print packing slips / orders for multiple orders in one go
@@ -59,7 +61,7 @@ Smart Manager works with WooCommerce latest versions and both WP e-Commerce 3.7 
 
 Thousands of customers like you are extremely happy with Smart Manager! Checkout our website for more details.
 
-**More than 75,000 downloads and counting***
+**More than 75,000 downloads and counting**
 
 Available Translations: Dutch, Brazilian Portugese, French
 
@@ -114,6 +116,13 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.4 =
+* New: Attributes Column in Products Module (WooCommerce)
+* New: Compatibility with woocommerce-sequential-order-numbers-pro plugin (WooCommerce)
+* Fix: Resolved issue with welcome-email-editor & wpMandrill plugin
+* Fix: Resolved issue with WP HTTP Compression plugin
+* Fix: Some minor fixes
 
 = 3.3 =
 * Update: Provision to add store logo in 'Print Order' functionality
@@ -445,6 +454,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.4 =
+Compatibility with woocommerce-sequential-order-numbers-pro & some new features along with some minor fixes. Recommended upgrade.
 
 = 3.3 =
 Compatibility with latest version of WordPress, WPeC & WooCommerce & some new features. Recommended upgrade.
