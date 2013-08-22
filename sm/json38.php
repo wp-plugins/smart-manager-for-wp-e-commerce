@@ -1,8 +1,21 @@
 <?php
 ob_start();
 
+if (!function_exists('find_wp_load_path')) {
+    function find_wp_load_path() { // function to find the wordpress root directory path
+        $dir = dirname(__FILE__);
+        do {
+            if( file_exists($dir."/wp-load.php") ) {
+                return $dir;
+            }
+        } while( $dir = realpath("$dir/..") );
+        return null;
+    }    
+}
+
+
 if ( ! defined('ABSPATH') ) {
-    include_once ('../../../../wp-load.php');
+    include_once (find_wp_load_path()  . '/wp-load.php');
 }
 
 include_once (ABSPATH . 'wp-includes/wp-db.php');
@@ -899,7 +912,12 @@ elseif ($active_module == 'Orders') {
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	$encoded = get_data_wpsc_38 ( $_POST, $offset, $limit );
-	ob_clean();
+	// ob_clean();
+
+	while(ob_get_contents()) {
+        ob_clean();
+    }
+
         echo json_encode ( $encoded );
 	unset($encoded);
 }
@@ -986,10 +1004,10 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 				$columns_header['billingstate'] 		= __('State / Region', $sm_domain);
 				$columns_header['billingcountry'] 		= __('Country', $sm_domain);
 				$columns_header['billingphone'] 		= __('Phone / Mobile', $sm_domain);
-                                $columns_header['_order_total'] 		= __('Last Order Total', $sm_domain);
+                $columns_header['_order_total'] 		= __('Last Order Total', $sm_domain);
 				$columns_header['Last_Order'] 		= __('Last Order Date', $sm_domain);
                 $columns_header['count_orders']          = __('Total Number Of Orders', $sm_domain);
-                                $columns_header['total_orders'] 		= __('Total Purchased Till Date (By Customer)', $sm_domain);
+                $columns_header['total_orders'] 		= __('Total Purchased Till Date (By Customer)', $sm_domain);
 				
 			break;
 			
@@ -999,7 +1017,7 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 				$columns_header['billingfirstname'] 		= __('Billing First Name', $sm_domain);
 				$columns_header['billinglastname'] 			= __('Billing Last Name', $sm_domain);
 				$columns_header['billingemail'] 			= __('Billing E-mail ID', $sm_domain);
-                                $columns_header['billingphone'] 			= __('Billing Phone Number', $sm_domain);
+                $columns_header['billingphone'] 			= __('Billing Phone Number', $sm_domain);
 				$columns_header['amount'] 					= __('Order Total', $sm_domain);
 				$columns_header['details'] 					= __('Total No. of Items', $sm_domain);
 				$columns_header['products_name'] 			= __('Order Items (Product Name[SKU])', $sm_domain);
@@ -1031,7 +1049,12 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 	header("Pragma: no-cache");
 	header("Expires: 0");
 		
-	ob_clean();
+	// ob_clean();
+
+	while(ob_get_contents()) {
+        ob_clean();
+    }
+
         echo $file_data['file_content'];
 		
 	exit;
@@ -1222,7 +1245,12 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		} else
 			$encoded ['msg'] = __( "Purchase Logs removed from the grid", 'smart-manager' ); 
 	}
-	ob_clean();
+	// ob_clean();
+
+	while(ob_get_contents()) {
+        ob_clean();
+    }
+
         echo json_encode ( $encoded );
 }
 
@@ -1680,12 +1708,21 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 			
 		}
 	}
-	ob_clean();
+	// ob_clean();
+
+	while(ob_get_contents()) {
+        ob_clean();
+    }
+
         echo json_encode ( $encoded );
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 	global $wpdb, $current_user;
+
+	if (!function_exists('wp_get_current_user')) {
+		require_once (ABSPATH . 'wp-includes/pluggable.php'); // Sometimes conflict with SB-Welcome Email Editor
+	}
 
 	$current_user = wp_get_current_user();
         if ( !isset( $current_user->roles[0] ) ) {
@@ -1698,7 +1735,12 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 	} else {
 		$results = get_dashboard_combo_store();
 	}
-	ob_clean();
+	// ob_clean();
+
+	while(ob_get_contents()) {
+        ob_clean();
+    }
+
         echo json_encode ( $results );
 }
 
@@ -1710,7 +1752,12 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 //	$thumbnail = ( $image[0] != '' ) ? $image[0] : '';
         $image = wpsc_the_product_thumbnail( '','', $_POST ['id'], '' );
         $thumbnail    = ( $image != '' ) ? $image : '';
-	ob_clean();
+	// ob_clean();
+
+        while(ob_get_contents()) {
+            ob_clean();
+        }
+        
         echo json_encode ( $thumbnail );
 }
 //ob_end_flush();

@@ -457,6 +457,7 @@ Ext.onReady(function () {
                             op : 'get'
                 },
                 success: function(response) {
+                	
                     var myJsonObj    = Ext.decode(response);
                     
                     SM.products_state = Ext.decode(myJsonObj['Products']);
@@ -464,7 +465,7 @@ Ext.onReady(function () {
                     SM.orders_state = Ext.decode(myJsonObj['Orders']);
                     SM.dashboard_state = myJsonObj['dashboardcombobox'];
                     SM.variation_state = myJsonObj['incVariation'];
-                    
+
 //                    SM.editor_state = Ext.decode(myJsonObj[SM.dashboard_state]);
 
                     if(SM.dashboard_state === "" || SM.dashboard_state === null) {
@@ -630,7 +631,7 @@ Ext.onReady(function () {
 	function formatDate(value){
         return value ? value.dateFormat('M d, Y') : '';
     }
-	
+
 	//combo box consisting of yes and no values.
 	var yesNoCombo = new Ext.form.ComboBox({
 		typeAhead: true,
@@ -891,7 +892,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
                 editable: false,
                 allowBlank: false,
 				allowNegative: false,
-                                width: 80
+                width: 80
             })
         },{
             header: SM.productsCols.salePriceTo.name,
@@ -919,7 +920,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			tooltip: getText('Inventory'),
 			editor: new fm.NumberField({
 				allowBlank: true,
-				allowNegative: false,
+				allowNegative: true,
                                 size: 22
 			})
 		},{
@@ -940,6 +941,14 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			sortable: true,
 			dataIndex: SM.productsCols.group.colName,
 			tooltip: getText('Category')
+		},{
+			header: SM.productsCols.attributes.name,
+			id: 'attributes',
+            width: 100,
+            hidden: true,
+			sortable: true,
+			dataIndex: SM.productsCols.attributes.colName,
+			tooltip: getText('Attributes')
 		},{
 			header: SM.productsCols.weight.name,
 			id: 'weight',
@@ -1116,6 +1125,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 				{name: SM.productsCols.publish.colName,           type: 'string'},
 				{name: SM.productsCols.sku.colName,               type: 'string'},
 				{name: SM.productsCols.group.colName,             type: 'string'},
+				{name: SM.productsCols.attributes.colName,             type: 'string'},
 				{name: SM.productsCols.desc.colName,              type: 'string'},
 				{name: SM.productsCols.addDesc.colName,           type: 'string'},
 				{name: SM.productsCols.weight.colName,            type: 'string'},
@@ -1149,6 +1159,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 		listeners: {
 			//Products Store onload function.
 			load: function (store,records,obj) {
+
 				cnt = -1;
 				cnt_array = [];
 				editorGridSelectionModel.clearSelections();
@@ -1640,6 +1651,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			SM.activeModule = 'Products';
 			showProductsView();
 		}
+
 	};
 	
         //Code to create a new button for dulicating product
@@ -1898,9 +1910,9 @@ var searchLogic = function () {
 					productsStore.loadData(myJsonObj);
 				else if(SM.activeModule == 'Orders'){
 					ordersStore.loadData(myJsonObj);
-                                } else {
+                } else {
 					customersStore.loadData(myJsonObj);
-                                }
+                }
 					
 			} catch (e) {
 				return;
@@ -2006,6 +2018,7 @@ var orderStatusStoreData = new Array();
                             ['refunded', getText('Refunded')],
                             ['cancelled', getText('Cancelled')]
                           ];
+
 
 var orderStatusStore = new Ext.data.ArrayStore({
 			id: 0,
@@ -3102,16 +3115,10 @@ var showCustomerDetails = function(record,rowIndex){
             this.fireEvent("columnmoved", this, oldIndex, newIndex);
           }
         });  
-	
+
 	var ordersColumnModel = new Ext.OrdersColumnModel({	
 		columns:[editorGridSelectionModel, //checkbox for
-		{
-			header: getText('Order Id'),
-			id: 'id',
-			dataIndex: 'id',
-                        width: 75,
-			tooltip: getText('Order Id') 
-		},{
+		{header: getText('Order Id'),id: 'id',dataIndex: 'display_id',width: 75,tooltip: getText('Order Id') },{
 			header: getText('Date / Time'),
 			id: 'date',
 			dataIndex: 'date',
@@ -3344,13 +3351,14 @@ var showCustomerDetails = function(record,rowIndex){
 		defaultSortable: true
 	});
 
+	
 	// Data reader class to create an Array of Records objects from a JSON packet.
 	var ordersJsonReader = new Ext.data.customJsonReader({
 		totalProperty: 'totalCount',
 		root: 'items',
 		fields:
 		[
-		{name:'id',type:'int'},
+		{name:'display_id',type:'string'},   //DataType set to string for Sequential Orders compatibility
 		{name:'date',type:'string'},
 		{name:'name',type:'string'},
 		{name:'_order_total', type:'float'},
@@ -3536,7 +3544,7 @@ var showCustomerDetails = function(record,rowIndex){
 			 	boxLabel: getText('Show Variations'),
 			 	listeners: {
 			 		check : function(checkbox, bool) {
-			 			if ( SM.activeModule == 'Products' ) {
+			 			if ( SM.dashboard_state == 'Products' ) {
 		                        mask.show();
 		                        SM.incVariation  = bool;
 				 				productsStore.setBaseParam('incVariation', SM.incVariation);
@@ -3573,6 +3581,7 @@ var showCustomerDetails = function(record,rowIndex){
 								}
 								
 							}
+
 							if ( dashboardComboStore < 1) {
 								Ext.Msg.show({
 									title: getText('Access Denied'),
@@ -3967,9 +3976,9 @@ if(fileExists == 1){
 	};
 	
 	//disable inline editing for products
-	var productsColumnCount = productsColumnModel.getColumnCount();
-	for(var i=6; i<productsColumnCount; i++)
-	productsColumnModel.setEditable(i,false);
+	// var productsColumnCount = productsColumnModel.getColumnCount();
+	// for(var i=6; i<productsColumnCount; i++)
+	// productsColumnModel.setEditable(i,false);
 	
 	//disable inline editing for customers
 	var customersColumnCount = customersColumnModel.getColumnCount();

@@ -1,7 +1,22 @@
 <?php
-if ( ! defined('ABSPATH') ) {
-	include_once ('../../../../wp-load.php');
+
+if (!function_exists('find_wp_load_path')) {
+    function find_wp_load_path() { // function to find the wordpress root directory path
+        $dir = dirname(__FILE__);
+        do {
+            if( file_exists($dir."/wp-load.php") ) {
+                return $dir;
+            }
+        } while( $dir = realpath("$dir/..") );
+        return null;
+    }    
 }
+
+
+if ( ! defined('ABSPATH') ) {
+    include_once (find_wp_load_path()  . '/wp-load.php');
+}
+
 include_once (ABSPATH . 'wp-includes/wp-db.php');
 include_once (ABSPATH . 'wp-includes/functions.php');
 load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
@@ -452,7 +467,12 @@ elseif ($active_module == 'Orders') {
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 	$encoded = get_data_wpsc_37 ( $_POST, $offset, $limit );
-        ob_clean();
+        // ob_clean();
+
+	while(ob_get_contents()) {
+		ob_clean();
+	}
+
 	echo json_encode ( $encoded );
 	unset($encoded);
 }
@@ -526,7 +546,12 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 				$columns_header['shippingcountry'] 			= 'Shippping Country';
 			break;
 	}
-	ob_clean();
+	// ob_clean();
+
+	while(ob_get_contents()) {
+		ob_clean();
+	}
+
 	echo export_csv_wpsc_37 ( $active_module, $columns_header, $data );
 	exit;
 }
@@ -570,7 +595,12 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		} else
 			$encoded ['msg'] = __( "Purchase Logs removed from the grid" . 'smart-manager'); 
 	}
-	ob_clean();
+	// ob_clean();
+
+	while(ob_get_contents()) {
+		ob_clean();
+	}
+
         echo json_encode ( $encoded );
 }
 
@@ -634,12 +664,22 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 			}
 		}
 	}
-	ob_clean();
+	// ob_clean();
+
+	while(ob_get_contents()) {
+		ob_clean();
+	}
+
         echo json_encode ( $encoded );	
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 	global $wpdb, $current_user;
+
+	if (!function_exists('wp_get_current_user')) {
+		require_once (ABSPATH . 'wp-includes/pluggable.php'); // Sometimes conflict with SB-Welcome Email Editor
+	}
+
 	$current_user = wp_get_current_user();
         if ( !isset( $current_user->roles[0] ) ) {
             $roles = array_values( $current_user->roles );
@@ -651,7 +691,12 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 	} else {
 		$results = get_dashboard_combo_store();
 	}
-	ob_clean();
+	// ob_clean();
+
+	while(ob_get_contents()) {
+		ob_clean();
+	}
+		
         echo json_encode ( $results );
 }
 
