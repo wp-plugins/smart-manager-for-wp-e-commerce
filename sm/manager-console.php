@@ -346,7 +346,7 @@ if (WPSC_RUNNING === true) {
 	$products_cols['qtyLimited']['colFilter']='meta_key:_wpsc_stock';	
 
 } else if (WOO_RUNNING === true) {
-	
+
 	$orders_details_url = ADMIN_URL . "/post.php?post=";
 	
 	$orderFieldsQuery = "SELECT DISTINCT meta_key FROM {$wpdb->prefix}postmeta WHERE meta_key IN 
@@ -354,6 +354,7 @@ if (WPSC_RUNNING === true) {
 																					'_shipping_address_1', '_shipping_address_2',
 																					'_shipping_city', '_shipping_state', '_shipping_country','_shipping_postcode')";
 	$orderFieldsResults = $wpdb->get_results ($orderFieldsQuery);
+
 	$cnt = 0;
 	foreach ($orderFieldsResults as $obj) {
 		$ordersfield_names ['items'] [$cnt] ['id'] = $cnt;
@@ -366,11 +367,12 @@ if (WPSC_RUNNING === true) {
 		$ordersfield_names ['items'] [$cnt] ['value'] = $obj->meta_key . ",`{$wpdb->prefix}postmeta`";
 		$ordersfield_names ['totalCount'] = $cnt ++;
 	}
+
 	$ordersfield_names ['items'] [$cnt] ['id'] = $cnt;
 	$ordersfield_names ['items'] [$cnt] ['name'] = 'Order Status';
 	$ordersfield_names ['items'] [$cnt] ['type'] = 'bigint';
 	$ordersfield_names ['items'] [$cnt] ['value'] = " ,`{$wpdb->prefix}term_relationships`";
-	
+
 	$encodedOrdersFields = json_encode ( $ordersfield_names );
 	
 	$customerFieldsQuery = "SELECT DISTINCT meta_key FROM {$wpdb->prefix}postmeta WHERE meta_key IN 
@@ -442,6 +444,12 @@ if (WPSC_RUNNING === true) {
     $products_cols['visibility']['colName']='_visibility';
     $products_cols['visibility']['tableName']="{$wpdb->prefix}postmeta";
     $products_cols['visibility']['updateColName']='meta_value';
+
+    $products_cols['attributes']['name']=__( 'Attributes', $sm_domain );
+	$products_cols['attributes']['actionType']='setStrActions';
+	$products_cols['attributes']['colName']='product_attributes';
+	$products_cols['attributes']['tableName']="{$wpdb->prefix}postmeta";
+	$products_cols['attributes']['updateColName']='meta_value';
 
 } 
 
@@ -685,6 +693,7 @@ if (WPSC_RUNNING === true) {
 		lang.inventory	        = '" . __('Inventory',$sm_domain) . "';
 		lang.sku	            = '" . __('SKU',$sm_domain) . "';
 		lang.category	        = '" . __('Category',$sm_domain) . "';
+		lang.attributes	        = '" . __('Attributes',$sm_domain) . "';
 		lang.weight		        = '" . __('Weight',$sm_domain) . "';
 		lang.product_status		= '" . __('Product Status',$sm_domain) . "';
 		lang.description		= '" . __('Description',$sm_domain) . "';
@@ -955,7 +964,7 @@ if (WPSC_RUNNING === true) {
                 //Condition to skip the Description, Additional Description and Group column from SM Batch Update
                 
 //		echo "if(value.value != 'group' && value.value != 'desc' && value.value != 'addDesc'){
-		echo "if(value.value != 'group'){
+		echo "if(value.value != 'group' && value.value != 'attributes'){
 				productsFields.items.push(value);
 				productsFields.totalCount = ++j;
 			}

@@ -807,7 +807,7 @@ Ext.onReady(function () {
 			tooltip: getText('Inventory'),
 			editor: new fm.NumberField({
 				allowBlank: true,
-				allowNegative: false
+				allowNegative: true
 			})
 		},{
 			header: SM.productsCols.sku.name,

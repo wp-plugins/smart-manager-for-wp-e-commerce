@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.3
+Version: 3.4
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013 Store Apps All rights reserved.
@@ -11,9 +11,9 @@ Copyright (c) 2010, 2011, 2012, 2013 Store Apps All rights reserved.
 
 //Hooks
 
-
 register_activation_hook( __FILE__, 'smart_activate' );
 register_deactivation_hook( __FILE__, 'smart_deactivate' );
+
 
 /**
  * Registers a plugin function to be run when the plugin is activated.
@@ -54,7 +54,10 @@ function smart_is_pro_updated() {
  * Throw an error on admin page when WP e-Commerece plugin is not activated.
  */
 //if (is_admin ()) {
-require_once (ABSPATH . 'wp-includes/pluggable.php'); // Sometimes conflict with SB-Welcome Email Editor
+
+
+// require_once (ABSPATH . 'wp-includes/pluggable.php'); // Sometimes conflict with SB-Welcome Email Editor
+
 require_once (ABSPATH . WPINC . '/default-constants.php');
 $plugin = plugin_basename( __FILE__ );
 define( 'SM_PLUGIN_DIR', dirname( $plugin ) );
@@ -237,6 +240,11 @@ function smart_admin_styles() {
 
 function smart_woo_add_modules_admin_pages() {
 	global $wpdb, $current_user;
+
+	if (!function_exists('wp_get_current_user')) {
+		require_once (ABSPATH . 'wp-includes/pluggable.php'); // Sometimes conflict with SB-Welcome Email Editor
+	}
+
 	$current_user = wp_get_current_user(); // Sometimes conflict with SB-Welcome Email Editor
         
         if ( (!current_user_can( 'edit_pages' )) && (is_plugin_active( 'woocommerce/woocommerce.php' )) ) {
@@ -255,6 +263,11 @@ function smart_woo_add_modules_admin_pages() {
 
 function smart_wpsc_add_modules_admin_pages($page_hooks, $base_page) {
 	global $wpdb, $current_user;
+
+	if (!function_exists('wp_get_current_user')) {
+		require_once (ABSPATH . 'wp-includes/pluggable.php'); // Sometimes conflict with SB-Welcome Email Editor
+	}
+
 	$current_user = wp_get_current_user(); // Sometimes conflict with SB-Welcome Email Editor
         
         if ( (!current_user_can( 'edit_posts' )) && (is_plugin_active( 'wp-e-commerce/wp-shopping-cart.php' )) ) {
@@ -276,6 +289,11 @@ function smart_wpsc_add_modules_admin_pages($page_hooks, $base_page) {
 
 function smart_add_menu_access() {
 	global $wpdb, $current_user;
+
+	if (!function_exists('wp_get_current_user')) {
+		require_once (ABSPATH . 'wp-includes/pluggable.php'); // Sometimes conflict with SB-Welcome Email Editor
+	}
+
 	$current_user = wp_get_current_user(); // Sometimes conflict with SB-Welcome Email Editor
         if ( !isset( $current_user->roles[0] ) ) {
             $roles = array_values( $current_user->roles );
