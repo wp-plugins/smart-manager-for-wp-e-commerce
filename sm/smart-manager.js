@@ -187,6 +187,24 @@ Ext.onReady(function () {
 	//Regex to allow only numbers.
 	var objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;
 	var regexError = getText('Only numbers are allowed');
+
+	// Code for defining the renderer for dimensions field
+	var dimensionsRenderer = '';
+
+	if (sm_dimensions_decimal_precision != '') {
+
+		var decimal_format='0,0';
+
+		for(var i=0;i<sm_dimensions_decimal_precision;i++) {
+			if (i == 0) {
+				decimal_format += '.';				
+			}
+
+			decimal_format += '0';
+		}
+
+		dimensionsRenderer = Ext.util.Format.numberRenderer(decimal_format);
+	}
 		
 	//number format in which the amounts in the grid will be displayed.
 	var amountRenderer = Ext.util.Format.numberRenderer('0,0.00'),
@@ -832,13 +850,15 @@ Ext.onReady(function () {
 			colSpan: 2,
 			sortable: true,
 			align: 'right',
-                        width: 60,
+            width: 60,
 			dataIndex: SM.productsCols.weight.colName,
 			tooltip: getText('Weight'),
-			renderer: amountRenderer,
+			// renderer: amountRenderer,
+			renderer: dimensionsRenderer,
 			editor: new fm.NumberField({
 				allowBlank: true,
-				allowNegative: false
+				allowNegative: false,
+				decimalPrecision:sm_dimensions_decimal_precision
 			})
 		},{
 			header: SM.productsCols.weightUnit.name,
@@ -933,13 +953,15 @@ Ext.onReady(function () {
 			hidden: true,
 			sortable: true,
 			align: 'right',
-                        width: 60,
+            width: 60,
 			dataIndex: SM.productsCols.height.colName,
 			tooltip: getText('Height'),		
-			renderer: amountRenderer,
+			// renderer: amountRenderer,
+			renderer: dimensionsRenderer,
 			editor: new fm.NumberField({
 				allowBlank: false,
-				allowNegative: false
+				allowNegative: false,
+				decimalPrecision:sm_dimensions_decimal_precision
 			})
 		},{
 			header: SM.productsCols.heightUnit.name,
@@ -958,13 +980,15 @@ Ext.onReady(function () {
 			hidden: true,
 			sortable: true,
 			align: 'right',
-                        width: 60,
+            width: 60,
 			dataIndex: SM.productsCols.width.colName,
 			tooltip: getText('Width'),
-			renderer: amountRenderer,
+			// renderer: amountRenderer,
+			renderer: dimensionsRenderer,
 			editor: new fm.NumberField({
 				allowBlank: false,
-				allowNegative: false
+				allowNegative: false,
+				decimalPrecision:sm_dimensions_decimal_precision
 			})
 		},{
 			header: SM.productsCols.widthUnit.name,
@@ -983,13 +1007,15 @@ Ext.onReady(function () {
 			hidden: true,
 			sortable: true,
 			align: 'right',
-                        width: 60,
+            width: 60,
 			dataIndex: SM.productsCols.lengthCol.colName,
 			tooltip: getText('Length'),			
-			renderer: amountRenderer,
+			// renderer: amountRenderer,
+			renderer: dimensionsRenderer,
 			editor: new fm.NumberField({
 				allowBlank: false,
-				allowNegative: false
+				allowNegative: false,
+				decimalPrecision:sm_dimensions_decimal_precision
 			})
 		},{
 			header: SM.productsCols.lengthUnit.name,

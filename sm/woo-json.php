@@ -190,20 +190,28 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         }
 
         //Code to get the attribute terms for all attributes
-        $query_attribute_names = "SELECT GROUP_CONCAT(distinct terms.name order by terms.term_id SEPARATOR ', ') AS attribute_terms,
-                                        taxonomy.taxonomy as attribute_name
+        $query_attribute_names = "SELECT terms.name AS attribute_terms,
+                                        taxonomy.taxonomy as attribute_name,
+                                        taxonomy.term_taxonomy_id as term_taxonomy_id
                                     FROM {$wpdb->prefix}terms as terms
                                         JOIN {$wpdb->prefix}term_taxonomy as taxonomy ON (taxonomy.term_id = terms.term_id)
                                     WHERE taxonomy.taxonomy LIKE 'pa_%'
-                                    GROUP BY taxonomy.taxonomy";
+                                    GROUP BY taxonomy.taxonomy, taxonomy.term_taxonomy_id";
         $results_attribute_names = $wpdb->get_results( $query_attribute_names, 'ARRAY_A' );
-        
+
         $product_attributes = array();
 
-        foreach ($results_attribute_names as $results_attribute_name) {
-            $product_attributes[$results_attribute_name['attribute_name']] = $results_attribute_name['attribute_terms'];
-        }
+        $temp_attribute_nm = "";
 
+        foreach ($results_attribute_names as $results_attribute_name) {
+
+            if ($results_attribute_name['attribute_name'] != $temp_attribute_nm) {
+                $product_attributes[$results_attribute_name['attribute_name']] = array();               
+            }
+
+            $product_attributes[$results_attribute_name['attribute_name']][$results_attribute_name['term_taxonomy_id']] = $results_attribute_name['attribute_terms'];
+            $temp_attribute_nm = $results_attribute_name['attribute_name'];
+        }
 
         $query_attribute_label = "SELECT attribute_name, attribute_label
                                 FROM {$wpdb->prefix}woocommerce_attribute_taxonomies";
@@ -232,6 +240,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         $select_count = "SELECT COUNT(*) as count"; // To get the count of the number of rows generated from the above select query
 
         $search = "";
+        $search_condn = "";
         
         if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
             $search_on = trim ( $_POST ['searchText'] );
@@ -342,7 +351,6 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 $search_tax_visible = "";
             }
             
-            
             if ( is_array( $search_ons ) && count( $search_ons ) >= 1 ) {
             			$search_condn = " HAVING ";                    
 				foreach ( $search_ons as $search_on ) {
@@ -394,8 +402,8 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 						prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price','_thumbnail_id','_tax_status','_min_variation_regular_price','_min_variation_sale_price','_visibility','_product_attributes','" . implode( "','", $variation ) . "') )
 						
 						LEFT JOIN {$wpdb->prefix}term_relationships as wtr ON (products.id = wtr.object_id
-                                                            $term_taxonomy_id_query)";  // Remove $term_taxonomy_id_query
-												
+                                                            )";  // Removed $term_taxonomy_id_query as it was conflicting with Attributes Column
+
 		$where	= " WHERE products.post_status IN $post_status
 						AND products.post_type IN $post_type
                                                 $trash_id
@@ -433,31 +441,6 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 $prod_meta_key_values = array_combine($prod_meta_key, $prod_meta_values);
                 $product_type = wp_get_object_terms($records[$i]['id'], 'product_type', array('fields' => 'slugs'));
 
-
-                if (isset($prod_meta_key_values['_product_attributes']) && $prod_meta_key_values['_product_attributes'] != "") {
-                    $prod_attr = unserialize($prod_meta_key_values['_product_attributes']);
-
-                    $attributes_list = "";
-
-                    foreach ($prod_attr as $prod_attr1) {
-                        if (isset($attributes_label[$prod_attr1['name']])) {
-                            $attributes_list .= $attributes_label[$prod_attr1['name']] . ": [" . $product_attributes[$prod_attr1['name']] . " ]";
-                        }
-                        else {
-                            $attributes_list .= $prod_attr1['name'] . ": [" . str_replace(" |", ",", $prod_attr1['value']) ."]";
-                        }
-
-                        if($attributes_list != "") {
-                            $attributes_list .= "<br>";
-                        }    
-                    }
-
-                    // $records[$i]['product_attributes'] = substr( $attributes_list, 0, -3);
-                    $records[$i]['product_attributes'] = $attributes_list;
-                } else {
-                    $records[$i]['product_attributes'] = "";
-                }
-
                 // Code to get the Category Name from the term_taxonomy_id
                 $category_id = explode('###', $records[$i]['term_taxonomy_id']);
                 $category_names = "";
@@ -474,6 +457,47 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 }
 
                 $records[$i]['category'] = ( ( $records[$i]['post_parent'] > 0 && $product_type[0] == 'simple' ) || ( $records[$i]['post_parent'] == 0 ) ) ? $records[$i]['category'] : '';   // To hide category name from Product's variations
+
+                //Attributes Column
+
+                if (isset($prod_meta_key_values['_product_attributes']) && $prod_meta_key_values['_product_attributes'] != "") {
+                    $prod_attr = unserialize($prod_meta_key_values['_product_attributes']);
+
+                    $attributes_list = "";
+
+                    foreach ($prod_attr as $prod_attr1) {
+
+                        $attribute_terms = "";
+
+                        if (isset($attributes_label[$prod_attr1['name']]) && isset($product_attributes[$prod_attr1['name']])) {
+                            foreach ($category_id as $category_id1) {
+                                if (isset($product_attributes[$prod_attr1['name']][$category_id1])) {
+                                    $attribute_terms .= $product_attributes[$prod_attr1['name']][$category_id1] . ', ';    
+                                }
+                            }
+
+                            if ($attribute_terms != "") {
+                                $attribute_terms = substr($attribute_terms, 0, -2);
+                            }
+
+                            $attributes_list .= $attributes_label[$prod_attr1['name']] . ": [" . $attribute_terms . "]";
+                        }
+                        else {
+                            $attributes_list .= $prod_attr1['name'] . ": [" . str_replace(" |", ",", $prod_attr1['value']) ."]";
+                        }
+
+                        if($attributes_list != "") {
+                            $attributes_list .= "<br>";
+                        }    
+                    }
+
+                    // $records[$i]['product_attributes'] = substr( $attributes_list, 0, -3);
+                    $records[$i]['product_attributes'] = $attributes_list;
+                } else {
+                    $records[$i]['product_attributes'] = "";
+                }
+
+                
 
                 if (isset($prod_meta_key_values['_sale_price_dates_from']) && !empty($prod_meta_key_values['_sale_price_dates_from']))
                     $prod_meta_key_values['_sale_price_dates_from'] = date('Y-m-d', (int) $prod_meta_key_values['_sale_price_dates_from']);
@@ -858,7 +882,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         }
 
 		$select_query = "SELECT SQL_CALC_FOUND_ROWS posts.ID as id,
-                                                                posts.post_excerpt as order_note,
+                                posts.post_excerpt as order_note,
 								date_format(posts.post_date,'%b %e %Y, %r') AS date,
 								GROUP_CONCAT( postmeta.meta_value 
 								ORDER BY postmeta.meta_id
@@ -1410,7 +1434,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 							$records [] = array_merge ( $postmeta, $data );	
 					}
 				}
-				
+
 				unset($meta_value);
 				unset($meta_key);
 				unset($postmeta);
@@ -1452,6 +1476,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
     $encoded = get_data_woo ( $_POST, $offset, $limit );   
      
    // ob_clean("ob_gzhandler");
+
+    header('X-Frame-Options: GOFORIT');
 
     while(ob_get_contents()) {
         ob_clean();
@@ -1900,6 +1926,7 @@ function woo_insert_update_data($post) {
                         if ( $key == 'order_status' ) {
                             $term_taxonomy_id = get_term_taxonomy_id ( $value );
                             $query = "UPDATE {$wpdb->prefix}term_relationships SET term_taxonomy_id = " . $wpdb->_real_escape($term_taxonomy_id) . " WHERE object_id = " . $wpdb->_real_escape($obj->id) . ";";
+
                             if ( $value == 'processing' || $value == 'completed' ) {
                                     $order = new WC_Order( $obj->id );
                                     $order->update_status( $value );
