@@ -188,11 +188,51 @@ Ext.onReady(function () {
 	var objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;
 	var regexError = getText('Only numbers are allowed'); 
 		
+
+	// Code for defining the renderer for dimensions field
+	var dimensionsRenderer = '';
+
+	if (sm_dimensions_decimal_precision != '') {
+
+		var decimal_format='0,0';
+
+		for(var i=0;i<sm_dimensions_decimal_precision;i++) {
+			if (i == 0) {
+				decimal_format += '.';				
+			}
+
+			decimal_format += '0';
+		}
+
+		dimensionsRenderer = Ext.util.Format.numberRenderer(decimal_format);
+	}
+
+
+	// Code for defining the renderer for amount field
+	var amountRenderer = '';
+
+	if (sm_amount_decimal_precision != '') {
+
+		var decimal_format='0,0';
+
+		for(var i=0;i<sm_amount_decimal_precision;i++) {
+			if (i == 0) {
+				decimal_format += '.';				
+			}
+
+			decimal_format += '0';
+		}
+
+		amountRenderer = Ext.util.Format.numberRenderer(decimal_format);
+	}
+	
+
 	//number format in which the amounts in the grid will be displayed.
-	var amountRenderer = Ext.util.Format.numberRenderer('0,0.00'),
+
+	// var amountRenderer = Ext.util.Format.numberRenderer('0,0.00'),
 		
                 //setting Date fields.
-		fromDateTxt    = new Ext.form.TextField({emptyText:'From Date',readOnly: true,width: 80, id:'fromDateTxtId'}),
+	var	fromDateTxt    = new Ext.form.TextField({emptyText:'From Date',readOnly: true,width: 80, id:'fromDateTxtId'}),
 		toDateTxt      = new Ext.form.TextField({emptyText:'To Date',readOnly: true,width: 80, id:'toDateTxtId'
 	}),
 		toComboSearchBox = new Ext.form.ComboBox({
@@ -858,25 +898,27 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			dataIndex: SM.productsCols.price.colName,
 			tooltip: getText('Price'),
 			renderer: amountRenderer,
-                        width: 70,
+            width: 70,
 			editor: new fm.NumberField({
 				allowBlank: true,
-                                allowNegative: true,
-                                width: 70
+                allowNegative: true,
+                width: 70,
+                decimalPrecision:sm_amount_decimal_precision
 			})
 		},{
 			header: SM.productsCols.salePrice.name,
 			id: 'salePrice',
 			sortable: true,
 			align: 'right',
-                        width: 70,
+            width: 70,
 			dataIndex: SM.productsCols.salePrice.colName,
 			renderer: amountRenderer,
 			tooltip: getText('Sale Price'),
 			editor: new fm.NumberField({
 				allowBlank: true,
 				allowNegative: true,
-                                width: 70
+                width: 70,
+                decimalPrecision:sm_amount_decimal_precision
 			})
 		},{
             header: SM.productsCols.salePriceFrom.name,
@@ -958,11 +1000,13 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			align: 'right',
 			dataIndex: SM.productsCols.weight.colName,
 			tooltip: getText('Weight'),
-			renderer: amountRenderer,
+			// renderer: amountRenderer,
+			renderer: dimensionsRenderer,
 			editor: new fm.NumberField({
 				allowBlank: true,
 				allowNegative: false,
-                                width: 60
+                width: 60,
+                decimalPrecision:sm_dimensions_decimal_precision
 			})
 		},{
 			header: SM.productsCols.publish.name,
@@ -1003,16 +1047,18 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			header: SM.productsCols.height.name,
 			id: 'height',
 			hidden: true,
-                        width: 60,
+            width: 60,
 			colSpan: 2,
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.height.colName,
 			tooltip: getText('Height'),		
-			renderer: amountRenderer,
+			// renderer: amountRenderer,
+			renderer: dimensionsRenderer,
 			editor: new fm.NumberField({
 				allowBlank: true,
-				allowNegative: false
+				allowNegative: false,
+				decimalPrecision:sm_dimensions_decimal_precision
 			})
 		},{
 			header: SM.productsCols.width.name,
@@ -1024,25 +1070,29 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			align: 'right',
 			dataIndex: SM.productsCols.width.colName,
 			tooltip: getText('Width'),
-			renderer: amountRenderer,
+			// renderer: amountRenderer,
+			renderer: dimensionsRenderer,
 			editor: new fm.NumberField({
 				allowBlank: true,
-				allowNegative: false
+				allowNegative: false,
+				decimalPrecision:sm_dimensions_decimal_precision
 			})
 		},{
 			header: SM.productsCols.lengthCol.name,
 			id: 'lengthCol',
 			hidden: true,
-                        width: 60,
+            width: 60,
 			colSpan: 2,
 			sortable: true,
 			align: 'right',
 			dataIndex: SM.productsCols.lengthCol.colName,
 			tooltip: getText('Length'),		
-			renderer: amountRenderer,
+			// renderer: amountRenderer,
+			renderer: dimensionsRenderer,
 			editor: new fm.NumberField({
 				allowBlank: true,
-				allowNegative: false
+				allowNegative: false,
+				decimalPrecision:sm_dimensions_decimal_precision
 			})
 		},{
             header: SM.productsCols.visibility.name,
@@ -3118,8 +3168,19 @@ var showCustomerDetails = function(record,rowIndex){
 
 	var ordersColumnModel = new Ext.OrdersColumnModel({	
 		columns:[editorGridSelectionModel, //checkbox for
-		{header: getText('Order Id'),id: 'id',dataIndex: 'display_id',width: 75,tooltip: getText('Order Id') },{
-			header: getText('Date / Time'),
+		{	header: getText('Order Id'),
+			id: 'id_temp',
+			dataIndex: 'id',
+			width: 75,
+			tooltip: getText('Order Id'),
+			hideable:false,
+			hidden:true
+		},{	header: getText('Order Id'),
+			id: 'id',
+			dataIndex: 'display_id',
+			width: 75,
+			tooltip: getText('Order Id')
+		},{	header: getText('Date / Time'),
 			id: 'date',
 			dataIndex: 'date',
 			tooltip: getText('Date / Time'),
@@ -3358,6 +3419,7 @@ var showCustomerDetails = function(record,rowIndex){
 		root: 'items',
 		fields:
 		[
+		{name:'id',type:'string'},   //DataType set to string for Sequential Orders compatibility
 		{name:'display_id',type:'string'},   //DataType set to string for Sequential Orders compatibility
 		{name:'date',type:'string'},
 		{name:'name',type:'string'},

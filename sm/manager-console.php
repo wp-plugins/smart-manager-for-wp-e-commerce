@@ -3,6 +3,9 @@
 global $wpdb, $woocommerce, $wp_version;
 $limit = 2;
 
+remove_action( 'admin_init', 'send_frame_options_header', 10, 0 );
+remove_action( 'login_init', 'send_frame_options_header', 10, 0 );
+
 if ( !wp_script_is( 'jquery' ) ) {
 	wp_enqueue_script( 'jquery' );
 }
@@ -12,7 +15,7 @@ $fileExists = (defined('SMPRO') && SMPRO === true) ? 1 : 0;
 $wpsc = (defined('WPSC_RUNNING') && WPSC_RUNNING === true) ? 1 :0;
 $woo = (defined('WOO_RUNNING') && WOO_RUNNING === true) ? 1 :0;
 $wpsc_woo = (defined( 'WPSC_WOO_ACTIVATED' ) && WPSC_WOO_ACTIVATED === true) ? 1 : 0;
-$site_url = get_option('siteurl');
+$site_url = get_option('	siteurl');
 $upgrade = str_word_count("Upgrade In Progress");
 
 //setting limit for the records to be displayed
@@ -25,6 +28,22 @@ if( $limit_record == '' ) {
 		$record_limit_result = $limit_record;		
 }
 
+
+//setting limit for the decimal places for dimensions [i.e. weight, width, height & length]
+$decimal_precision = get_option( '_sm_dimensions_decimal_precision' );
+
+if( $decimal_precision == '' ) {
+		update_option('_sm_dimensions_decimal_precision', '2');
+		$sm_dimensions_decimal_precision = '2';
+} else {	
+		$sm_dimensions_decimal_precision = $decimal_precision;		
+}
+
+//setting limit for the decimal places for amount [i.e. price & saleprice]
+
+$sm_amount_decimal_precision = (get_option( 'woocommerce_price_num_decimals' ) != '') ? get_option( 'woocommerce_price_num_decimals' ) : '2';
+
+
 // creating a domain name for mutilingual
 $sm_domain = 'smart-manager';
 
@@ -33,10 +52,12 @@ $blog_info = get_bloginfo ( 'url' );
 
 //creating the products links
 if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
-        $products_details_url = $site_url.'/wp-admin/post.php?post=';
+        // $products_details_url = $site_url.'/wp-admin/post.php?post=';
+        $products_details_url = ADMIN_URL .'/post.php?post='; // Fix for X-Frame with SameOrigin
 } else if (WOO_RUNNING === true) {
         $product_id = '';
-	$products_details_url = $site_url.'/wp-admin/post.php?action=edit&post='.$product_id;
+	// $products_details_url = $site_url.'/wp-admin/post.php?action=edit&post='.$product_id;
+	$products_details_url = ADMIN_URL .'/post.php?action=edit&post='.$product_id; // Fix for X-Frame with SameOrigin
 }
 
 $updater = rand(3.0,3.9);
@@ -602,7 +623,7 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 $encoded_categories = json_encode ( $categories );
 $products_cols = json_encode( $products_cols );
 if ( isset( $attribute ) ) {
-	$attribute = json_encode( $attribute );
+	$attribute = addslashes(json_encode( $attribute )); // addslashes was done as one client was facing issue with attributes
 }
 // EOF Product category
 // BOF Products Fields
@@ -629,7 +650,9 @@ if ( isset( $attribute ) ) {
 	var countries           =  " . $encodedCountries . ";
 	var site_url            =  '" . $site_url . "';
 	var wpContentUrl        =  '" . WP_CONTENT_URL . "';
-	var sm_record_limit 	=  '".$record_limit_result."';";	//record_limit stored and passed
+	var sm_record_limit 	=  '".$record_limit_result."';		
+	var sm_amount_decimal_precision 	=  '".$sm_amount_decimal_precision."';	
+	var sm_dimensions_decimal_precision 	=  '".$sm_dimensions_decimal_precision."';";	//Decimal Precision for Dimensions fields 
 	
 
 if ( MULTISITE == 1 ) {
