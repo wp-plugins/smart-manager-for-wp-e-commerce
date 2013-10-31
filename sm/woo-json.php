@@ -20,7 +20,7 @@ if ( ! defined('ABSPATH') ) {
 }
 
 include_once (WP_PLUGIN_DIR . '/woocommerce/admin/includes/duplicate_product.php');
-load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
+load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/languages/smart-manager-' . WPLANG . '.mo' );
 
 $mem_limit = ini_get('memory_limit');
 if(intval(substr($mem_limit,0,strlen($mem_limit)-1)) < 64 ){
@@ -36,9 +36,9 @@ $offset = (isset ( $_POST ['start'] )) ? $_POST ['start'] : 0;
 $limit = (isset ( $_POST ['limit'] )) ? $_POST ['limit'] : 100;
 
 // For pro version check if the required file exists
-if (file_exists ( WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/pro/woo.php' )) {
+if (file_exists ( WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/pro/woo.php' )) {
 	define ( 'SMPRO', true );
-	include_once (WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/pro/woo.php');
+	include_once (WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/pro/woo.php');
 } else {
 	define ( 'SMPRO', false );
 }
@@ -224,6 +224,27 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         }
 
 
+        //Query to get the Category Ids
+
+        $query_categories = "SELECT products.id as id,
+                                GROUP_CONCAT(distinct wtr.term_taxonomy_id order by wtr.object_id SEPARATOR '###') AS term_taxonomy_id
+                            FROM {$wpdb->prefix}posts as products
+                                    JOIN {$wpdb->prefix}term_relationships as wtr ON (products.id = wtr.object_id)
+                            WHERE products.post_status IN $post_status
+                                    AND products.post_type IN $post_type
+                                    $trash_id
+                            GROUP BY id";
+        $records_categories = $wpdb->get_results ( $query_categories, 'ARRAY_A' );                    
+
+        $category_ids_all = array();
+
+        foreach ($records_categories as $records_category) {
+            $category_ids_all[$records_category['id']] = $records_category['term_taxonomy_id'];
+        }
+
+
+        // GROUP_CONCAT(distinct wtr.term_taxonomy_id order by wtr.object_id SEPARATOR '###') AS term_taxonomy_id,
+
         $select = "SELECT SQL_CALC_FOUND_ROWS products.id,
 					products.post_title,
                     products.post_title as post_title_search,
@@ -231,7 +252,6 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 					products.post_excerpt,
 					products.post_status,
 					products.post_parent,
-					GROUP_CONCAT(distinct wtr.term_taxonomy_id order by wtr.object_id SEPARATOR '###') AS term_taxonomy_id,
 					GROUP_CONCAT(prod_othermeta.meta_key order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_key,
 					GROUP_CONCAT(prod_othermeta.meta_value order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_value
 					$parent_sort_id";
@@ -397,13 +417,13 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         }
 		} 
 
+        // LEFT JOIN {$wpdb->prefix}term_relationships as wtr ON (products.id = wtr.object_id
+        //                                                     )";  // Removed $term_taxonomy_id_query as it was conflicting with Attributes Column
+
 		$from = "FROM {$wpdb->prefix}posts as products
 						JOIN {$wpdb->prefix}postmeta as prod_othermeta ON (prod_othermeta.post_id = products.id and
-						prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price','_thumbnail_id','_tax_status','_min_variation_regular_price','_min_variation_sale_price','_visibility','_product_attributes','" . implode( "','", $variation ) . "') )
+						prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price','_thumbnail_id','_tax_status','_min_variation_regular_price','_min_variation_sale_price','_visibility','_product_attributes','" . implode( "','", $variation ) . "') )";
 						
-						LEFT JOIN {$wpdb->prefix}term_relationships as wtr ON (products.id = wtr.object_id
-                                                            )";  // Removed $term_taxonomy_id_query as it was conflicting with Attributes Column
-
 		$where	= " WHERE products.post_status IN $post_status
 						AND products.post_type IN $post_type
                                                 $trash_id
@@ -442,19 +462,30 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 $product_type = wp_get_object_terms($records[$i]['id'], 'product_type', array('fields' => 'slugs'));
 
                 // Code to get the Category Name from the term_taxonomy_id
-                $category_id = explode('###', $records[$i]['term_taxonomy_id']);
-                $category_names = "";
-                unset($records[$i]['term_taxonomy_id']);
+                
+                if (isset($category_ids_all[$records[$i]['id']])) {
 
-                for ($j = 0; $j < sizeof($category_id); $j++) {
-                    if (isset($term_taxonomy[$category_id[$j]])) {
-                        $category_names .=$term_taxonomy[$category_id[$j]] . ', ';
-                    }
+                    //$category_id = explode('###', $records[$i]['term_taxonomy_id']);
+                        $category_names = "";
+            //                unset($records[$i]['term_taxonomy_id']);
+
+                    $category_id = explode('###', $category_ids_all[$records[$i]['id']]);
+
+                      for ($j = 0; $j < sizeof($category_id); $j++) {
+                            if (isset($term_taxonomy[$category_id[$j]])) {
+                                $category_names .=$term_taxonomy[$category_id[$j]] . ', ';
+                                }
+                        }
+                        if ($category_names != "") {
+                            $category_names = substr($category_names, 0, -2);
+                            $records[$i]['category'] = $category_names;
+                        }
+
+                } else {
+                    $records[$i]['category'] = "";
                 }
-                if ($category_names != "") {
-                    $category_names = substr($category_names, 0, -2);
-                    $records[$i]['category'] = $category_names;
-                }
+
+
 
                 $records[$i]['category'] = ( ( $records[$i]['post_parent'] > 0 && $product_type[0] == 'simple' ) || ( $records[$i]['post_parent'] == 0 ) ) ? $records[$i]['category'] : '';   // To hide category name from Product's variations
 
@@ -511,8 +542,6 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
                 // Setting product type for grouped products
                 if ($records[$i]['post_parent'] != 0 ) {
-
-
 
                     $product_type_parent = wp_get_object_terms($records[$i]['post_parent'], 'product_type', array('fields' => 'slugs'));
                         
@@ -865,8 +894,6 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 $terms = $wpdb->get_results ( $query_terms,'ARRAY_A');
                 
 
-                
-                
                 for ($i=0;$i<sizeof($terms);$i++) {
                     $terms_name[$terms[$i]['term_taxonomy_id']] = $terms[$i]['name'];
                     $terms_id[$i] = $terms[$i]['term_taxonomy_id'];
@@ -913,14 +940,20 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 			
 			if (isset ( $_POST ['fromDate'] )) {
                                 
-                                $from_date = date('Y-m-d H:i:s',(int)strtotime($_POST ['fromDate']));
+                $from_date = date('Y-m-d H:i:s',(int)strtotime($_POST ['fromDate']));
+                
+                $date_start = date('Y-m-d',(int)strtotime($_POST ['fromDate']));
+                $date = date('Y-m-d',(int)strtotime($_POST ['toDate']));
                                 
-                                $date = date('Y-m-d',(int)strtotime($_POST ['toDate']));
-                                $curr_time_gmt = date('H:i:s',time()- date("Z"));
-                                $new_date = $date ." " . $curr_time_gmt;
-                                $to_date = date('Y-m-d H:i:s',((int)strtotime($new_date)) + ( get_option( 'gmt_offset' ) * HOUR_IN_SECONDS )) ;
-                                
-                                if (SMPRO == true) {
+                if ( $date_start == $date && $date == date('Y-m-d')) {
+                    $curr_time_gmt = date('H:i:s',time()- date("Z"));
+                    $new_date = $date ." " . $curr_time_gmt;
+                    $to_date = date('Y-m-d H:i:s',((int)strtotime($new_date)) + ( get_option( 'gmt_offset' ) * HOUR_IN_SECONDS )) ;
+                } else {
+                    $to_date = $date . " 23:59:59";
+                }
+
+                if (SMPRO == true) {
 					$where .= " AND posts.post_date BETWEEN '$from_date' AND '$to_date'";                                        
 				}
 			}
@@ -1445,7 +1478,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         $encoded ['items'] = $records;
         $encoded ['totalCount'] = $num_records;
         unset($records);
-                return $encoded;
+        return $encoded;
     }
 }
 
@@ -1473,7 +1506,51 @@ if ( !function_exists( 'get_attributes_value' ) ) {
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
-    $encoded = get_data_woo ( $_POST, $offset, $limit );   
+    //Code to handle get_data for Coupons dashboard
+    if (isset ( $_POST ['couponFields'] ) && $_POST ['couponFields'] != '') {
+
+        $fields = json_decode ( stripslashes ($_POST['couponFields']), true);
+        $coupon_details = $fields['coupon_dashbd'];
+
+        $args = array(
+            'post_type' => 'shop_coupon',
+            );
+
+        $result_coupons = new WP_Query( $args );
+        // $result_coupons = query_posts( $args );
+
+        $temp = array();
+        $cnt = 0;
+
+        while ($result_coupons->have_posts()) {
+            
+            $result_coupons->the_post();
+            $temp[$cnt] = array();
+            $temp[$cnt] ['id'] = get_the_ID();
+            
+            foreach ($coupon_details['column']['items'] as $meta_key) {
+
+                if ($meta_key['table'] == 'posts') {
+                    $post = get_post($temp[$cnt] ['id'], ARRAY_A);
+                    $temp[$cnt] [$meta_key['value']] = $post[$meta_key['value']];   
+                } else if ($meta_key['table'] == 'postmeta') {
+                    $temp[$cnt] [$meta_key['value']] = get_post_meta(get_the_ID(),$meta_key['value'],true);
+                }
+
+            }       
+
+            $temp[$cnt] ['post_status'] = get_post_status();
+            $cnt++;
+            
+        }
+
+        $encoded['items'] = $temp;
+        $encoded ['totalCount'] = $cnt;
+
+    } else {
+        $encoded = get_data_woo ( $_POST, $offset, $limit );
+    }
+
      
    // ob_clean("ob_gzhandler");
 
@@ -1485,6 +1562,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
     echo json_encode ( $encoded );
 	unset($encoded);
+    exit;
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
@@ -1496,7 +1574,10 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
         for ($i=0;$i<sizeof($state_nm);$i++) {
             $stateid = "_sm_".$current_user->user_email."_".$state_nm[$i];
         
-            $query_state  = "SELECT option_value FROM {$wpdb->prefix}options WHERE option_name like '$stateid'";
+            $query_state  = "SELECT option_value
+                             FROM {$wpdb->prefix}options
+                             WHERE option_name like '$stateid' 
+                                AND option_value <> ''";
             $result_state =  $wpdb->get_col ( $query_state );
             $rows_state   = $wpdb->num_rows;
             
@@ -1513,18 +1594,33 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
 
             }
             else {
+
+                if ($state_nm[$i] == "dashboardcombobox") {
+                    $state_apply_default = "Products";
+                } else if ($state_nm[$i] == "incVariation") {
+                    $state_apply_default = "false";
+                } else {
+                    $state_apply_default = '';
+                }
                 
-                $state_apply = $_POST[$state_nm[$i]];
+                // $state_apply = $_POST[$state_nm[$i]];
+
+                $state_apply = isset($_POST[$state_nm[$i]]) ? $_POST[$state_nm[$i]] : $state_apply_default;
                 
                 $query_state = "INSERT INTO {$wpdb->prefix}options (option_name,option_value) values ('$stateid','$state_apply')";
                 $result_state =  $wpdb->query ( $query_state );
                 
-                $state[$state_nm[$i]] = $state_apply;
+                if (!empty($state_apply)) {
+                    $state[$state_nm[$i]] = $state_apply;    
+                }
+
+                
             }
         }
         if ($_POST ['op'] == 'get' ) {   
             echo json_encode ($state);
         }
+        exit;
 }
 
 
@@ -1532,6 +1628,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
 if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
         $sm_domain = 'smart-manager';
 	$encoded = get_data_woo ( $_GET, $offset, $limit, true );
+
 	$data = $encoded ['items'];
 	unset($encoded);
 	$columns_header = array();
@@ -1621,6 +1718,8 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
 
         echo $file_data['file_content'];
 		
+
+
 	exit;
 }
 //Pro Version
@@ -2028,18 +2127,63 @@ function woo_insert_update_data($post) {
 
 // For insert updating product in woo.
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
-		
-                //For encoding the string in UTF-8 Format
+
+        //For encoding the string in UTF-8 Format
 //                $charset = "EUC-JP, ASCII, UTF-8, ISO-8859-1, JIS, SJIS";
-                $charset = ( get_bloginfo('charset') === 'UTF-8' ) ? null : get_bloginfo('charset');
-                if (!(is_null($charset))) {
-                    $_POST['edited'] = mb_convert_encoding(stripslashes($_POST['edited']),"UTF-8",$charset);
+        $charset = ( get_bloginfo('charset') === 'UTF-8' ) ? null : get_bloginfo('charset');
+        if (!(is_null($charset))) {
+            $_POST['edited'] = mb_convert_encoding(stripslashes($_POST['edited']),"UTF-8",$charset);
+
+            if ( $_POST['active_module'] == "Coupons" ) {
+                $_POST['table'] = mb_convert_encoding(stripslashes($_POST['table']),"UTF-8",$charset);
+                $_POST['edited_ids'] = mb_convert_encoding(stripslashes($_POST['edited_ids']),"UTF-8",$charset);
+            }
+
+        }
+        else {
+            $_POST['edited'] = stripslashes($_POST['edited']);
+
+            if ( $_POST['active_module'] == "Coupons" ) {
+                $_POST['table'] = stripslashes($_POST['table']);                        
+                $_POST['edited_ids'] = stripslashes($_POST['edited_ids']);                        
+            }
+        }
+
+        if ( $_POST['active_module'] == "Coupons" ) {
+            $edit_fields = json_decode($_POST['edited'], true);
+            $field_update_table = json_decode($_POST['table'], true);
+            $edited_ids = json_decode($_POST['edited_ids'], true);
+
+            $i = 0;
+
+            foreach ( $edit_fields as $edit_field ) {
+                $id = $edited_ids[$i];
+
+                foreach ( $edit_field as $key => $value ) {
+
+                    if ($field_update_table[$key] == "posts") {
+
+                        $post = array(
+                                'ID' => $id,
+                                $key => $value
+                            );
+
+                        wp_update_post( $post );
+
+                    } elseif ($field_update_table[$key] == "postmeta") {
+                        update_post_meta( $id, $key, $value );
+                    }
                 }
-                else {
-                    $_POST['edited'] = stripslashes($_POST['edited']);
-                }
-                    
-			$result = woo_insert_update_data ( $_POST );
+                $i++;    
+            }
+
+            $result ['updated'] = 1;
+            $result ['updateCnt'] = sizeof($edited_ids);
+
+        } else {
+            $result = woo_insert_update_data ( $_POST );
+        }
+			
 		
 		if ($result ['updated'] && $result ['inserted']) {
 			if ($result ['updateCnt'] == 1 && $result ['insertCnt'] == 1)
@@ -2074,6 +2218,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
         }
 
         echo json_encode ( $encoded );
+
+        exit;
 }
 
 
@@ -2117,6 +2263,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
                 $encoded ['msg'] = $activeModule . __('s were not duplicated','smart-manager');
         }
         echo json_encode ( $encoded );
+
+        exit;
     }
 
     /*Code to handle the First AJAX request used to calculate the 
@@ -2167,6 +2315,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
         $encoded['data_dup'] = $data_dup;
         
         echo json_encode ( $encoded );
+
+        exit;
     }
 
     /*Code for handling the remmaing ajax request which actully calls the 
@@ -2249,6 +2399,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
         }
 
         echo json_encode ( $encoded );
+
+        exit;
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
@@ -2271,6 +2423,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
     }
      
     echo json_encode ( $results );
+
+    exit;
 }
 
 function customers_query($search_text = '') {
@@ -2372,6 +2526,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getTerms'){
     }
 
         echo json_encode ( $terms_combo_store );
+
+        exit;
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRegion') {
@@ -2393,6 +2549,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRegion') {
     }
 
         echo json_encode ( $regions );
+
+        exit;
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
@@ -2407,6 +2565,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
     }
     
         echo json_encode ( $thumbnail );
+
+        exit;
 }
 ob_end_flush();
 ?>

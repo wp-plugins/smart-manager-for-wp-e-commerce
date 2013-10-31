@@ -24,7 +24,7 @@ include_once (ABSPATH . 'wp-admin/includes/screen.php'); // Fix to handle the WP
 require_once( WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-admin/includes/product-functions.php' );     // Fix for undefined function 'wpsc_product_has_children'
 include_once (WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-core/wpsc-functions.php');
 include_once (WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-includes/purchaselogs.class.php');
-load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/languages/smart-manager-' . WPLANG . '.mo' );
+load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/languages/smart-manager-' . WPLANG . '.mo' );
 
 //checking the memory limit allocated
 $mem_limit = ini_get('memory_limit');
@@ -39,9 +39,9 @@ $offset = (isset ( $_POST ['start'] )) ? $_POST ['start'] : 0;
 $limit = (isset ( $_POST ['limit'] )) ? $_POST ['limit'] : 100;
 
 // For pro version check if the required file exists
-if (file_exists ( WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/pro/sm38.php' )) {
+if (file_exists ( WP_PLUGIN_DIR . '/' . dirname( dirname(plugin_basename( __FILE__ ))) . '/pro/sm38.php' )) {
 	define ( 'SMPRO', true );
-	include_once ( WP_PLUGIN_DIR . '/smart-manager-for-wp-e-commerce/pro/sm38.php' );
+	include_once ( WP_PLUGIN_DIR . '/' . dirname( dirname(plugin_basename( __FILE__ ))) . '/pro/sm38.php' );
 } else {
 	define ( 'SMPRO', false );
 }
@@ -920,6 +920,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
         echo json_encode ( $encoded );
 	unset($encoded);
+
+	exit;
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
@@ -961,6 +963,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
         if ($_POST ['op'] == 'get' ) {   
             echo json_encode ($state);
         }
+
+        exit;
 }
 
 
@@ -1102,6 +1106,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
                 $encoded ['msg'] = $activeModule . __('s were not duplicated','smart-manager');
         }
         echo json_encode ( $encoded );
+
+        exit;
     }
 
     /*Code to handle the First AJAX request used to calculate the 
@@ -1152,6 +1158,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
         $encoded['data_dup'] = $data_dup;
         
         echo json_encode ( $encoded );
+
+        exit;
     }
 
     /*Code for handling the remmaing ajax request which actully calls the 
@@ -1252,6 +1260,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
     }
 
         echo json_encode ( $encoded );
+
+        exit;
 }
 
 //update products for lite version.
@@ -1715,6 +1725,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
     }
 
         echo json_encode ( $encoded );
+
+        exit;
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
@@ -1742,6 +1754,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
     }
 
         echo json_encode ( $results );
+
+        exit;
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
@@ -1759,6 +1773,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
         }
         
         echo json_encode ( $thumbnail );
+
+        exit;
 }
 //ob_end_flush();
 ?>

@@ -413,7 +413,10 @@ Ext.onReady(function () {
 				if (sm.getCount()) {
 
 					if(fileExists == 1) {
-						pagingToolbar.batchButton.enable();
+						if (SM.activeModule != 'Coupons') {
+							pagingToolbar.batchButton.enable();
+						}
+						
                     	editorGrid.getTopToolbar().get('duplicateButton').enable();	
                     	if(pagingToolbar.hasOwnProperty('printButton'))
 							pagingToolbar.printButton.enable();
@@ -448,7 +451,7 @@ Ext.onReady(function () {
         //Function to handle the state apply at regular intervals
         function state_update() {
             
-            if (state_apply === true) {
+            if (state_apply === true && SM.activeModule != "Coupons") {
                 
                 var editor_current_state = editorGrid.getState();
                 if (SM.dashboard_state == "Products") {
@@ -463,7 +466,8 @@ Ext.onReady(function () {
 
                 jQuery.ajax({
                     type : 'POST',
-                    url : jsonURL,
+                    // url : jsonURL,
+                    url: ajaxurl + '?action=sm_include_file',
                     dataType:"text",
                     async: false,
                     data: {
@@ -473,7 +477,8 @@ Ext.onReady(function () {
                                 incVariation : SM.variation_state,
                                 Products : Ext.encode(SM.products_state),
                                 Customers : Ext.encode(SM.customers_state),
-                                Orders : Ext.encode(SM.orders_state)
+                                Orders : Ext.encode(SM.orders_state),
+                                file:  jsonURL
                     },
                     success: function(data) {
                         state_apply = false;
@@ -489,15 +494,20 @@ Ext.onReady(function () {
         {	
           jQuery.ajax({
                 type : 'POST',
-                url : jsonURL,
+                // url : jsonURL,
+                url: ajaxurl + '?action=sm_include_file',
                 dataType:"text",
                 async: false,
                 data: {
                             cmd: 'state',
-                            op : 'get'
+                            op : 'get',
+                            file:  jsonURL
                 },
                 success: function(response) {
                 	
+                	
+                	
+
                     var myJsonObj    = Ext.decode(response);
                     
                     SM.products_state = Ext.decode(myJsonObj['Products']);
@@ -671,6 +681,22 @@ Ext.onReady(function () {
 	function formatDate(value){
         return value ? value.dateFormat('M d, Y') : '';
     }
+	
+    //Coupons == combo box consisting of yes and no values for inline editing
+	var yesNoCombo_inline = new Ext.form.ComboBox({
+		typeAhead: true,
+		triggerAction: 'all',
+		lazyRender:true,
+		editable: false,
+		mode: 'local',
+		store: new Ext.data.ArrayStore({
+			id: 0,
+			fields: ['value','name'],
+			data: [['true', 'Yes'], ['false', 'No']]
+		}),
+		valueField: 'value',
+		displayField: 'name'
+	});	
 
 	//combo box consisting of yes and no values.
 	var yesNoCombo = new Ext.form.ComboBox({
@@ -692,7 +718,8 @@ Ext.onReady(function () {
 		var getVariations = function (params,columnModel,store){
         if ( editorGrid.loadMask != undefined ) editorGrid.loadMask.show();
         var o = {
-		url: jsonURL,
+		// url: jsonURL,
+		url: ajaxurl + '?action=sm_include_file',
 		method: 'post',
 		callback: function (options, success, response) {
                 editorGrid.loadMask.show();
@@ -806,17 +833,6 @@ Ext.onReady(function () {
         valueField: 'value',
         displayField: 'name'
     });
-
-
-//Ext.override(Ext.grid.ColumnModel, { 
-//    setState: function (col, state) { 
-//        if (SM.activeModule == 'Products') {
-//            Ext.apply(this.lookup[col], state); 
-//        }
-//    } 
-//}); 
-
-
 
 
 //Code to override the Drag function of EXTJS
@@ -1193,7 +1209,8 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 	var productsStore = new Ext.data.Store({
 		reader: productsJsonReader,
 		proxy: new Ext.data.HttpProxy({
-			url: jsonURL
+			// url: jsonURL
+			url: ajaxurl + '?action=sm_include_file'
 		}),
 		baseParams: {
 			cmd: 'getData',
@@ -1202,7 +1219,8 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			limit: limit,
 			viewCols: Ext.encode(productsViewCols),
 			incVariation: SM.incVariation,
-                        SM_IS_WOO16: SM_IS_WOO16
+            SM_IS_WOO16: SM_IS_WOO16,
+            file:  jsonURL
 		},
 		dirty: false,
 		pruneModifiedRecords: true,
@@ -1305,11 +1323,14 @@ var pagingToolbar = new Ext.PagingToolbar({
 		id: 'saveButton',
 		listeners:{ click : function () {
 			if(SM.activeModule == 'Orders')
-			store = ordersStore;
+				store = ordersStore;
 			else if(SM.activeModule == 'Products')
-			store = productsStore;
+				store = productsStore;
 			else if(SM.activeModule == 'Customers')
-			store = customersStore;
+				store = customersStore;
+			else if(SM.activeModule == couponFields.coupon_dashbd.title)
+				store = couponstore;
+
 			saveRecords(store,pagingToolbar,jsonURL,editorGridSelectionModel);
 		}}
 	},{xtype:'tbseparator', id:'beforeExportSeparator'},
@@ -1334,7 +1355,8 @@ var pagingToolbar = new Ext.PagingToolbar({
                                     width: 0, 
                                     height: 0, 
                                     css: 'display:none;visibility:hidden;height:0px;', 
-                                    src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
+                                    // src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
+                                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
                                 }); 
 			}
 		}
@@ -1363,19 +1385,38 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			Ext.notification.msg('Note', 'For editing more records upgrade to Pro');
 			return;
 		}
+
+		var coupon_data_table = new Object();
+		
+		if ( SM.activeModule == 'Coupons' ) {
+			var fields = Ext.decode(store.baseParams.couponFields);
+			var coupon_fields = fields.coupon_dashbd.column.items;
+
+			for (j = 0; j < coupon_fields.length; j++) {
+    			coupon_data_table[coupon_fields[j].value] = coupon_fields[j].table;
+    		}
+		}
+			
+
 		var edited  = [];
+		var edited_ids = [];
 		Ext.each(modifiedRecords, function(r, i){
+
 			if(r.get('id') == ''){
 				r.data.category = newCatId;
 			}
 
-		var records = r.get('id');
-		
+			var records = r.get('id');
+			if ( SM.activeModule == 'Coupons' ) {
+				edited_ids.push(r.id);
+			}
+			
 			edited.push(r.data);
 		});
 
 		var o = {
-			url:jsonURL
+			// url:jsonURL
+			url: ajaxurl + '?action=sm_include_file'
 			,method:'post'
 			,callback: function(options, success, response)	{
 				var myJsonObj = Ext.decode(response.responseText);
@@ -1405,7 +1446,10 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 				active_module: SM.activeModule,
 				incVariation: SM.incVariation,
 				edited:Ext.encode(edited),
-                SM_IS_WOO16: SM_IS_WOO16
+				table:Ext.encode(coupon_data_table),
+				edited_ids:Ext.encode(edited_ids),
+                SM_IS_WOO16: SM_IS_WOO16,
+                file:  jsonURL
 			}};
 			Ext.Ajax.request(o);
 	};
@@ -1483,7 +1527,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                         for (i=0;i<count;i++) {
 
                                 arr[i] = {
-                                            url: jsonURL,
+                                            // url: jsonURL,
+                                            url: ajaxurl + '?action=sm_include_file',
                                             method: 'post',
                                             callback: function (options, success, response) {
 
@@ -1538,7 +1583,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                                     dup_data : dup_data,
                                                     menu : menu,
                                                     active_module: SM.activeModule,
-                                                    incvariation: SM.incVariation
+                                                    incvariation: SM.incVariation,
+                                                    file:  jsonURL
                                             }
                                     };
 
@@ -1558,7 +1604,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 
                         //Initial AJAX request to get the number of AJAX request to be made based on the number of products selected for duplication
                         var o = {
-                            url: jsonURL,
+                            // url: jsonURL,
+                            url: ajaxurl + '?action=sm_include_file',
                             method: 'post',
                             callback: function (options, success, response) {
                                 try {
@@ -1580,7 +1627,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                     menu : menu,
                                     active_module: SM.activeModule,
                                     incvariation: SM.incVariation,
-                                    data: Ext.encode(records)
+                                    data: Ext.encode(records),
+                                    file:  jsonURL
                             }
                     };
                     Ext.Ajax.request(o);
@@ -1617,7 +1665,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			if (btn == 'yes') {
                                 batchUpdateWindow.loadMask.show();
 				var o = {
-					url: jsonURL,
+					// url: jsonURL,
+					url: ajaxurl + '?action=sm_include_file',
 					method: 'post',
 					callback: function (options, success, response) {
 
@@ -1669,7 +1718,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 					params: {
 						cmd: 'delData',
 						active_module: SM.activeModule,
-						data: Ext.encode(records)
+						data: Ext.encode(records),
+						file:  jsonURL
 					}
 				};
 				Ext.Ajax.request(o);
@@ -1697,6 +1747,9 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		}else if (clickedActiveModule == 'Orders'){
 			SM.activeModule = 'Orders';
 			showOrdersView();
+		}else if (clickedActiveModule == couponFields.coupon_dashbd.title){
+			SM.activeModule = couponFields.coupon_dashbd.title;
+			showcouponView();
 		}else{
 			SM.activeModule = 'Products';
 			showProductsView();
@@ -1797,7 +1850,9 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
                 },
                 
                 saveState : function(){
+                	if (this.value != 'Coupons') {
                       SM.dashboard_state = this.value;
+                	}
                 },
 		
 		forceSelection: true,
@@ -1805,7 +1860,18 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 		listeners: {
 			select: function () {
 				pagingToolbar.emptyMsg = this.getValue() + ' ' + getText('list is empty');
-                                
+
+								if(this.value == 'Coupons') {
+									pagingToolbar.exportButton.disable();
+									editorGrid.getTopToolbar().get(10).hide();
+									editorGrid.getTopToolbar().get(11).hide();
+									
+								} else {
+									pagingToolbar.exportButton.enable();
+									editorGrid.getTopToolbar().get(10).show();
+									editorGrid.getTopToolbar().get(11).show();
+								}
+
                                 if(this.value == 'Products') {
                                       editorGrid.stateId = this.value.toLowerCase()+'EditorGridPanelWoo';
                                 }
@@ -1835,6 +1901,8 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 					store = ordersStore;
 				else if(SM.activeModule == 'Products')
 					store = productsStore;
+				else if(SM.activeModule == couponFields.coupon_dashbd.title)
+					store = couponstore;
 				else 
 					store = customersStore;
 
@@ -1843,6 +1911,8 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 					clickedActiveModule = 'Customers';
 				else if (this.value == 'Orders')
 					clickedActiveModule = 'Orders';
+				else if (this.value == couponFields.coupon_dashbd.title)
+					clickedActiveModule = couponFields.coupon_dashbd.title;
 				else
 					clickedActiveModule = 'Products';
 
@@ -1940,7 +2010,8 @@ var searchLogic = function () {
 	//END setting the params to store if search fields are with values (refresh event)
 	mask.show();
 	var o = {
-		url: jsonURL,
+		// url: jsonURL,
+		url: ajaxurl + '?action=sm_include_file',
 		method: 'post',
 		callback: function (options, success, response) {
 			
@@ -1980,7 +2051,8 @@ var searchLogic = function () {
 			start: 0,
 			limit: limit,
 			viewCols: Ext.encode(productsViewCols),
-			SM_IS_WOO16: SM_IS_WOO16
+			SM_IS_WOO16: SM_IS_WOO16,
+			file:  jsonURL
 		}
 	};
 	Ext.Ajax.request(o);
@@ -2359,7 +2431,8 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								textField1Cmp.hide();
 								textField2Cmp.hide();
 								var object = {
-												url:jsonURL
+												// url:jsonURL
+												url: ajaxurl + '?action=sm_include_file'
 												,method:'post'
 												,callback: function(options, success, response)	{
 													var myJsonObj = Ext.decode(response.responseText);
@@ -2388,7 +2461,8 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 													cmd: 'getTerms',
 											 		active_module: SM.activeModule,
 											 		action_name: selectedValue,
-											 		attribute_name: selectedActionvalue
+											 		attribute_name: selectedActionvalue,
+											 		file:  jsonURL
 												}
 											};
 								Ext.Ajax.request(object);
@@ -2430,7 +2504,8 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var selectedValue      = comboCountriesCmp.value;
 						
 						var object = {
-							url:jsonURL
+							// url:jsonURL
+							url: ajaxurl + '?action=sm_include_file'
 							,method:'post'
 							,callback: function(options, success, response)	{
 								var myJsonObj = Ext.decode(response.responseText);
@@ -2466,7 +2541,8 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							{
 								cmd: 'getRegion',
 								active_module: SM.activeModule,
-								country_id: selectedValue				
+								country_id: selectedValue,
+								file:  jsonURL				
 							}
 						};
 						Ext.Ajax.request(object);
@@ -2801,6 +2877,7 @@ var billingDetailsIframe = function(recordId){
 
 var checkModifiedAndshowDetails = function(record,rowIndex){
 	//set a store depending on the active Module
+
 	if(SM.activeModule == 'Orders')
 	store = ordersStore;
 	else if(SM.activeModule == 'Products')
@@ -3055,13 +3132,17 @@ var showCustomerDetails = function(record,rowIndex){
 	// create the Customers Data Store
 	var customersStore = new Ext.data.Store({
 		reader: customersJsonReader,
-		proxy:new Ext.data.HttpProxy({url:jsonURL}),
+		proxy:new Ext.data.HttpProxy({
+			// url:jsonURL
+			url: ajaxurl + '?action=sm_include_file'
+		}),
 		baseParams:{
 			cmd: 'getData',
 			active_module: 'Customers',
 			start: 0,
 			limit: limit,
-                        SM_IS_WOO16: SM_IS_WOO16
+            SM_IS_WOO16: SM_IS_WOO16,
+            file:  jsonURL
 		},
 		dirty:false,
 		pruneModifiedRecords: true
@@ -3165,6 +3246,152 @@ var showCustomerDetails = function(record,rowIndex){
             this.fireEvent("columnmoved", this, oldIndex, newIndex);
           }
         });  
+	
+
+	//COUPONS//
+        
+        var str = new Array();
+        var coupon_render_fields = new Array();
+
+        str[0] = editorGridSelectionModel;
+
+        for (i = 0; i < couponFields.coupon_dashbd.column.items.length; i++) {
+        	var coupon = new Object();
+        	coupon.header = couponFields.coupon_dashbd.column.items[i].name;
+        	coupon.dataIndex = couponFields.coupon_dashbd.column.items[i].value;
+        	coupon.width = 50;
+        	coupon.editable= true;
+
+        	if (coupon.header == 'id') {
+        		coupon.hideable = false;
+				coupon.hidden = true;
+        	}
+
+        	if (couponFields.coupon_dashbd.column.items[i].type == "bool") {
+        		coupon.editor = yesNoCombo_inline;
+        	} else if (couponFields.coupon_dashbd.column.items[i].type == "datetime") {
+        		coupon.editor = new fm.DateField({
+                					format: 'm/d/y',
+                					editable: false,
+                					allowBlank: false,
+									allowNegative: false,
+                					width: 50
+            					})
+        	} else if (couponFields.coupon_dashbd.column.items[i].type == "select") {
+
+        		var select = new Array();
+        		for (j = 0; j < couponFields.coupon_dashbd.column.items[i].data.length; j++) {
+        			select[j] = new Array();
+
+        			select[j][0] = couponFields.coupon_dashbd.column.items[i].data[j][0];
+        			select[j][1] = couponFields.coupon_dashbd.column.items[i].data[j][1];
+        		}
+
+        		coupon.editor = new Ext.form.ComboBox({
+									typeAhead: true,
+									triggerAction: 'all',
+									lazyRender:true,
+									editable: false,
+									mode: 'local',
+									store: new Ext.data.ArrayStore({
+												id: 0,
+												fields: ['id','name'],
+												data: select
+											}),
+									valueField: 'name',
+									displayField: 'name'
+								});
+        	} else {
+        		coupon.editor= new fm.TextField({ allowBlank: true, allowNegative: true});	
+        	}
+
+        	
+        	var coupon_render = new Object();
+        	coupon_render.name = couponFields.coupon_dashbd.column.items[i].value;
+        	coupon_render.type = couponFields.coupon_dashbd.column.items[i].type;
+        	coupon_render.table = couponFields.coupon_dashbd.column.items[i].table;
+
+        	str[i+1] = coupon;
+
+        	coupon_render_fields [i] = coupon_render;
+
+        }
+
+        var colModel1 = new Ext.grid.ColumnModel(str);
+        var colModel = new Ext.grid.ColumnModel(editorGridSelectionModel,colModel1);
+        var title = couponFields.coupon_dashbd.title;
+        var colmodel = title + "ColumnModel";
+
+        var  colmodel = new Ext.grid.ColumnModel({	
+		columns: str,
+		listeners: {
+			hiddenchange: function( ColumnModel,columnIndex, hidden ){
+                            state_apply = false;
+			}
+		},
+		defaultSortable: true
+	});
+
+		var couponsJsonReader = new Ext.data.customJsonReader({
+		totalProperty: 'totalCount',
+		root: 'items',
+		fields: coupon_render_fields
+	});
+
+		var store1 = couponFields.title + "Store";
+
+		// create the Orders Data Store
+	var couponstore = new Ext.data.Store({
+		// reader: couponFields.coupon_dashbd.title + "JsonReader",
+		reader: couponsJsonReader,
+		proxy:new Ext.data.HttpProxy({
+			// url:jsonURL
+			url: ajaxurl + '?action=sm_include_file'
+		}),
+		baseParams:{
+			cmd: 'getData',
+			active_module: couponFields.coupon_dashbd.title,
+			start: 0,
+			limit: limit,
+			couponFields: Ext.encode(couponFields),
+			SM_IS_WOO16: SM_IS_WOO16,
+			file:  jsonURL
+		},
+		dirty:false,
+		pruneModifiedRecords: true,
+		listeners: {
+			//Products Store onload function.
+			load: function (store,records,obj) {
+
+			}
+		}
+	});
+
+
+	var showcouponView = function(){
+        batchUpdateWindow.loadMask.show();
+
+        SM.activeModule = couponFields.coupon_dashbd.title;
+		SM.dashboardComboBox.setValue(SM.activeModule);
+                
+		couponstore.baseParams.searchText = ''; //clear the baseParams for couponstore
+		SM.searchTextField.reset(); 			  //to reset the searchTextField
+		
+		hidePrintButton();
+		hideDeleteButton();
+		hideAddProductButton();
+		showDeleteButton();
+		pagingToolbar.doLayout(true,true);
+		
+		for(var i=2;i<=8;i++)
+		editorGrid.getTopToolbar().get(i).hide();
+		editorGrid.getTopToolbar().get('incVariation').hide();
+        editorGrid.getTopToolbar().get('duplicateButton').hide();
+
+		couponstore.load();
+		editorGrid.reconfigure(couponstore,colmodel);
+		pagingToolbar.bind(couponstore);
+	};
 
 	var ordersColumnModel = new Ext.OrdersColumnModel({	
 		columns:[editorGridSelectionModel, //checkbox for
@@ -3451,13 +3678,17 @@ var showCustomerDetails = function(record,rowIndex){
 	// create the Orders Data Store
 	var ordersStore = new Ext.data.Store({
 		reader: ordersJsonReader,
-		proxy:new Ext.data.HttpProxy({url:jsonURL}),
+		proxy:new Ext.data.HttpProxy({
+			// url:jsonURL
+			url: ajaxurl + '?action=sm_include_file'
+		}),
 		baseParams:{
 			cmd: 'getData',
 			active_module: 'Orders',
 			start: 0,
 			limit: limit,
-                        SM_IS_WOO16: SM_IS_WOO16
+            SM_IS_WOO16: SM_IS_WOO16,
+            file:  jsonURL
 		},
 		dirty:false,
 		pruneModifiedRecords: true
@@ -3624,13 +3855,10 @@ var showCustomerDetails = function(record,rowIndex){
 		beforerender: function(grid) {
 
                     	var object = {
-						url:jsonURL
+						// url:jsonURL
+						url: ajaxurl + '?action=sm_include_file'
 						,method:'post'
 						,callback: function(options, success, response)	{
-
-							// if ( fileExists != 1) {
-							// 	exportCsvButton.fireEvent('disable', this);
-							// }
 
 							var myJsonObj = Ext.decode(response.responseText);
 							var dashboardComboStore = new Array();
@@ -3644,6 +3872,8 @@ var showCustomerDetails = function(record,rowIndex){
 								
 							}
 
+							//COUPONS == Pushing coupons in dashboard
+							dashboardComboStore.push( new Array( 3, couponFields.coupon_dashbd.title, couponFields.coupon_dashbd.title ) );
 							if ( dashboardComboStore < 1) {
 								Ext.Msg.show({
 									title: getText('Access Denied'),
@@ -3660,7 +3890,8 @@ var showCustomerDetails = function(record,rowIndex){
 						},scope: SM.dashboardComboBox
 						,params:
 						{
-							cmd:'getRolesDashboard'
+							cmd:'getRolesDashboard',
+							file:  jsonURL
 						}};
 				Ext.Ajax.request(object);
 		},
@@ -3682,7 +3913,7 @@ var showCustomerDetails = function(record,rowIndex){
 					salePriceToColumnIndex    = productsColumnModel.findColumnIndex(SM.productsCols.salePriceTo.colName),
 					descColumnIndex        	  = productsColumnModel.findColumnIndex(SM.productsCols.desc.colName),
 					addDescColumnIndex        = productsColumnModel.findColumnIndex(SM.productsCols.addDesc.colName),
-                                        visibilityColumnIndex     = productsColumnModel.findColumnIndex(SM.productsCols.visibility.colName),
+                    visibilityColumnIndex     = productsColumnModel.findColumnIndex(SM.productsCols.visibility.colName),
                     taxStatusColumnIndex      = productsColumnModel.findColumnIndex(SM.productsCols.taxStatus.colName);
 
 				if(SM.activeModule == 'Orders'){
@@ -3783,7 +4014,8 @@ var showCustomerDetails = function(record,rowIndex){
 								},
 								close: function() {
 									var object = {
-										url:jsonURL
+										// url:jsonURL
+										url: ajaxurl + '?action=sm_include_file'
 										,method:'post'
 										,callback: function(options, success, response)	{
 											var myJsonObj = Ext.decode(response.responseText);
@@ -3795,7 +4027,8 @@ var showCustomerDetails = function(record,rowIndex){
 										{
 											cmd:'editImage',
 											id: record.id,
-											incVariation: SM.incVariation
+											incVariation: SM.incVariation,
+											file:  jsonURL
 										}
 									};
 									Ext.Ajax.request(object);
@@ -3933,7 +4166,7 @@ var showCustomerDetails = function(record,rowIndex){
                     Ext.grid.GridPanel.superclass.applyState.call(this, o);
                     this.view.refresh(true);
                     
-                    setInterval(function(){state_update()}, 60000);
+                    // setInterval(function(){state_update()}, 60000);
                 }
 
                 editorGrid.loadMask.hide();
@@ -3947,7 +4180,6 @@ var showCustomerDetails = function(record,rowIndex){
 		// state of the editor grid is captured and applied to back to the grid.
                 
 		reconfigure : function(grid,store,colModel ){
-//                    editorGrid.view.refresh(true);
                     editorGrid.loadMask.show();
                     
                     state_apply = true;

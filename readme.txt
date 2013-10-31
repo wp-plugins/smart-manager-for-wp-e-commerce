@@ -3,8 +3,8 @@ Contributors: storeapps, niravmehta, ratnakar.dubey, rupali, Tarun.Parswani, sun
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager, extension, premium, free, download
 Requires at least: 2.0.2
-Tested up to: 3.6.1
-Stable tag: 3.4.1
+Tested up to: 3.7.1
+Stable tag: 3.5
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -116,6 +116,11 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.5 =
+* New: Coupons Dashboard (WooCommerce)
+* New: Included translation files for Romania (Thanks to Balanean Corneliu)
+* Update: Some minor fixes
 
 = 3.4.1 =
 * Update: Attributes column to show only product specific attributes (WooCommerce)
@@ -459,6 +464,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.5 =
+New coupons dashboard for WooCommerce and new translation files for Romania along with some minor fixes. Recommended upgrade.
 
 = 3.4.1 =
 Updates related to attributes column [WooCommerce] & option for handling decimal precission for dimensions fields along with some minor fixes. Recommended upgrade.

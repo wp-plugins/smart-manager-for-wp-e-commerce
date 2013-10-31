@@ -435,7 +435,8 @@ Ext.onReady(function () {
 
                 jQuery.ajax({
                     type : 'POST',
-                    url : jsonURL,
+                    // url : jsonURL,
+                    url: ajaxurl + '?action=sm_include_file',
                     dataType:"text",
                     async: false,
                     data: {
@@ -445,7 +446,8 @@ Ext.onReady(function () {
                                 incVariation : SM.variation_state,
                                 Products : Ext.encode(SM.products_state),
                                 Customers : Ext.encode(SM.customers_state),
-                                Orders : Ext.encode(SM.orders_state)
+                                Orders : Ext.encode(SM.orders_state),
+                                file:  jsonURL
                     },
                     success: function(data) {
                         state_apply = false;
@@ -462,12 +464,14 @@ Ext.onReady(function () {
         {
           jQuery.ajax({
                 type : 'POST',
-                url : jsonURL,
+                // url : jsonURL,
+                url: ajaxurl + '?action=sm_include_file',
                 dataType:"text",
                 async: false,
                 data: {
                             cmd: 'state',
-                            op : 'get'
+                            op : 'get',
+                            file:  jsonURL
                 },
                 success: function(response) {
                 	var myJsonObj    = Ext.decode(response);
@@ -1109,7 +1113,8 @@ Ext.onReady(function () {
 	var productsStore = new Ext.data.Store({
 		reader: productsJsonReader,
 		proxy: new Ext.data.HttpProxy({
-			url: jsonURL
+			// url: jsonURL
+			url: ajaxurl + '?action=sm_include_file'
 		}),
 		baseParams: {
 			cmd: 'getData',
@@ -1117,7 +1122,8 @@ Ext.onReady(function () {
 			start: 0,
 			limit: limit,
 			viewCols: Ext.encode(productsViewCols),
-			incVariation: SM.incVariation
+			incVariation: SM.incVariation,
+			file:  jsonURL
 		},
 		dirty: false,
 		pruneModifiedRecords: true,
@@ -1172,7 +1178,8 @@ Ext.onReady(function () {
 		var getVariations = function (params,columnModel,store){
         if ( editorGrid.loadMask != undefined ) editorGrid.loadMask.show();
         var o = {
-		url: jsonURL,
+		// url: jsonURL,
+		url: ajaxurl + '?action=sm_include_file',
 		method: 'post',
 		callback: function (options, success, response) {
                 editorGrid.loadMask.show();
@@ -1287,7 +1294,8 @@ var pagingToolbar = new Ext.PagingToolbar({
                     width: 0, 
                     height: 0,
                     css: 'display:none;visibility:hidden;height:0px;', 
-                    src: jsonURL+'?cmd=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
+                    // src: jsonURL+'?cmd=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
+                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&cmd=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
                 }); 
 			}
 		}
@@ -1330,7 +1338,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		});
 		
 		var o = {
-			url:jsonURL
+			// url:jsonURL
+			url: ajaxurl + '?action=sm_include_file'
 			,method:'post'
 			,callback: function(options, success, response)	{
 				var myJsonObj = Ext.decode(response.responseText);
@@ -1358,7 +1367,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			{
 				cmd:'saveData',
 				active_module: SM.activeModule,
-				edited:Ext.encode(edited)				
+				edited:Ext.encode(edited),
+				file:  jsonURL
 			}};
 			Ext.Ajax.request(o);
 	};
@@ -1440,7 +1450,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                         for (i=0;i<count;i++) {
 
                                 arr[i] = {
-					url: jsonURL,
+					// url: jsonURL,
+					url: ajaxurl + '?action=sm_include_file',
 					method: 'post',
 					callback: function (options, success, response) {
 
@@ -1495,7 +1506,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                                 dup_data : dup_data,
                                                 menu : menu,
                                                 active_module : SM.activeModule,
-                                                incvariation : SM.incVariation
+                                                incvariation : SM.incVariation,
+                                                file:  jsonURL
 					}
 				};
 
@@ -1514,7 +1526,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                         
                         //Initial AJAX request to get the number of AJAX request to be made based on the number of products selected for duplication
                         var o = {
-                            url: jsonURL,
+                            // url: jsonURL,
+                            url: ajaxurl + '?action=sm_include_file',
                             method: 'post',
                             callback: function (options, success, response) {
                                 try {
@@ -1536,7 +1549,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                     menu : menu,
                                     active_module: SM.activeModule,
                                     incvariation: SM.incVariation,
-                                    data: Ext.encode(records)
+                                    data: Ext.encode(records),
+                                    file:  jsonURL
                             }
                     };
                     Ext.Ajax.request(o);
@@ -1572,7 +1586,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			if (btn == 'yes') {
                                 batchUpdateWindow.loadMask.show();
 				var o = {
-					url: jsonURL,
+					// url: jsonURL,
+					url: ajaxurl + '?action=sm_include_file',
 					method: 'post',
 					callback: function (options, success, response) {
 
@@ -1616,7 +1631,8 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 					params: {
 						cmd: 'delData',
 						active_module: SM.activeModule,
-						data: Ext.encode(records)
+						data: Ext.encode(records),
+						file:  jsonURL
 					}
 				};
 				Ext.Ajax.request(o);
@@ -2117,12 +2133,16 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 	// create the Customers Data Store
 	var customersStore = new Ext.data.Store({
 		reader: customersJsonReader,
-		proxy:new Ext.data.HttpProxy({url:jsonURL}),
+		proxy:new Ext.data.HttpProxy({
+			// url:jsonURL
+			url: ajaxurl + '?action=sm_include_file'
+		}),
 		baseParams:{
 			cmd: 'getData',
 			active_module: 'Customers',
 			start: 0,
-			limit: limit			
+			limit: limit,
+			file:  jsonURL			
 		},
 		dirty:false,
 		pruneModifiedRecords: true
@@ -2463,12 +2483,16 @@ if(isWPSC38 == '1'){
 	// create the Orders Data Store
 	var ordersStore = new Ext.data.Store({
 		reader: ordersJsonReader,
-		proxy:new Ext.data.HttpProxy({url:jsonURL}),
+		proxy:new Ext.data.HttpProxy({
+			// url:jsonURL
+			url: ajaxurl + '?action=sm_include_file'
+		}),
 		baseParams:{
 			cmd: 'getData',
 			active_module: 'Orders',
 			start: 0,
-			limit: limit
+			limit: limit,
+			file:  jsonURL
 		},
 		dirty:false,
 		pruneModifiedRecords: true
@@ -2621,7 +2645,8 @@ var searchLogic = function () {
 	//END setting the params to store if search fields are with values (refresh event)
 	mask.show();
 	var o = {
-		url: jsonURL,
+		// url: jsonURL,
+		url: ajaxurl + '?action=sm_include_file',
 		method: 'post',
 		callback: function (options, success, response) {
 			
@@ -2658,7 +2683,8 @@ var searchLogic = function () {
 			incVariation:SM.incVariation,
 			start: 0,
 			limit: limit,
-			viewCols: Ext.encode(productsViewCols)
+			viewCols: Ext.encode(productsViewCols),
+			file:  jsonURL
 		}
 	};
 	Ext.Ajax.request(o);
@@ -3484,7 +3510,8 @@ var showCustomerDetails = function(record,rowIndex){
 	listeners: {
 		beforerender: function(grid) {
 			var object = {
-						url:jsonURL
+						// url:jsonURL
+						url: ajaxurl + '?action=sm_include_file'
 						,method:'post'
 						,callback: function(options, success, response)	{
 							var myJsonObj = Ext.decode(response.responseText);
@@ -3515,7 +3542,8 @@ var showCustomerDetails = function(record,rowIndex){
 						,scope: SM.dashboardComboBox
 						,params:
 						{
-							cmd:'getRolesDashboard'
+							cmd:'getRolesDashboard',
+							file:  jsonURL
 						}};
 				Ext.Ajax.request(object);
 			
@@ -3613,7 +3641,8 @@ var showCustomerDetails = function(record,rowIndex){
 									},
 									close: function() {
 										var object = {
-											url:jsonURL
+											// url:jsonURL
+											url: ajaxurl + '?action=sm_include_file'
 											,method:'post'
 											,callback: function(options, success, response)	{
 												var myJsonObj = Ext.decode(response.responseText);
@@ -3625,7 +3654,8 @@ var showCustomerDetails = function(record,rowIndex){
 											{
 												cmd:'editImage',
 												id: record.id,
-												incVariation: SM.incVariation
+												incVariation: SM.incVariation,
+												file:  jsonURL
 											}
 										};
 										Ext.Ajax.request(object);
