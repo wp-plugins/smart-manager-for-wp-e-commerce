@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.4.1
+Version: 3.5
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013 Store Apps All rights reserved.
@@ -49,6 +49,7 @@ function smart_is_pro_updated() {
 	$latest_version = smart_get_latest_version();
 	return version_compare( $user_version, $latest_version, '>=' );
 }
+
 
 /**
  * Throw an error on admin page when WP e-Commerece plugin is not activated.
@@ -130,6 +131,7 @@ if (is_plugin_active( $old_plugin )) {
                                 define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.8', '<' ));
 				define('IS_WPSC388', version_compare ( WPSC_VERSION, '3.8.8', '>=' ));
 			}
+
 		} else if ( ( isset($_GET['post_type']) && $_GET['post_type'] == 'product' ) || ( isset($_GET['page']) && $_GET['page'] == 'smart-manager-woo' ) ) {
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager-woo.js', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
 			define('WPSC_RUNNING', false);
@@ -167,6 +169,20 @@ if (is_plugin_active( $old_plugin )) {
 //			add_action ( 'in_plugin_update_message-' . plugin_basename ( __FILE__ ), 'smart_update_notice' );
 //			add_action ( 'all_admin_notices', 'smart_update_overwrite' );
 		}
+
+		//wp-ajax action
+		if (is_admin() ) {
+            add_action ( 'wp_ajax_sm_include_file', 'sm_include_file' );       
+        }
+
+}
+
+function sm_include_file() {
+
+	$json_filename = $_REQUEST['file'];
+
+	$base_path = WP_PLUGIN_DIR . '/' . str_replace( basename( __FILE__ ), "", plugin_basename( __FILE__ ) ) . 'sm/' . $json_filename . '.php';
+	include_once ( $base_path );
 }
 
 function generate_db_index_queries() {
@@ -359,7 +375,8 @@ function smart_show_console() {
 	} else if (WOO_RUNNING === true) {
 		$json_filename = 'woo-json';
 	}
-	define( 'JSON_URL', SM_PLUGIN_DIRNAME . "/sm/$json_filename.php" );
+	// define( 'JSON_URL', SM_PLUGIN_DIRNAME . "/sm/$json_filename.php" );
+	define( 'JSON_URL', $json_filename );
 	define( 'ADMIN_URL', get_admin_url() ); //defining the admin url
 	define( 'ABS_WPSC_URL', WP_PLUGIN_DIR . '/wp-e-commerce' );
 	define( 'WPSC_NAME', 'wp-e-commerce' );
@@ -412,7 +429,7 @@ function smart_show_console() {
                                 add_thickbox();
                             }
                             $before_plug_page = '<a href="edit.php#TB_inline?max-height=420px&inlineId=smart_manager_post_query_form" title="Send your query" class="thickbox" id="support_link">Need Help?</a> <sup style="vertical-align: super;color:red;">New</sup> | ';
-                           
+                            $before_plug_page = apply_filters( 'sm_before_plug_page', $before_plug_page );
                             if (is_super_admin()) {
                                 $before_plug_page .= '<a href="options-general.php?page=smart-manager-settings">Settings</a> | ';
                             }

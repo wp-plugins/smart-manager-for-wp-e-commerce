@@ -368,6 +368,91 @@ if (WPSC_RUNNING === true) {
 
 } else if (WOO_RUNNING === true) {
 
+	// ==============================================================
+	// Coupons Code
+	// ==============================================================
+
+	$couponfieldsResults = array();
+
+	$couponfieldsquery = "SELECT DISTINCT meta_key FROM {$wpdb->prefix}postmeta WHERE meta_key IN
+															('discount_type','coupon_amount','individual_use','coupon_title_suffix',
+																'apply_before_tax','free_shipping','coupon_title_prefix','exclude_sale_items',
+																'usage_limit','expiry_date','minimum_amount','usage_count')";
+	$couponfieldsResults = $wpdb->get_results ($couponfieldsquery , ARRAY_A);
+
+	if ( empty( $couponfieldsResults ) ) {
+		$couponfieldsResults =array ( array ( 'meta_key' => 'apply_before_tax' ), 
+									  array ( 'meta_key' => 'coupon_amount' ),
+									  array ( 'meta_key' => 'discount_type' ),
+									  array ( 'meta_key' => 'exclude_sale_items' ),
+									  array ( 'meta_key' => 'expiry_date' ),
+									  array ( 'meta_key' => 'free_shipping' ),
+									  array ( 'meta_key' => 'individual_use' ),
+									  array ( 'meta_key' => 'minimum_amount' ),
+									  array ( 'meta_key' => 'usage_count' ),
+									  array ( 'meta_key' => 'usage_limit' ));
+	}
+
+	$select_box = $woocommerce->get_coupon_discount_types();
+
+	$select_box_keys = array_keys($select_box);
+
+	$couponfield_names_select = array();
+
+	$i = 0;
+
+	foreach ($select_box as $select_box1) {
+		$couponfield_names_select [$i][0] = $select_box_keys [$i];
+		$couponfield_names_select [$i][1] = $select_box1;
+		$i++;
+	}
+
+	$cnt = 0;
+
+	$couponfield_names ['items'] [$cnt] ['id'] = $cnt;
+	$couponfield_names ['items'] [$cnt] ['name'] = 'Coupon Name';
+	$couponfield_names ['items'] [$cnt] ['type'] = 'string';
+	$couponfield_names ['items'] [$cnt] ['table'] ="posts";
+	$couponfield_names ['items'] [$cnt] ['value'] = 'post_title';
+
+	$cnt ++;
+
+	foreach ($couponfieldsResults as $obj) {
+		$couponfield_names ['items'] [$cnt] ['id'] = $cnt;
+		$couponfield_names ['items'] [$cnt] ['name'] = ucwords(str_replace('_', ' ', $obj['meta_key']));
+
+		if($obj['meta_key'] == "individual_use" || $obj['meta_key'] == "apply_before_tax"|| $obj['meta_key'] == "free_shipping"
+			|| $obj['meta_key'] == "exclude_sale_items") {
+
+			$couponfield_names ['items'] [$cnt] ['type'] = 'bool';
+
+		} elseif ($obj['meta_key'] == "expiry_date") {
+			$couponfield_names ['items'] [$cnt] ['type'] = 'datetime';
+		} elseif ($obj['meta_key'] == "discount_type") {
+			$couponfield_names ['items'] [$cnt] ['type'] = 'select';
+			// $couponfield_names ['items'] [$cnt] ['data'] = $woocommerce->get_coupon_discount_types();
+			$couponfield_names ['items'] [$cnt] ['data'] = $couponfield_names_select;
+		} else {
+			$couponfield_names ['items'] [$cnt] ['type'] = 'string';	
+		}
+	
+		// $couponfield_names ['items'] [$cnt] ['value'] = $obj['meta_key'] . ",`{$wpdb->prefix}postmeta`";
+		$couponfield_names ['items'] [$cnt] ['value'] = $obj['meta_key'];
+		$couponfield_names ['items'] [$cnt] ['table'] ="postmeta";
+		$couponfield_names ['totalCount'] = $cnt ++;
+	}
+
+	$coupon_details['title'] = 'Coupons';
+	$coupon_details['column'] = $couponfield_names;
+
+
+	$user_defined_fields['coupon_dashbd'] = $coupon_details;
+
+	$encodedcouponfields = json_encode ( $user_defined_fields );
+
+
+	// ================================================================================
+
 	$orders_details_url = ADMIN_URL . "/post.php?post=";
 	
 	$orderFieldsQuery = "SELECT DISTINCT meta_key FROM {$wpdb->prefix}postmeta WHERE meta_key IN 
@@ -673,6 +758,7 @@ if (WPSC_RUNNING === true) {
         var regions             =  '" . (isset($encodedRegions) ? $encodedRegions : '') . "';
 	var ordersStatus        =  '" . (isset($encodedOrderStatus) ? $encodedOrderStatus : '') . "';
 	var weightUnits         =  '" . (isset($encodedWeightUnits) ? $encodedWeightUnits : '') . "';
+	var couponFields        =  " . $encodedcouponfields . "; // For WooCoupons
 	var attribute           =  '" . $attribute  . "';";
 }
 	echo "
@@ -791,7 +877,7 @@ if (WPSC_RUNNING === true) {
 		lang.phone_number		= '" . __('Phone Number',$sm_domain) . "';
 		lang.total_number_of_orders = '" . __('Total Number Of Orders',$sm_domain) . "';
 		lang.total_orders_amount	= '" . __('Total Orders Amount',$sm_domain) . "';
-		lang.filter_through_date_feature_is_available_only_in_pro_versionlast_name	= '" . __('Filter through Date feature is available only in Pro versionLast Name',$sm_domain) . "';
+		lang.filter_through_date_feature_is_available_only_in_pro_version = '" . __('Filter through Date feature is available only in Pro version',$sm_domain) . "';
 		lang.order_id			= '" . __('Order Id',$sm_domain) . "';
 		lang.date___time			= '" . __('Date / Time',$sm_domain) . "';
 		lang.name				= '" . __('Name',$sm_domain) . "';
@@ -1003,12 +1089,17 @@ if (WPSC_RUNNING === true) {
         }
 	
 	</script>";
+
+// Code for handling SSL error for FB Link
+$ssl = (is_ssl()) ? "https" : "http";
+$fb_link = $ssl . "://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fwww.storeapps.org%2F&amp;layout=standard&amp;show_faces=true&amp;width=450&amp;action=like&amp;colorscheme=light&amp;height=80";
                 
 ?>
 <!-- Smart Manager FB Like Button -->
+
 <div class="wrap"><br />
 <iframe
-	src="http://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fwww.storeapps.org%2F&amp;layout=standard&amp;show_faces=true&amp;width=450&amp;action=like&amp;colorscheme=light&amp;height=80"
+	src= <?php echo $fb_link;?>
 	scrolling="no" frameborder="0"
 	style="border: none; overflow: hidden; width: 450px; height: 80px;"
 	allowTransparency="true"></iframe></div>
