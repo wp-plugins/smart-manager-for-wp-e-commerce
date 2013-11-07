@@ -1570,17 +1570,16 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
         global $current_user , $wpdb;
 
         $state_nm = array("dashboardcombobox", "Products", "Customers", "Orders","incVariation");
-        
+
         for ($i=0;$i<sizeof($state_nm);$i++) {
             $stateid = "_sm_".$current_user->user_email."_".$state_nm[$i];
-        
+
             $query_state  = "SELECT option_value
                              FROM {$wpdb->prefix}options
-                             WHERE option_name like '$stateid' 
-                                AND option_value <> ''";
+                             WHERE option_name like '$stateid'";
             $result_state =  $wpdb->get_col ( $query_state );
             $rows_state   = $wpdb->num_rows;
-            
+           
             if ($rows_state > 0) {
             
                 if ($_POST ['op'] == 'get' ) {
@@ -1590,33 +1589,22 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
                     $state_apply = $_POST[$state_nm[$i]];
                     $query_state = "UPDATE {$wpdb->prefix}options SET option_value = '$state_apply' WHERE option_name = '$stateid'";
                     $result_state =  $wpdb->query ( $query_state );
+//                    $state = $_POST['state'];
                 }
 
             }
             else {
-
-                if ($state_nm[$i] == "dashboardcombobox") {
-                    $state_apply_default = "Products";
-                } else if ($state_nm[$i] == "incVariation") {
-                    $state_apply_default = "false";
-                } else {
-                    $state_apply_default = '';
-                }
                 
-                // $state_apply = $_POST[$state_nm[$i]];
-
-                $state_apply = isset($_POST[$state_nm[$i]]) ? $_POST[$state_nm[$i]] : $state_apply_default;
+                $state_apply = $_POST[$state_nm[$i]];
                 
                 $query_state = "INSERT INTO {$wpdb->prefix}options (option_name,option_value) values ('$stateid','$state_apply')";
                 $result_state =  $wpdb->query ( $query_state );
                 
-                if (!empty($state_apply)) {
-                    $state[$state_nm[$i]] = $state_apply;    
-                }
-
-                
+                $state[$state_nm[$i]] = $state_apply;
             }
+
         }
+
         if ($_POST ['op'] == 'get' ) {   
             echo json_encode ($state);
         }
@@ -1995,6 +1983,18 @@ function woo_insert_update_data($post) {
 
                             array_push ( $result ['productId'], $post_id );
                             foreach ($post_meta_key as $object) {
+
+                                // ================================================================================================
+                                // Code for enabling negative values for inline editing
+                                // ================================================================================================
+
+                                // if ( $object == '_sale_price' || $object == '_price' || $object == '_regular_price' ) {
+                                //     update_post_meta($wpdb->_real_escape($post_id), $wpdb->_real_escape($object), $wpdb->_real_escape($postarr[$object]) );
+                                //     continue;
+                                // }
+
+                                // ================================================================================================
+
                                 if ( isset ( $postarr[$object] ) && $postarr[$object] > -1 ) {              // to skip query for blank value
                                     //Code to handle the condition for the attribute visibility on product page issue while save action
                                     if ($object == '_product_attributes' && isset($product_custom_fields['_product_attributes'][0])) {
