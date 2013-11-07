@@ -1867,7 +1867,10 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 									editorGrid.getTopToolbar().get(11).hide();
 									
 								} else {
-									pagingToolbar.exportButton.enable();
+
+									if(fileExists != 0) {
+										pagingToolbar.exportButton.enable();
+									}
 									editorGrid.getTopToolbar().get(10).show();
 									editorGrid.getTopToolbar().get(11).show();
 								}
@@ -4189,7 +4192,7 @@ var showCustomerDetails = function(record,rowIndex){
                             SM.editor_state = SM.products_state;
                         }
                         else {
-                            SM.editor_state = productsColumnModel;
+                            SM.editor_state = productsColumnModel.columns;
                         }
                     }
                     else if (SM.dashboard_state == "Customers") {
@@ -4197,7 +4200,7 @@ var showCustomerDetails = function(record,rowIndex){
                             SM.editor_state = SM.customers_state;
                         }
                         else {
-                            SM.editor_state = customersColumnModel;
+                            SM.editor_state = customersColumnModel.columns;
                         }
 
                     }
@@ -4206,7 +4209,7 @@ var showCustomerDetails = function(record,rowIndex){
                             SM.editor_state = SM.orders_state;
                         }
                         else {
-                            SM.editor_state = ordersColumnModel;
+                            SM.editor_state = ordersColumnModel.columns;
                         }
                     }
 
