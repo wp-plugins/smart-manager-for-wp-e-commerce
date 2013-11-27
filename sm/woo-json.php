@@ -37,10 +37,10 @@ $limit = (isset ( $_POST ['limit'] )) ? $_POST ['limit'] : 100;
 
 // For pro version check if the required file exists
 if (file_exists ( WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/pro/woo.php' )) {
-	define ( 'SMPRO', true );
+	if ( !defined( 'SMPRO' ) ) define ( 'SMPRO', true );
 	include_once (WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/pro/woo.php');
 } else {
-	define ( 'SMPRO', false );
+	if ( !defined( 'SMPRO' ) ) define ( 'SMPRO', false );
 }
 
 function values( $arr ) {
@@ -1549,6 +1549,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
     } else {
         $encoded = get_data_woo ( $_POST, $offset, $limit );
+
     }
 
      
@@ -1579,7 +1580,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
                              WHERE option_name like '$stateid'";
             $result_state =  $wpdb->get_col ( $query_state );
             $rows_state   = $wpdb->num_rows;
-           
+
             if ($rows_state > 0) {
             
                 if ($_POST ['op'] == 'get' ) {
@@ -1588,6 +1589,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
                 elseif ($_POST ['op'] == 'set') {
                     $state_apply = $_POST[$state_nm[$i]];
                     $query_state = "UPDATE {$wpdb->prefix}options SET option_value = '$state_apply' WHERE option_name = '$stateid'";
+
                     $result_state =  $wpdb->query ( $query_state );
 //                    $state = $_POST['state'];
                 }
@@ -1915,6 +1917,7 @@ function woo_insert_update_data($post) {
                             // create an array to be used for updating product's details. add modified value from Smart Manager & rest same as in original post
                             $postarr = array(
                                     'ID'                        => isset($obj->id) ? $obj->id : '',
+                                    'post_author'               => isset($post->post_author) ? $post->post_author : '',
                                     'post_content'              => isset($obj->post_content) ? $obj->post_content : '',
                                     'post_title'                => isset($obj->post_title) ? $obj->post_title : '',
                                     'post_excerpt'              => isset($obj->post_excerpt) ? $obj->post_excerpt : '',
@@ -2225,6 +2228,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
+
+    global $wpdb;
+
     $dupCnt = 0;
     $activeModule = substr( $_POST ['active_module'], 0, -1 );
     $data_temp = json_decode ( stripslashes ( $_POST ['data'] ) );
@@ -2278,7 +2284,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
             $data_dup = $wpdb->get_col ( $query );
         }
         else{
-            if ($_POST ['incvariation'] == true) {
+
+            if ($_POST ['incvariation'] == "true") {
+
                 $query="SELECT id from {$wpdb->prefix}posts WHERE post_type='product' AND post_parent =0";
                 $parent_ids = $wpdb->get_col ( $query );
 
@@ -2315,7 +2323,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
         $encoded['data_dup'] = $data_dup;
         
         echo json_encode ( $encoded );
-
         exit;
     }
 

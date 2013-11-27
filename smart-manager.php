@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.5.1
+Version: 3.5.2
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013 Store Apps All rights reserved.
@@ -474,9 +474,15 @@ function smart_show_console() {
 		if (SMPRO === false) {
 			?>
 <div id="message" class="updated fade">
+<span style="float:right; margin-top: -1px; margin-right: -15px">
+		<a href="http://www.storeapps.org/?buy-now=742&coupon=sm-festive-40-2013" target="_blank"> <img src="<?php echo IMG_URL . '40perc-off-sm-thanks2013.png'?>" alt="40peroff"> </a>
+</span>
 <p><?php
-			printf( ('<b>' . __( 'Important:', 'smart-manager' ) . '</b> ' . __( 'Upgrading to Pro gives you powerful features like \'<i>Batch Update</i>\' , \'<i>Export CSV</i>\' , \'<i>Duplicate Products</i>\' &amp; many more...', 'smart-manager' ) . " " . '<br /><a href="%1s" target=_storeapps>' . " " .__( 'Learn more about Pro version here', 'smart-manager' ) . '</a> ' . __( 'or take a', 'smart-manager' ) . " " . '<a href="%2s" target=_livedemo>' . " " . __( 'Live Demo here', 'smart-manager' ) . '</a>'), 'http://www.storeapps.org/product/smart-manager', 'http://demo.storeapps.org/?p=1' );
-			?></p>
+		// printf( ('<b>' . __( 'Important:', 'smart-manager' ) . '</b> ' . __( 'Upgrading to Pro gives you powerful features like \'<i>Batch Update</i>\' , \'<i>Export CSV</i>\' , \'<i>Duplicate Products</i>\' &amp; many more...', 'smart-manager' ) . " " . '<br /><a href="%1s" target=_storeapps>' . " " .__( 'Learn more about Pro version here', 'smart-manager' ) . '</a> ' . __( 'or take a', 'smart-manager' ) . " " . '<a href="%2s" target=_livedemo>' . " " . __( 'Live Demo here', 'smart-manager' ) . '</a>'), 'http://www.storeapps.org/product/smart-manager', 'http://demo.storeapps.org/?p=1' );
+		printf( ('<b>' . __( 'Important:', 'smart-manager' ) . '</b> ' . __( 'Upgrade to Pro to get features like \'<i>Batch Update</i>\' , \'<i>Export CSV</i>\' , \'<i>Duplicate Products</i>\' &amp; many more...', 'smart-manager' ) . " " . '<br /><a href="%1s" target=_storeapps>' . " " .__( 'Learn more about Pro version here', 'smart-manager' ) . '</a> ' . __( 'or take a', 'smart-manager' ) . " " . '<a href="%2s" target=_livedemo>' . " " . __( 'Live Demo here', 'smart-manager' ) . '</a>'), 'http://www.storeapps.org/product/smart-manager', 'http://demo.storeapps.org/?p=1' );
+		?>
+</p>
+	
 </div>
 <?php
 		}

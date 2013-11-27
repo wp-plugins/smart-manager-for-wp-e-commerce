@@ -3971,7 +3971,7 @@ var showCustomerDetails = function(record,rowIndex){
 						}
 					
 					// show Inherit option only for the product variations otherwise show only Published & Draft 	
-					}else if(columnIndex == publishColumnIndex || columnIndex == nameColumnIndex || columnIndex == salePriceFromColumnIndex || columnIndex == salePriceToColumnIndex || columnIndex == descColumnIndex || columnIndex == addDescColumnIndex || columnIndex == visibilityColumnIndex || columnIndex == taxStatusColumnIndex){
+					}else if(columnIndex == publishColumnIndex || columnIndex == nameColumnIndex || columnIndex == descColumnIndex || columnIndex == addDescColumnIndex || columnIndex == visibilityColumnIndex || columnIndex == taxStatusColumnIndex){
 							if(record.get('post_parent') == 0  || record['json']['product_type'] == "grouped"){
 								productsColumnModel.setEditable(columnIndex,true);
 								productsColumnModel.getColumnById('publish').editor = newProductStatusCombo;
@@ -3986,6 +3986,12 @@ var showCustomerDetails = function(record,rowIndex){
 							}else{
                                 productsColumnModel.getColumnById('visibility').editor = visibilityCombo;   
 								productsColumnModel.setEditable(columnIndex,false);
+							}
+					} else if (columnIndex == salePriceFromColumnIndex || columnIndex == salePriceToColumnIndex){
+							if(record.get('post_parent') == 0){
+								productsColumnModel.setEditable(columnIndex,false);
+							}else{
+								productsColumnModel.setEditable(columnIndex,true);
 							}
 					} else if (columnIndex == taxStatusColumnIndex){
 							if(record.get('post_parent') == 0){
