@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager, extension, premium, free, download
 Requires at least: 2.0.2
 Tested up to: 3.7.1
-Stable tag: 3.5.2
+Stable tag: 3.5.3
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -116,6 +116,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.5.3 =
+* Fix: Resolved 'Sale Price From and To Date not getting enabled for Simple Products' issue
 
 = 3.5.2 =
 * Fix: Resolved 'Duplication of the Product Not Successful' issue
@@ -472,6 +475,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.5.3 =
+Resolved 'Sale Price From and To Date not getting enabled for Simple Products' issue. Recommended upgrade.
 
 = 3.5.2 =
 Resolved 'Duplication of the Product Not Successful' issue along with some minor fixes. Recommended upgrade.
