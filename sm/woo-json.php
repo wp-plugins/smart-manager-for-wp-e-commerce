@@ -1998,6 +1998,8 @@ function woo_insert_update_data($post) {
 
                                 // ================================================================================================
 
+                                
+
                                 if ( isset ( $postarr[$object] ) && $postarr[$object] > -1 ) {              // to skip query for blank value
                                     //Code to handle the condition for the attribute visibility on product page issue while save action
                                     if ($object == '_product_attributes' && isset($product_custom_fields['_product_attributes'][0])) {
