@@ -947,8 +947,8 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
                             width: 80,
             editor: new fm.DateField({
                 format: 'm/d/y',
-                editable: false,
-                allowBlank: false,
+                editable: true,
+                allowBlank: true,
 				allowNegative: false,
                 width: 80
             })
@@ -963,8 +963,8 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
             renderer: formatDate,
             editor: new fm.DateField({
                 format: 'm/d/y',
-                editable: false,
-                allowBlank: false,
+                editable: true,
+                allowBlank: true,
                 allowNegative: false,
                 width: 80
             })
@@ -3901,6 +3901,7 @@ var showCustomerDetails = function(record,rowIndex){
 
 		cellclick: function(editorGrid,rowIndex, columnIndex, e) {
 			try{
+
 				var record  = editorGrid.getStore().getAt(rowIndex);
                                 cellClicked = true;
 				var editLinkColumnIndex   	  = productsColumnModel.findColumnIndex('edit_url'),
@@ -3934,6 +3935,7 @@ var showCustomerDetails = function(record,rowIndex){
 					
 				// Show WPeC's product edit page in a Ext window instance.
 				}else if(SM.activeModule == 'Products'){
+
 					if(columnIndex == editLinkColumnIndex) {
 						var productsDetailsWindow = new Ext.Window({
 							stateId : 'productsDetailsWindowWoo',
@@ -3988,10 +3990,10 @@ var showCustomerDetails = function(record,rowIndex){
 								productsColumnModel.setEditable(columnIndex,false);
 							}
 					} else if (columnIndex == salePriceFromColumnIndex || columnIndex == salePriceToColumnIndex){
-							if(record.get('post_parent') == 0){
-								productsColumnModel.setEditable(columnIndex,false);
-							}else{
+							if(record.get('post_parent') > 0 || record['json']['product_type'] != "variable"){
 								productsColumnModel.setEditable(columnIndex,true);
+							}else{
+								productsColumnModel.setEditable(columnIndex,false);
 							}
 					} else if (columnIndex == taxStatusColumnIndex){
 							if(record.get('post_parent') == 0){
