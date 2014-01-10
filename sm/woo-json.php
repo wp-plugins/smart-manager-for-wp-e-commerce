@@ -594,9 +594,11 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         $records[$i]['_sale_price'] = $records[$i]['_min_variation_sale_price'];
                     } else {
                         $records[$i]['_regular_price'] = trim( $records[$i]['_regular_price'] );
-                        if ( empty( $records[$i]['_regular_price'] ) ) {
-                            $records[$i]['_regular_price'] = $records[$i]['_price'];
-                        }
+                        // if ( empty( $records[$i]['_regular_price'] ) ) {
+                        //     $records[$i]['_regular_price'] = $records[$i]['_price'];
+                        // }
+                        $records[$i]['_sale_price'] = trim( $records[$i]['_sale_price'] );
+
                     }
                 } else {
                     $records[$i]['_regular_price'] = $records[$i]['_regular_price'];
@@ -1274,7 +1276,25 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                         GROUP BY order_items.order_item_id
                                                         ORDER BY FIND_IN_SET(order_items.order_id,'$order_id')";
                                     $results_order_items  = $wpdb->get_results ( $query_order_items , 'ARRAY_A');
+				    $num_rows_order_items = $wpdb->num_rows;
 
+                                    //code for formatting order items array
+
+                                    if ( $num_rows_order_items > 0 ) {
+
+                                        $order_items = array();
+
+                                        foreach ( $results_order_items as $results_order_item ) {
+
+                                            if ( !isset($order_items [$results_order_item['order_id']]) ) {
+                                                $order_items [$results_order_item['order_id']] = array();
+                                            }
+
+                                            $order_items [$results_order_item['order_id']] [] = $results_order_item;
+                                        }    
+                                    }
+
+				
                                     $query_order_coupons = "SELECT order_id,
                                                                 GROUP_CONCAT(order_item_name
                                                                                     ORDER BY order_item_id 
@@ -1366,7 +1386,12 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                     }
                                                 }
                                                 
+											
+
                                                 if($_POST['SM_IS_WOO16'] == "true") {
+
+							
+
                                                     if (is_serialized($postmeta['_order_items'])) {
                                                             $order_items = unserialize(trim($postmeta['_order_items']));
                                                             foreach ( (array)$order_items as $order_item) {
@@ -1397,9 +1422,10 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                     }
                                                     
                                                 }
-                                                else {
-                                                        if (!empty($results_order_items)) {
-                                                            foreach ( $results_order_items as $order_item) {
+
+					                          else {
+                                                        if (!empty($order_items[$data['id']])) {
+                                                            foreach ( $order_items[$data['id']] as $order_item) {
                                                                 $prod_meta_values = explode('###', $order_item ['meta_value'] );
                                                                 $prod_meta_key = explode('###', $order_item ['meta_key'] );
                                                                 if (count($prod_meta_values) != count($prod_meta_key))
@@ -1412,7 +1438,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                                 $prod_meta_key_values = array_combine($prod_meta_key, $prod_meta_values);
 
                                                                 
-                                                                if ($data['id'] == $order_item['order_id']) {
+                                                                // if ($data['id'] == $order_item['order_id']) {
 
                                                                     $data['details'] += $prod_meta_key_values['_qty'];
                                                                     $data['order_total_ex_tax'] += $prod_meta_key_values['_line_total'];
@@ -1432,7 +1458,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                             
                                                                     $data['coupons'] = (isset($order_coupons[$order_item['order_id']])) ? $order_coupons[$order_item['order_id']] : "";
 
-                                                                }
+                                                                // }
                                                             }
                                                             isset($data['details']) ? $data['details'] .= ' items' : $data['details'] = '';
                                                             $data['products_name'] = substr($data['products_name'], 0, -2); //To remove extra comma ', ' from returned string                                                                              
@@ -1597,7 +1623,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
             }
             else {
                 
-                $state_apply = $_POST[$state_nm[$i]];
+                $state_apply = ( isset($_POST[$state_nm[$i]]) ) ? $_POST[$state_nm[$i]] : null; // For WP_DEBUG
                 
                 $query_state = "INSERT INTO {$wpdb->prefix}options (option_name,option_value) values ('$stateid','$state_apply')";
                 $result_state =  $wpdb->query ( $query_state );
@@ -2235,7 +2261,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
 
     $dupCnt = 0;
     $activeModule = substr( $_POST ['active_module'], 0, -1 );
-    $data_temp = json_decode ( stripslashes ( $_POST ['data'] ) );
+    $data_temp = (isset($_POST ['data'])) ? json_decode ( stripslashes ( $_POST ['data'] ) ) : '';
 
     // Function to Duplicate the Product
     function duplicate_product ($strtCnt, $dupCnt, $data, $msg, $count, $per, $perval) {

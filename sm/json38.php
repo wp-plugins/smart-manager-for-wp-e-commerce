@@ -1065,7 +1065,7 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
-    
+    global $wpdb;
     require_once (WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-admin/admin.php');
 
     $dupCnt = 0;

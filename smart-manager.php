@@ -3,10 +3,10 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.5.3
+Version: 3.5.4
 Author: Store Apps
 Author URI: http://www.storeapps.org/
-Copyright (c) 2010, 2011, 2012, 2013 Store Apps All rights reserved.
+Copyright (c) 2010, 2011, 2012, 2013, 2014 Store Apps All rights reserved.
 */
 
 //Hooks
@@ -90,6 +90,8 @@ if (is_plugin_active( $old_plugin )) {
 	
 	function smart_admin_init() {
                 global $wp_version;
+
+                add_action( 'admin_head', 'remove_help_tab'); // For removing the help tab
                 
                 $plugin_info = get_plugins ();
 		$sm_plugin_info = $plugin_info [SM_PLUGIN_FILE];
@@ -364,6 +366,13 @@ if (is_admin()) {
 
 }
 
+
+// function for removing the Help Tab
+function remove_help_tab(){
+	$screen = get_current_screen();
+    $screen->remove_help_tabs();
+}
+
 function smart_show_console() {
 	
 	define( 'PLUGINS_FILE_PATH', dirname( dirname( __FILE__ ) ) );
@@ -384,6 +393,7 @@ function smart_show_console() {
 	$latest_version = smart_get_latest_version();
 	$is_pro_updated = smart_is_pro_updated();
 	
+
 //	if (isset( $_GET ['action'] ) && $_GET ['action'] == 'sm-settings') {
 //		smart_settings_page();
 //	} else {
@@ -401,12 +411,17 @@ function smart_show_console() {
     
 <h2><?php
                 echo 'Smart Manager ';
-		echo (SMPRO === true) ? 'Pro' : 'Lite';
+				echo (SMPRO === true) ? 'Pro' : 'Lite';
                 $before_plug_page = '';
                 $after_plug_page = '';
                 $plug_page = '';
+                $sm_promo_img_url = "http://www.storeapps.org/ads/sm-in-app.png?d=". date("Ymd");
 		?>
-   		<p class="wrap" style="font-size: 12px"><span style="float: right"> <?php
+		<span style="float:right; margin: -6px -21px -20px 0px;">
+				<!-- <a href="http://www.storeapps.org/?buy-now=742&coupon=sm-festive-40-2013&utm_source=SM&utm_medium=Lite&utm_campaign=Festive2013" target="_blank"> <img src="<?php echo IMG_URL . '40perc-off-sm-thanks2013.png'?>" alt="40peroff"> </a> -->
+				<a href="http://www.storeapps.org/sm-in-app-promo" target="_blank"> <img src="<?php echo $sm_promo_img_url ?>" alt=""> </a>
+		</span>
+   		<p class="wrap" style="font-size: 12px; margin: 18px -21px 0px 5px;"><span style="float: right; line-height: 17px;"> <?php
 			if ( SMPRO === true && ! is_multisite() ) {
                 		$before_plug_page .= '<a href="admin.php?page=smart-manager-';
 				$after_plug_page = '&action=sm-settings">Settings</a> | ';
@@ -474,9 +489,9 @@ function smart_show_console() {
 		if (SMPRO === false) {
 			?>
 <div id="message" class="updated fade">
-<span style="float:right; margin-top: -1px; margin-right: -15px">
+<!-- <span style="float:right; margin-top: -1px; margin-right: -15px">
 		<a href="http://www.storeapps.org/?buy-now=742&coupon=sm-festive-40-2013&utm_source=SM&utm_medium=Lite&utm_campaign=Festive2013" target="_blank"> <img src="<?php echo IMG_URL . '40perc-off-sm-thanks2013.png'?>" alt="40peroff"> </a>
-</span>
+</span> -->
 <p><?php
 		// printf( ('<b>' . __( 'Important:', 'smart-manager' ) . '</b> ' . __( 'Upgrading to Pro gives you powerful features like \'<i>Batch Update</i>\' , \'<i>Export CSV</i>\' , \'<i>Duplicate Products</i>\' &amp; many more...', 'smart-manager' ) . " " . '<br /><a href="%1s" target=_storeapps>' . " " .__( 'Learn more about Pro version here', 'smart-manager' ) . '</a> ' . __( 'or take a', 'smart-manager' ) . " " . '<a href="%2s" target=_livedemo>' . " " . __( 'Live Demo here', 'smart-manager' ) . '</a>'), 'http://www.storeapps.org/product/smart-manager', 'http://demo.storeapps.org/?p=1' );
 		printf( ('<b>' . __( 'Important:', 'smart-manager' ) . '</b> ' . __( 'Upgrade to Pro to get features like \'<i>Batch Update</i>\' , \'<i>Export CSV</i>\' , \'<i>Duplicate Products</i>\' &amp; many more...', 'smart-manager' ) . " " . '<br /><a href="%1s" target=_storeapps>' . " " .__( 'Learn more about Pro version here', 'smart-manager' ) . '</a> ' . __( 'or take a', 'smart-manager' ) . " " . '<a href="%2s" target=_livedemo>' . " " . __( 'Live Demo here', 'smart-manager' ) . '</a>'), 'http://www.storeapps.org/product/smart-manager', 'http://demo.storeapps.org/?p=1' );
