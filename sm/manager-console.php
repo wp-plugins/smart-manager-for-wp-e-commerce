@@ -470,14 +470,14 @@ if (WPSC_RUNNING === true) {
 		} else {
 			$ordersfield_names ['items'] [$cnt] ['type'] = 'blob';
 		}
-		$ordersfield_names ['items'] [$cnt] ['value'] = $obj->meta_key . ",`{$wpdb->prefix}postmeta`";
+		$ordersfield_names ['items'] [$cnt] ['value'] = $obj->meta_key . ",{$wpdb->prefix}postmeta";
 		$ordersfield_names ['totalCount'] = $cnt ++;
 	}
 
 	$ordersfield_names ['items'] [$cnt] ['id'] = $cnt;
 	$ordersfield_names ['items'] [$cnt] ['name'] = 'Order Status';
 	$ordersfield_names ['items'] [$cnt] ['type'] = 'bigint';
-	$ordersfield_names ['items'] [$cnt] ['value'] = " ,`{$wpdb->prefix}term_relationships`";
+	$ordersfield_names ['items'] [$cnt] ['value'] = " ,{$wpdb->prefix}term_relationships";
 
 	$encodedOrdersFields = json_encode ( $ordersfield_names );
 	
@@ -497,7 +497,7 @@ if (WPSC_RUNNING === true) {
 			} else {
 				$customerFields ['items'] [$cnt] ['type'] = 'blob';
 			}
-			$customerFields ['items'] [$cnt] ['value'] = $obj->meta_key . ",`{$wpdb->prefix}postmeta`";
+			$customerFields ['items'] [$cnt] ['value'] = $obj->meta_key . ",{$wpdb->prefix}postmeta";
 			$customerFields ['totalCount'] = $cnt ++;
 		}	
     }    
@@ -725,6 +725,7 @@ if ( isset( $attribute ) ) {
 	var isWPSC37            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC37 : '') . "';
         var isWPSC38            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC38 : '') . "';
         var SM_IS_WOO16            =  '" . ((WOO_RUNNING === true) ? SM_IS_WOO16 : '') . "';
+        var SM_IS_WOO21            =  '" . ((WOO_RUNNING === true) ? SM_IS_WOO21 : '') . "';
         var IS_WP35             =  '" . ((version_compare ( $wp_version, '3.5', '>=' )) ? IS_WP35 : '') . "';
         var time_zone           = '" . $timezone . "';
 	
