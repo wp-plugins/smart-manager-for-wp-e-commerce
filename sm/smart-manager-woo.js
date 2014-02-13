@@ -573,8 +573,8 @@ Ext.onReady(function () {
 				listeners : {
 					click : function() {
 						productsColumnModel.getColumnById('publish').editor = newProductStatusCombo;
-                                                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;
-                                                productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
+                            productsColumnModel.getColumnById('visibility').editor = visibilityCombo;
+                            productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
 						if(fileExists == 1){
 							addProduct(productsStore, cnt_array, cnt, newCatName);
 						}else{
@@ -1220,6 +1220,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 			viewCols: Ext.encode(productsViewCols),
 			incVariation: SM.incVariation,
             SM_IS_WOO16: SM_IS_WOO16,
+            SM_IS_WOO21: SM_IS_WOO21,
             file:  jsonURL
 		},
 		dirty: false,
@@ -1449,6 +1450,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 				table:Ext.encode(coupon_data_table),
 				edited_ids:Ext.encode(edited_ids),
                 SM_IS_WOO16: SM_IS_WOO16,
+                SM_IS_WOO21: SM_IS_WOO21,
                 file:  jsonURL
 			}};
 			Ext.Ajax.request(o);
@@ -1584,6 +1586,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                                     menu : menu,
                                                     active_module: SM.activeModule,
                                                     incvariation: SM.incVariation,
+                                                    SM_IS_WOO21: SM_IS_WOO21,
                                                     file:  jsonURL
                                             }
                                     };
@@ -2789,7 +2792,7 @@ var batchUpdatePanel = new Ext.Panel({
 				store = productsStore;
 				cm = productsColumnModel;
 			}
-			batchUpdateRecords(batchUpdatePanel,toolbarCount,cnt_array,store,jsonURL,batchUpdateWindow,radioValue,flag,pagingToolbar);
+			batchUpdateRecords(batchUpdatePanel,toolbarCount,cnt_array,store,jsonURL,batchUpdateWindow,radioValue,flag,pagingToolbar,SM_IS_WOO16,SM_IS_WOO21);
 		}}
 	}]
 });

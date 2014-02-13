@@ -19,7 +19,15 @@ if ( ! defined('ABSPATH') ) {
     include_once (find_wp_load_path()  . '/wp-load.php');
 }
 
-include_once (WP_PLUGIN_DIR . '/woocommerce/admin/includes/duplicate_product.php');
+// WOO 2.1 compatibility
+if ($_POST['SM_IS_WOO21'] == "true") {
+    include_once (WP_PLUGIN_DIR . '/woocommerce/includes/admin/class-wc-admin-duplicate-product.php'); // for handling the duplicate product functionality
+    include_once (WP_PLUGIN_DIR . '/woocommerce/includes/class-wc-product-variable.php'); // for handling variable parent price
+    include_once (WP_PLUGIN_DIR . '/woocommerce/includes/abstracts/abstract-wc-product.php'); // for updating stock status
+} else {
+    include_once (WP_PLUGIN_DIR . '/woocommerce/admin/includes/duplicate_product.php');
+}
+
 load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/languages/smart-manager-' . WPLANG . '.mo' );
 
 $mem_limit = ini_get('memory_limit');
@@ -70,7 +78,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 	global $wpdb, $woocommerce, $post_status, $parent_sort_id, $order_by, $post_type, $variation_name, $from_variation, $parent_name, $attributes;
 	$_POST = $post;     // Fix: PHP 5.4
         $products = array();
-        
+
 	// getting the active module
         $active_module = (isset($_POST ['active_module']) ? $_POST ['active_module'] : 'Products');
 //        $active_module = $_POST ['active_module'];
@@ -240,6 +248,41 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
         foreach ($records_categories as $records_category) {
             $category_ids_all[$records_category['id']] = $records_category['term_taxonomy_id'];
+        }
+
+
+        if ($_POST['SM_IS_WOO21'] == "true") {
+
+            $query_taxonomy_id_variable = "SELECT term_taxonomy.term_taxonomy_id
+                                            FROM {$wpdb->prefix}term_taxonomy AS term_taxonomy 
+                                                    JOIN {$wpdb->prefix}terms AS terms ON (term_taxonomy.term_id = terms.term_id)
+                                            WHERE terms.name LIKE 'variable'";
+            $results_taxonomy_id_variable = $wpdb->get_col ( $query_taxonomy_id_variable );
+
+            if ( !empty($results_taxonomy_id_variable) ) {
+                $cond_taxonomy_id_variable = "AND term_relationships.term_taxonomy_id IN (". implode(",",$results_taxonomy_id_variable) .")";
+            } else {
+                $cond_taxonomy_id_variable = "";
+            }
+
+            $query_variation_reg_price = "SELECT postmeta.post_id as variation_parent_id,
+                                            postmeta.meta_value as variation_id
+                                        FROM {$wpdb->prefix}postmeta as postmeta
+                                            JOIN {$wpdb->prefix}term_relationships AS term_relationships 
+                                                    ON (term_relationships.object_id = postmeta.post_id)
+                                        WHERE postmeta.meta_key IN ('_min_price_variation_id')
+                                            $cond_taxonomy_id_variable
+                                        GROUP BY postmeta.post_id";
+            $results_variation_reg_price = $wpdb->get_results ( $query_variation_reg_price, 'ARRAY_A' );
+            $rows_variation_reg_price = $wpdb->num_rows;
+
+            $variation_reg_price = array();
+
+            if ( $rows_variation_reg_price > 0 ) {
+                foreach ( $results_variation_reg_price as $results_variation_reg_price1 ) {
+                    $variation_reg_price [ $results_variation_reg_price1['variation_parent_id'] ] = $results_variation_reg_price1['variation_id'];
+                }                
+            }
         }
 
 
@@ -422,7 +465,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
 		$from = "FROM {$wpdb->prefix}posts as products
 						JOIN {$wpdb->prefix}postmeta as prod_othermeta ON (prod_othermeta.post_id = products.id and
-						prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price','_thumbnail_id','_tax_status','_min_variation_regular_price','_min_variation_sale_price','_visibility','_product_attributes','" . implode( "','", $variation ) . "') )";
+						prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price','_thumbnail_id','_tax_status','_min_variation_regular_price','_min_variation_sale_price','_min_variation_price','_visibility','_product_attributes','" . implode( "','", $variation ) . "') )";
 						
 		$where	= " WHERE products.post_status IN $post_status
 						AND products.post_type IN $post_type
@@ -560,9 +603,6 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     if ( $records[$i]['post_parent'] != 0 && $product_type_parent[0] != "grouped" ) {
                         
                         $records[$i]['post_status'] = get_post_status($records[$i]['post_parent']);
-                        
-                        
-
 
                         if($_POST['SM_IS_WOO16'] == "true") {
                             $records[$i]['_regular_price'] = $records[$i]['_price'];
@@ -590,8 +630,17 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     $products[$records[$i]['id']]['variation'] = $variation_names;
                 } elseif ($show_variation === false && SMPRO) {
                     if ($product_type[0] == 'variable') {
-                        $records[$i]['_regular_price'] = $records[$i]['_min_variation_regular_price'];
-                        $records[$i]['_sale_price'] = $records[$i]['_min_variation_sale_price'];
+
+                        // WOO 2.1 compatibility
+                        if ($_POST['SM_IS_WOO21'] == "true") {
+
+                            $records[$i]['_regular_price'] = ( isset($variation_reg_price[$records[$i]['id']]) ) ? get_post_meta( $variation_reg_price[$records[$i]['id']], '_regular_price', true ) : 0;
+                            $records[$i]['_sale_price'] = (get_post_meta( $variation_reg_price[$records[$i]['id']], '_sale_price', true )) ? $records[$i]['_min_variation_price'] : '';
+                        } else {
+                            $records[$i]['_regular_price'] = $records[$i]['_min_variation_regular_price'];
+                            $records[$i]['_sale_price'] = $records[$i]['_min_variation_sale_price'];    
+                        }
+                        
                     } else {
                         $records[$i]['_regular_price'] = trim( $records[$i]['_regular_price'] );
                         // if ( empty( $records[$i]['_regular_price'] ) ) {
@@ -1718,6 +1767,8 @@ if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
 			break;
 	}
 
+
+
 	$file_data = export_csv_woo ( $active_module, $columns_header, $data );
 	
 	header("Content-type: text/x-csv; charset=UTF-8"); 
@@ -1874,6 +1925,7 @@ function get_price($regular_price, $sale_price, $sale_price_dates_from, $sale_pr
 function woo_insert_update_data($post) {
     global $wpdb,$woocommerce;
         $_POST = $post;  
+
           // Fix: PHP 5.4
     $editable_fields = array(
         '_billing_first_name' , '_billing_last_name' , '_billing_email', '_billing_address_1', '_billing_address_2', '_billing_city', '_billing_state',
@@ -1886,26 +1938,36 @@ function woo_insert_update_data($post) {
         $result = array(
             'productId' => array()
         );
+
+        $post_meta_info = array();
         // To get distinct meta_key for Simple Products. => Executed only once
         $post_meta_info = $wpdb->get_col( "SELECT distinct postmeta.meta_key FROM {$wpdb->prefix}postmeta AS postmeta INNER JOIN {$wpdb->prefix}posts AS posts on posts.ID = postmeta.post_id WHERE posts.post_type='product' AND posts.post_status IN ('publish','draft')" );
         // To get distinct meta_key for Child Products i.e. Variations. => Executed only once
         $post_meta_info_variations = $wpdb->get_col( "SELECT distinct postmeta.meta_key FROM {$wpdb->prefix}postmeta AS postmeta INNER JOIN {$wpdb->prefix}posts AS posts on posts.ID = postmeta.post_id WHERE posts.post_type='product_variation' AND posts.post_status IN ('publish','draft') AND posts.post_parent > 0" );
                 
         // meta_key required for new products, that are entered through Smart Manager   
-            if (count($post_meta_info) <= 0 || count($post_meta_info) < 23) {
-                            $post_meta_info = array(
-                    '_edit_last','_edit_lock', '_regular_price',
-                    '_sale_price', '_weight', '_length', '_width' ,
-                                        '_height', '_tax_status', '_tax_class',
-                                        '_stock_status', '_visibility', '_featured',
-                                        '_sku', '_product_attributes', '_downloadable',
-                                        '_virtual', '_sale_price_dates_from',
-                                        '_sale_price_dates_to', '_price',
-                                        '_stock', '_manage_stock', '_backorders');
+            // if (count($post_meta_info) <= 0 || count($post_meta_info) < 23) {
+                $post_meta_reqd_keys = array(
+                            '_edit_last','_edit_lock', '_regular_price',
+                            '_sale_price', '_weight', '_length', '_width' ,
+                            '_height', '_tax_status', '_tax_class',
+                            '_stock_status', '_visibility', '_featured',
+                            '_sku', '_product_attributes', '_downloadable',
+                            '_virtual', '_sale_price_dates_from',
+                            '_sale_price_dates_to', '_price',
+                            '_stock', '_manage_stock', '_backorders');
                             
-            }
+            // }
 
-    if( is_foreachable( $new_product ) ) {  
+        $post_meta_info = array_unique(array_merge($post_meta_info, $post_meta_reqd_keys)); // for adding the meta_keys if not present
+
+    if( is_foreachable( $new_product ) ) {
+
+        $woo_prod_obj = '';
+        if ($_POST['SM_IS_WOO21'] == "true") {
+            $woo_prod_obj = new WC_Product_Variable();
+        }
+
         foreach ($new_product as $obj){
             if($_POST ['active_module'] == 'Products') {
 
@@ -1990,14 +2052,15 @@ function woo_insert_update_data($post) {
                                     '_width'                    => isset($obj->_width) ? $obj->_width : '',
                                     '_height'                   => isset($obj->_height) ? $obj->_height : '',
                                     '_tax_status'               => isset($obj->_tax_status) ? $obj->_tax_status : 'taxable',
-                                    '_tax_class'                => isset($product_custom_fields['_tax_class'][0]) ? $product_custom_fields['_tax_class'][0] : '',
+                                    '_tax_class'                => isset($product_custom_fields['_tax_class'][0]) ? $product_custom_fields['_tax_class'][0] : '',                                    
                                     '_manage_stock'             => isset($product_custom_fields['_manage_stock'][0]) ? $product_custom_fields['_manage_stock'][0] : '',
                                     '_stock_status'             => isset($product_custom_fields['_stock_status'][0]) ? $product_custom_fields['_stock_status'][0] : '',
-                                    '_stock'                    => isset($obj->_stock) ? $obj->_stock : '',
                                     '_backorders'               => isset($product_custom_fields['_backorders'][0]) ? $product_custom_fields['_backorders'][0] : 'no',
+                                    '_stock'                    => isset($obj->_stock) ? $obj->_stock : '',
                                     'excerpt'                   => isset($obj->post_excerpt) ? $obj->post_excerpt : $post->post_excerpt,
                                     'advanced_view'             => 1
                             );
+
 
                             if ( ($obj->post_parent == 0 && $obj->product_type != 'variable') || ($product_type_parent[0] == "grouped") ) {
                                     $post_id = wp_insert_post($postarr);
@@ -2024,8 +2087,6 @@ function woo_insert_update_data($post) {
 
                                 // ================================================================================================
 
-                                
-
                                 if ( isset ( $postarr[$object] ) && $postarr[$object] > -1 ) {              // to skip query for blank value
                                     //Code to handle the condition for the attribute visibility on product page issue while save action
                                     if ($object == '_product_attributes' && isset($product_custom_fields['_product_attributes'][0])) {
@@ -2038,15 +2099,28 @@ function woo_insert_update_data($post) {
                                             wp_set_object_terms($post_id, 'simple', 'product_type');
                                     }
                                     else {
+
                                             //$query = "UPDATE {$wpdb->prefix}postmeta SET meta_value = '".$wpdb->_real_escape($postarr[$object])."' WHERE post_id = " . $wpdb->_real_escape($post_id) . " AND meta_key = '" . $wpdb->_real_escape($object) . "'";
-                                            update_post_meta($wpdb->_real_escape($post_id), $wpdb->_real_escape($object), $wpdb->_real_escape($postarr[$object]) );
+                                            update_post_meta($wpdb->_real_escape($post_id), $wpdb->_real_escape($object), $wpdb->_real_escape($postarr[$object]) );    
+
+                                            if ( $object == '_stock' ) {
+                                                if ($_POST['SM_IS_WOO21'] == "true") {
+                                                    $woo_prod_obj_stock_status = new WC_Product($post_id);
+                                                    $woo_prod_obj_stock_status->set_stock($wpdb->_real_escape($postarr[$object]));
+                                                }
+                                            }
                                     }
                                     
                                 }
                             }
+
                             //Code For updating the parent price of the product
                             if ($parent_id > 0) {
-                                variable_price_sync($parent_id);
+                                if ($_POST['SM_IS_WOO21'] == "true") {
+                                    $woo_prod_obj->sync($parent_id);
+                                } else {
+                                    variable_price_sync($parent_id);
+                                }
                             }
 
             } 
@@ -2264,14 +2338,22 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
     $data_temp = (isset($_POST ['data'])) ? json_decode ( stripslashes ( $_POST ['data'] ) ) : '';
 
     // Function to Duplicate the Product
-    function duplicate_product ($strtCnt, $dupCnt, $data, $msg, $count, $per, $perval) {
+    function sm_duplicate_product ($strtCnt, $dupCnt, $data, $msg, $count, $per, $perval, &$woo_dup_obj) {
         $post_data = array();
 
         for ($i = $strtCnt; $i < $dupCnt; $i ++) {
             $post_id = $data [$i];
             $post = get_post ( $post_id );
+
             if ($post->post_parent == 0) {
-                $post_data [] = woocommerce_create_duplicate_from_product($post,0,'publish');
+                
+                if ($woo_dup_obj instanceof WC_Admin_Duplicate_Product) {
+                    $post_data [] = $woo_dup_obj -> duplicate_product($post,0,'publish');
+
+                } else {
+                    $post_data [] = woocommerce_create_duplicate_from_product($post,0,'publish');
+                }
+
             }
             else{
                 $post_data [] = $data [$i];
@@ -2335,6 +2417,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
         }
         $dupCnt = count ( $data_dup );
 
+        //todo
+
         if ($dupCnt > 20) {
             for ($i=0;$i<$dupCnt;) {
                 $count_dup ++;
@@ -2361,6 +2445,11 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
         $data = json_decode ( stripslashes ( $_POST ['dup_data'] ) );
         $data_count = $_POST ['fdupcnt'] - $_POST ['dupcnt'];
 
+        $woo_dup_obj = '';
+        if ($_POST['SM_IS_WOO21'] == "true") {
+            $woo_dup_obj = new WC_Admin_Duplicate_Product();
+        }
+
         for ($i=1;$i<=$count;$i++) {
             if (isset ( $_POST ['part'] ) && $_POST ['part'] == $i) {
                 $per = intval(($_POST ['part']/$count)*100); // Calculating the percentage for the display purpose
@@ -2384,7 +2473,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
                 else{
                     $msg = $per . "% Duplication Completed";
                 }
-                duplicate_product ($_POST ['dupcnt'], $_POST ['fdupcnt'], $data, $msg, $data_count, $per,$perval);
+                sm_duplicate_product ($_POST ['dupcnt'], $_POST ['fdupcnt'], $data, $msg, $data_count, $per,$perval,$woo_dup_obj);
                 break;
             }
         }

@@ -1385,17 +1385,24 @@ function data_for_insert_update($post) {
 			'guid' 			 	=> '',    // 'guid'					=> $guid
 			'post_content_filtered' => ''
 			);			
+ 
+
+ 
+		// 'tax_input' 	   => Array (
+		// 												'product_tag' 			=> 1, 						  // product_tag
+		// 												'wpsc_product_category' => Array (0 => $obj->category ), // product category
+		// 												'wpsc-variation' 		=> Array (0 => 0 ) 			  // product variation
+		// 											),
+
 						
 			//FOR wpsc_pre_update FUNCTION & FOR wpsc_admin_submit_product FUNCTION
 			//(not passed as an argument but used in the function)
 			$_POST = array (
 						'original_publish' => $obj->post_status, 
 						'publish' 		   => $obj->post_status, 
-						'tax_input' 	   => Array (
-														'product_tag' 			=> 1, 						  // product_tag
-														'wpsc_product_category' => Array (0 => $obj->category ), // product category
-														'wpsc-variation' 		=> Array (0 => 0 ) 			  // product variation
-													), 
+
+						
+						
 			'meta' => Array (
 							'_wpsc_price' 		  	 	=> $obj->_wpsc_price, 
 							'_wpsc_special_price' 	 	=> $obj->_wpsc_special_price, 
@@ -1443,6 +1450,7 @@ function data_for_insert_update($post) {
 				$data ['guid'] 		  = $guid;
 				$_POST ['product_id'] = $product_id;
 				$_POST ['ID'] 		  = $product_id;
+
 				$data_value 		  = wpsc_pre_update ( $data, $_POST );
 				$inserted_product_id  = wpsc_admin_submit_product ( $product_id, $data );
 				
@@ -1482,7 +1490,7 @@ function data_for_insert_update($post) {
 					$product_meta_values = get_post_meta( $product_id, '_wpsc_product_metadata', true );					
 					$_POST['meta']['_wpsc_product_metadata'] = array_merge((array)$product_meta_values,$_POST['meta']['_wpsc_product_metadata']);
 					$product_meta = $_POST['meta'];
-					
+
 					if ($product_meta != null) {
 						foreach ( ( array ) $product_meta as $key => $value ) {
 							$bool = update_post_meta ( $product_id, $key, $value, $prev_value = '' );
