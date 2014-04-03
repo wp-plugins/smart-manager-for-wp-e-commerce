@@ -20,11 +20,11 @@ if ( ! defined('ABSPATH') ) {
 }
 
 // WOO 2.1 compatibility
-if ($_POST['SM_IS_WOO21'] == "true") {
+if (!empty($_POST['SM_IS_WOO21']) && $_POST['SM_IS_WOO21'] == "true") {
     include_once (WP_PLUGIN_DIR . '/woocommerce/includes/admin/class-wc-admin-duplicate-product.php'); // for handling the duplicate product functionality
     include_once (WP_PLUGIN_DIR . '/woocommerce/includes/class-wc-product-variable.php'); // for handling variable parent price
     include_once (WP_PLUGIN_DIR . '/woocommerce/includes/abstracts/abstract-wc-product.php'); // for updating stock status
-} else {
+} else if (!empty($_POST['SM_IS_WOO21']) && $_POST['SM_IS_WOO21'] == "false") {
     include_once (WP_PLUGIN_DIR . '/woocommerce/admin/includes/duplicate_product.php');
 }
 
@@ -96,7 +96,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 	
 	$wpdb->query ( "SET SESSION group_concat_max_len=999999" );// To increase the max length of the Group Concat Functionality
 	
-	$view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
+	$view_columns = (!empty($_POST ['viewCols'])) ? json_decode ( stripslashes ( $_POST ['viewCols'] ) ) : '';
 	if ($active_module == 'Products') { // <-products
 
         $tax_status = array(
@@ -491,8 +491,8 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
             for ($i = 0; $i < $num_rows; $i++) {
 
-                $records[$i]['post_content'] = str_replace('"','\'',$records[$i]['post_content']);
-                $records[$i]['post_excerpt'] = str_replace('"','\'',$records[$i]['post_excerpt']);                
+                // $records[$i]['post_content'] = str_replace('"','\'',$records[$i]['post_content']);
+                // $records[$i]['post_excerpt'] = str_replace('"','\'',$records[$i]['post_excerpt']);                
 
                 $prod_meta_values = explode('###', $records[$i]['prod_othermeta_value']);
                 $prod_meta_key = explode('###', $records[$i]['prod_othermeta_key']);
@@ -529,8 +529,8 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 }
 
 
-
-                $records[$i]['category'] = ( ( $records[$i]['post_parent'] > 0 && $product_type[0] == 'simple' ) || ( $records[$i]['post_parent'] == 0 ) ) ? $records[$i]['category'] : '';   // To hide category name from Product's variations
+                $product_type = (!empty($product_type[0])) ? $product_type[0] : '';
+                $records[$i]['category'] = ( ( $records[$i]['post_parent'] > 0 && $product_type == 'simple' ) || ( $records[$i]['post_parent'] == 0 ) ) ? (!empty($records[$i]['category']) ? $records[$i]['category'] : '') : '';   // To hide category name from Product's variations
 
                 //Attributes Column
 
@@ -552,17 +552,15 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
                             if ($attribute_terms != "") {
                                 $attribute_terms = substr($attribute_terms, 0, -2);
+                                $attributes_list .= $attributes_label[$prod_attr1['name']] . ": [" . $attribute_terms . "]";
+                                $attributes_list .= "<br>";
                             }
-
-                            $attributes_list .= $attributes_label[$prod_attr1['name']] . ": [" . $attribute_terms . "]";
+                            
                         }
-                        else {
+                        elseif ($prod_attr1['is_taxonomy'] == 0) {
                             $attributes_list .= $prod_attr1['name'] . ": [" . str_replace(" |", ",", $prod_attr1['value']) ."]";
-                        }
-
-                        if($attributes_list != "") {
                             $attributes_list .= "<br>";
-                        }    
+                        }
                     }
 
                     // $records[$i]['product_attributes'] = substr( $attributes_list, 0, -3);
@@ -571,8 +569,6 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     $records[$i]['product_attributes'] = "";
                 }
 
-                
-
                 if (isset($prod_meta_key_values['_sale_price_dates_from']) && !empty($prod_meta_key_values['_sale_price_dates_from']))
                     $prod_meta_key_values['_sale_price_dates_from'] = date('Y-m-d', (int) $prod_meta_key_values['_sale_price_dates_from']);
                 if (isset($prod_meta_key_values['_sale_price_dates_to']) && !empty($prod_meta_key_values['_sale_price_dates_to']))
@@ -580,7 +576,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
                 $records[$i] = array_merge((array) $records[$i], $prod_meta_key_values);
                 $thumbnail = isset($records[$i]['_thumbnail_id']) ? wp_get_attachment_image_src($records[$i]['_thumbnail_id'], $image_size) : '';
-                $records[$i]['thumbnail'] = ( $thumbnail[0] != '' ) ? $thumbnail[0] : false;
+                $records[$i]['thumbnail'] = ( !empty($thumbnail[0]) ) ? $thumbnail[0] : false;
                 $records[$i]['_tax_status'] = (!empty($prod_meta_key_values['_tax_status']) ) ? $prod_meta_key_values['_tax_status'] : '';
 
                 // Setting product type for grouped products
@@ -610,7 +606,8 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         $variation_names = '';
 
                         foreach ($variation as $slug) {
-                            $variation_names .= ( isset($attributes[$prod_meta_key_values[$slug]]) && !empty($attributes[$prod_meta_key_values[$slug]]) ) ? $attributes[$prod_meta_key_values[$slug]] . ', ' : ucfirst($prod_meta_key_values[$slug]) . ', ';
+                            $prod_meta_key_values_slug = ( !empty($prod_meta_key_values[$slug]) ) ? $prod_meta_key_values[$slug] : '';
+                            $variation_names .= ( isset($attributes[$prod_meta_key_values_slug]) && !empty($attributes[$prod_meta_key_values_slug]) ) ? $attributes[$prod_meta_key_values_slug] . ', ' : ucfirst($prod_meta_key_values_slug) . ', ';
                         }
                         
                         $records[$i]['post_title'] = get_the_title($records[$i]['post_parent']) . " - " . trim($variation_names, ", ");
@@ -627,7 +624,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     }
 
                     $products[$records[$i]['id']]['post_title'] = $records[$i]['post_title'];
-                    $products[$records[$i]['id']]['variation'] = $variation_names;
+                    $products[$records[$i]['id']]['variation'] = (!empty($variation_names)) ? $variation_names : '';
                 } elseif ($show_variation === false && SMPRO) {
                     if ($product_type[0] == 'variable') {
 
@@ -929,7 +926,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
 	} elseif ($active_module == 'Orders') {
             
-          if (SMPRO == true && function_exists ( 'sm_woo_get_packing_slip' ) && $_POST['label'] == 'getPurchaseLogs'){
+          if (SMPRO == true && function_exists ( 'sm_woo_get_packing_slip' ) && ( (!empty($_POST['label'])) && $_POST['label'] == 'getPurchaseLogs')) {
                     $log_ids_arr = json_decode ( stripslashes ( $_POST['log_ids'] ) );
                     if (is_array($log_ids_arr))
                     $log_ids = implode(', ',$log_ids_arr);
@@ -1009,6 +1006,8 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 				}
 			}
 			
+            $search_condn = '';
+
 			if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 				$multiple_search_terms = explode( '\"', trim ( $_POST ['searchText'] ) );
                 $search_on = $wpdb->_real_escape ( trim ( $_POST ['searchText'] ) );
@@ -1280,7 +1279,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 			}
 			
 			}
-			
+
 			//get the state id if the shipping state is numeric or blank
 			$query    = "$select_query $where $group_by $search_condn $limit_query";
             $results  = $wpdb->get_results ( $query,'ARRAY_A');
@@ -1308,6 +1307,16 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                 
                                 if($_POST['SM_IS_WOO16'] == "false") {
                                     $order_id = implode(",",$order_ids);
+
+                                    // Code for handling export functionality
+                                    if (!empty($_POST['func_nm']) && $_POST['func_nm'] == 'exportCsvWoo') {
+                                        $order_id_cond = "";
+                                        $order_id_order_by = "";
+                                    } else {
+                                        $order_id_cond = " AND order_items.order_id IN ($order_id)";
+                                        $order_id_order_by = "ORDER BY FIND_IN_SET(order_items.order_id,'$order_id')";
+                                    }
+
                                     $query_order_items = "SELECT order_items.order_item_id,
                                                             order_items.order_id    ,
                                                             order_items.order_item_name AS order_prod,
@@ -1320,12 +1329,12 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                         FROM {$wpdb->prefix}woocommerce_order_items AS order_items 
                                                             LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_itemmeta 
                                                                 ON (order_items.order_item_id = order_itemmeta.order_item_id)
-                                                        WHERE order_items.order_id IN ($order_id)
-                                                            AND order_items.order_item_type LIKE 'line_item'
+                                                        WHERE order_items.order_item_type LIKE 'line_item'
+                                                            $order_id_cond
                                                         GROUP BY order_items.order_item_id
-                                                        ORDER BY FIND_IN_SET(order_items.order_id,'$order_id')";
+                                                        $order_id_order_by";
                                     $results_order_items  = $wpdb->get_results ( $query_order_items , 'ARRAY_A');
-				    $num_rows_order_items = $wpdb->num_rows;
+				                    $num_rows_order_items = $wpdb->num_rows;
 
                                     //code for formatting order items array
 
@@ -1343,16 +1352,24 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                         }    
                                     }
 
+                                    //Code for export functionality
+                                    if (!empty($_POST['func_nm']) && $_POST['func_nm'] == 'exportCsvWoo') {
+                                        $coupons_order_id_cond = "";
+                                        $coupons_order_id_order_by = "";
+                                    } else {
+                                        $coupons_order_id_cond = " AND order_id IN ($order_id)";
+                                        $coupons_order_id_order_by = "ORDER BY FIND_IN_SET(order_id,'$order_id')";
+                                    }
 				
                                     $query_order_coupons = "SELECT order_id,
                                                                 GROUP_CONCAT(order_item_name
                                                                                     ORDER BY order_item_id 
                                                                                     SEPARATOR ', ' ) AS coupon_used
                                                             FROM {$wpdb->prefix}woocommerce_order_items
-                                                            WHERE order_id IN ($order_id)
-                                                                  AND order_item_type LIKE 'coupon'
+                                                            WHERE order_item_type LIKE 'coupon'
+                                                                $coupons_order_id_cond
                                                             GROUP BY order_id
-                                                            ORDER BY FIND_IN_SET(order_id,'$order_id')";
+                                                            $coupons_order_id_order_by";
                                     $results_order_coupons  = $wpdb->get_results ( $query_order_coupons , 'ARRAY_A');                                                            
                                     $num_rows_coupons = $wpdb->num_rows;
 
@@ -1482,12 +1499,18 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                                 unset( $order_item ['meta_value'] );
                                                                 unset( $order_item ['meta_key'] );
 
+                                                                $sku_detail = (!empty($sku_detail)) ? $sku_detail : '';
+                                                                $index = (!empty($index)) ? $index : '';
+
                                                                 update_post_meta($index, $sku_detail, $meta_value);
                                                                 
                                                                 $prod_meta_key_values = array_combine($prod_meta_key, $prod_meta_values);
 
                                                                 
                                                                 // if ($data['id'] == $order_item['order_id']) {
+
+                                                                    $data['details'] = (!empty($data['details'])) ? $data['details'] : '';
+                                                                    $data['order_total_ex_tax'] = (!empty($data['order_total_ex_tax'])) ? $data['order_total_ex_tax'] : '';
 
                                                                     $data['details'] += $prod_meta_key_values['_qty'];
                                                                     $data['order_total_ex_tax'] += $prod_meta_key_values['_line_total'];
@@ -1503,6 +1526,8 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                                     $variation_att = ( isset( $variation_att_all [$prod_meta_key_values['_variation_id']] ) && !empty( $variation_att_all [$prod_meta_key_values['_variation_id']] ) ) ? $variation_att_all [$prod_meta_key_values['_variation_id']] : '';
                                                                     
                                                                     $product_full_name = ( !empty( $variation_att ) ) ? $order_item['order_prod'] . ' (' . $variation_att . ')' : $order_item['order_prod'];
+                                                                        
+                                                                    $data['products_name'] = (!empty($data['products_name'])) ? $data['products_name'] : '';
                                                                     $data['products_name'] .= $product_full_name.' '.$sku_detail.'['.__('Qty','smart-manager').': '.$prod_meta_key_values['_qty'].']['.__('Price','smart-manager').': '.($prod_meta_key_values['_line_total']/$prod_meta_key_values['_qty']).'], ';
                                                             
                                                                     $data['coupons'] = (isset($order_coupons[$order_item['order_id']])) ? $order_coupons[$order_item['order_id']] : "";
@@ -1527,7 +1552,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 	
 						$data ['_shipping_address'] = $postmeta['_shipping_address_1'].', '.$postmeta['_shipping_address_2'];
 						unset($data ['meta_value']);
-						$postmeta ['_shipping_method'] = isset($postmeta ['_shipping_method_title']) ? $postmeta ['_shipping_method_title'] : $postmeta ['_shipping_method'];
+						$postmeta ['_shipping_method'] = isset($postmeta ['_shipping_method_title']) ? $postmeta ['_shipping_method_title'] : (!empty($postmeta ['_shipping_method']) ? $postmeta ['_shipping_method'] : '');
 						$postmeta ['_payment_method'] = isset($postmeta ['_payment_method_title']) ? $postmeta ['_payment_method_title'] : $postmeta ['_payment_method'];
 						$postmeta ['_shipping_state'] = isset($woocommerce->countries->states[$postmeta ['_shipping_country']][$postmeta ['_shipping_state']]) ? $woocommerce->countries->states[$postmeta ['_shipping_country']][$postmeta ['_shipping_state']] : $postmeta ['_shipping_state'];
 						$postmeta ['_shipping_country'] = isset($woocommerce->countries->countries[$postmeta ['_shipping_country']]) ? $woocommerce->countries->countries[$postmeta ['_shipping_country']] : $postmeta ['_shipping_country'];
@@ -1549,7 +1574,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 				unset($results);
 			}
 	}
-	if (!isset($_POST['label']) && $_POST['label'] != 'getPurchaseLogs'){
+	if (!isset($_POST['label']) || ( (!empty($_POST['label'])) && $_POST['label'] != 'getPurchaseLogs' )){
         $encoded ['items'] = $records;
         $encoded ['totalCount'] = $num_records;
         unset($records);
@@ -1589,6 +1614,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
         $args = array(
             'post_type' => 'shop_coupon',
+            'posts_per_page' => $limit,
+            'offset' => $offset,
+            'paged' => (get_query_var('paged')) ? get_query_var('paged') : 1
             );
 
         $result_coupons = new WP_Query( $args );
@@ -1620,7 +1648,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
         }
 
         $encoded['items'] = $temp;
-        $encoded ['totalCount'] = $cnt;
+        // $encoded ['totalCount'] = $cnt;
+        $encoded ['totalCount'] = $result_coupons->found_posts;
 
     } else {
         $encoded = get_data_woo ( $_POST, $offset, $limit );
@@ -1690,7 +1719,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
 
 
 
-if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWoo') {
+if (isset ( $_GET ['func_nm'] ) && $_GET ['func_nm'] == 'exportCsvWoo') {
         $sm_domain = 'smart-manager';
 	$encoded = get_data_woo ( $_GET, $offset, $limit, true );
 
@@ -1900,7 +1929,15 @@ function variable_product_price_sync($id) {
     update_post_meta( $id, '_min_variation_sale_price', $parent['min_variation_sale_price'] );
     update_post_meta( $id, '_max_variation_sale_price', $parent['max_variation_sale_price'] );
 
-    if ( $parent['min_variation_price'] !== '' ) $woocommerce->clear_product_transients( $id );
+    if ( $parent['min_variation_price'] !== '' ) {
+
+        if ($_POST['SM_IS_WOO21'] == "true") {
+            wc_delete_product_transients( $id );
+        } else {
+            $woocommerce->clear_product_transients( $id );
+        }
+    }
+     
 }
 
 function get_price($regular_price, $sale_price, $sale_price_dates_from, $sale_price_dates_to) {
@@ -2222,9 +2259,14 @@ function woo_insert_update_data($post) {
             $result = array('inserted' => 0, 'insertCnt' => 0, 'updated' => 0, 'updateCnt' => 0);
     }
         
-        //Clearing the transients to handle the proper functioning of the widgets
+    //Clearing the transients to handle the proper functioning of the widgets
+    if ($_POST['SM_IS_WOO21'] == "true") {
+        wc_delete_product_transients();
+    } else{
         $woocommerce->clear_product_transients();
-        return $result;
+    }
+
+    return $result;
 }
 
 
@@ -2553,6 +2595,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 
 function customers_query($search_text = '') {
     global $wpdb;
+    $search_condn = '';
     if ($search_text) {
 
         $query_users = "SELECT id FROM $wpdb->users WHERE user_email LIKE '$search_text%'";

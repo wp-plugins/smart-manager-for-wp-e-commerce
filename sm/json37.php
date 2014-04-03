@@ -478,7 +478,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 }
 
 
-if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
+if (isset ( $_GET ['func_nm'] ) && $_GET ['func_nm'] == 'exportCsvWpsc') {
 
 	$encoded = get_data_wpsc_37 ( $_GET, $offset, $limit, true );
 	$data = $encoded ['items'];

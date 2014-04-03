@@ -1349,16 +1349,16 @@ var pagingToolbar = new Ext.PagingToolbar({
 					// Ext.notification.msg('Smart Manager', getText('Export CSV feature is available only in Pro version') ); 
 					return;
 				}
-                                Ext.DomHelper.append(Ext.getBody(), { 
-                                    tag: 'iframe', 
-                                    id:'downloadIframe', 
-                                    frameBorder: 0, 
-                                    width: 0, 
-                                    height: 0, 
-                                    css: 'display:none;visibility:hidden;height:0px;', 
-                                    // src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
-                                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
-                                }); 
+                Ext.DomHelper.append(Ext.getBody(), { 
+                    tag: 'iframe', 
+                    id:'downloadIframe', 
+                    frameBorder: 0, 
+                    width: 0, 
+                    height: 0, 
+                    css: 'display:none;visibility:hidden;height:0px;', 
+                    // src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
+                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
+                }); 
 			}
 		}
 	}],
@@ -1379,7 +1379,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		// Gets all records modified since the last commit.
 		// Modified records are persisted across load operations like pagination or store reload.
 		
-		var modifiedRecords = store.getModifiedRecords();		
+		var modifiedRecords = store.getModifiedRecords();
 		if(!modifiedRecords.length) {
 			return;
 		} else if ( ( modifiedRecords.length >= updation_progress ) && ( fileExists == 0 ) ) {
@@ -3785,7 +3785,7 @@ var showCustomerDetails = function(record,rowIndex){
         var column_move = false;
 
 	// Grid panel for the records to display
-	
+
 	var flag_save_lite = 0;
 	var row_index_save_lite = new Array();
 

@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.6
+Version: 3.6.1
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013, 2014 Store Apps All rights reserved.
@@ -122,6 +122,7 @@ add_action ( 'admin_notices', 'smart_admin_notices' );
         }
 
         wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
+        // wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
 		wp_register_script ( 'sm_ext_all', plugins_url ( '/ext/ext-all.js', __FILE__ ), array ('sm_ext_base' ), $ext_version );
 		if ( ( isset($_GET['post_type']) && $_GET['post_type'] == 'wpsc-product' ) || ( isset($_GET['page']) && $_GET['page'] == 'smart-manager-wpsc' ) ) {
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager.js', __FILE__ ), array ('sm_ext_all'), $sm_plugin_info ['Version'] );
@@ -162,7 +163,7 @@ add_action ( 'admin_notices', 'smart_admin_notices' );
                         
 		}
 
-	      
+
 		wp_register_style ( 'sm_ext_all', plugins_url ( '/ext/ext-all.css', __FILE__ ), array (), $ext_version );
 		wp_register_style ( 'sm_main', plugins_url ( '/sm/smart-manager.css', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
 		
@@ -522,8 +523,10 @@ add_action ( 'admin_notices', 'smart_admin_notices' );
 			$error_message = '';
 			if ((file_exists( WP_PLUGIN_DIR . '/wp-e-commerce/wp-shopping-cart.php' )) && (file_exists( WP_PLUGIN_DIR . '/woocommerce/woocommerce.php' ))) {
 				if (is_plugin_active( 'wp-e-commerce/wp-shopping-cart.php' )) {
+
 	                            require_once (WPSC_FILE_PATH . '/wp-shopping-cart.php');
-	                            if (IS_WPSC37 || IS_WPSC38) {
+	                            // if (IS_WPSC37 || IS_WPSC38) {
+	                            if  ( version_compare ( WPSC_VERSION, '3.8', '>=' )) {
 	                                if (file_exists( $base_path . 'manager-console.php' )) {
 	                                        include_once ($base_path . 'manager-console.php');
 	                                        return;
