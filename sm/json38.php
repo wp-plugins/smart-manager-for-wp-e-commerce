@@ -40,10 +40,10 @@ $limit = (isset ( $_POST ['limit'] )) ? $_POST ['limit'] : 100;
 
 // For pro version check if the required file exists
 if (file_exists ( WP_PLUGIN_DIR . '/' . dirname( dirname(plugin_basename( __FILE__ ))) . '/pro/sm38.php' )) {
-	define ( 'SMPRO', true );
+	if ( !defined( 'SMPRO' ) ) define ( 'SMPRO', true );
 	include_once ( WP_PLUGIN_DIR . '/' . dirname( dirname(plugin_basename( __FILE__ ))) . '/pro/sm38.php' );
 } else {
-	define ( 'SMPRO', false );
+	if ( !defined( 'SMPRO' ) ) define ( 'SMPRO', false );
 }
 
 function get_regions_ids(){ //getting the list of regions
@@ -968,7 +968,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
 }
 
 
-if (isset ( $_GET ['cmd'] ) && $_GET ['cmd'] == 'exportCsvWpsc') {
+if (isset ( $_GET ['func_nm'] ) && $_GET ['func_nm'] == 'exportCsvWpsc') {
 
 	$sm_domain = 'smart-manager';
         $columns_header = array();
@@ -1212,7 +1212,13 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 		
 		for($i = 0; $i < $delCnt; $i ++) {
 			$post_id = $data [$i];
-			$post_data [] = wp_trash_post ( $post_id );
+			$post = get_post ( $post_id );
+	
+			if ( $post->post_status == 'inherit' ) {
+				$post_data [] = wp_delete_post( $post_id );
+			} else {
+				$post_data [] = wp_trash_post ( $post_id );
+			}
 		}
 		
 		$deleted_count = count ( $post_data );

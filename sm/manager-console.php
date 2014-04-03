@@ -393,7 +393,7 @@ if (WPSC_RUNNING === true) {
 									  array ( 'meta_key' => 'usage_limit' ));
 	}
 
-	$select_box = $woocommerce->get_coupon_discount_types();
+	$select_box = (SM_IS_WOO21 == "true") ?  wc_get_coupon_types() : $woocommerce->get_coupon_discount_types();
 
 	$select_box_keys = array_keys($select_box);
 

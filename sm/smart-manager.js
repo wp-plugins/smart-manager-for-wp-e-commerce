@@ -1295,7 +1295,7 @@ var pagingToolbar = new Ext.PagingToolbar({
                     height: 0,
                     css: 'display:none;visibility:hidden;height:0px;', 
                     // src: jsonURL+'?cmd=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
-                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&cmd=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
+                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
                 }); 
 			}
 		}
