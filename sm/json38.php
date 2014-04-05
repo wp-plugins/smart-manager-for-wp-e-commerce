@@ -140,7 +140,7 @@ function variation_query_params(){
 
     $wpdb->query ( "SET SESSION group_concat_max_len=999999" );// To increase the max length of the Group Concat Functionality
 
-    $view_columns = json_decode ( stripslashes ( $_POST ['viewCols'] ) );
+    $view_columns = (!empty($_POST ['viewCols'])) ? json_decode ( stripslashes ( $_POST ['viewCols'] ) ) : '';
     
 	if ($active_module == 'Products') { // <-products
 
@@ -346,7 +346,7 @@ function variation_query_params(){
 }//products ->
 elseif ($active_module == 'Orders') {
 
-	if (SMPRO == true && function_exists ( 'get_packing_slip' ) && $_POST['label'] == 'getPurchaseLogs'){
+	if (SMPRO == true && function_exists ( 'get_packing_slip' ) && (!empty($_POST['label']) && $_POST['label'] == 'getPurchaseLogs')){
 		$log_ids_arr = json_decode ( stripslashes ( $_POST['log_ids'] ) );
 		if (is_array($log_ids_arr))
 		$log_ids = implode(', ',$log_ids_arr);
@@ -811,7 +811,7 @@ elseif ($active_module == 'Orders') {
                     $user_fname[$reg_user[$i]['ID']] = $name[0];
                     $user_lname[$reg_user[$i]['ID']] = $name[1];
                     
-                    if (!(is_null($name[2]))) {
+                    if (!empty($name[2])) {
                         $unserialized_detail = unserialize($name[2]); 
                         
                         $user_add[$reg_user[$i]['ID']]      = $unserialized_detail[4];
@@ -869,7 +869,7 @@ elseif ($active_module == 'Orders') {
 					}
                                         
                                         //Code to get the email for reg users from wp_users table
-                                        if ($result['id'] > 0) {
+                                        if (!empty($result['id']) && $result['id'] > 0) {
                                             $result['email']  = $user_email[$result['id']];
                                             $billing_user_details ['billingemail']      = $user_email[$result['id']];
                                             
@@ -901,11 +901,11 @@ elseif ($active_module == 'Orders') {
 	
         }
 	
-        if (!isset($_POST['label']) && $_POST['label'] != 'getPurchaseLogs'){
-		$encoded ['items'] = $records;
-		$encoded ['totalCount'] = $num_records;
-		unset($records);
-                return $encoded;
+        if (!isset($_POST['label']) || ( (!empty($_POST['label'])) && $_POST['label'] != 'getPurchaseLogs' )){
+			$encoded ['items'] = (!empty($records)) ? $records : '';
+			$encoded ['totalCount'] = $num_records;
+			unset($records);
+	        return $encoded;
 	}
 }
 
