@@ -739,7 +739,7 @@ Ext.onReady(function () {
 					if (records_cnt == 0){
 						myJsonObj.items = '';
 					}
-                                        store.loadData(myJsonObj);
+                    store.loadData(myJsonObj);
 					if(SM.incVariation == false){
 						columnModel.setHidden(SM.typeColIndex,true);
 					}else{
@@ -1240,12 +1240,104 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 		}
 	});
 
+	var mask = new Ext.LoadMask(Ext.getBody(), {
+		msg: getText('Please wait') + "..."
+	});
+
 	var showProductsView = function(){
-                batchUpdateWindow.loadMask.show();
+    	batchUpdateWindow.loadMask.show();
                 
 		productsStore.baseParams.searchText = ''; //clear the baseParams for productsStore
 		SM.searchTextField.reset(); 			  //to reset the searchTextField
+		SM.searchTextField.hide(); 			  //to reset the searchTextField
 		
+		jQuery("#sm_advanced_search_content").show(); //showing the advanced search box
+
+		editorGrid.getTopToolbar().get('searchIconId').hide();
+
+		jQuery(function($){
+			window.visualSearch = new VisualSearch({
+					el		: $("#sm_advanced_search_box_0"),
+					placeholder: "Enter your search conditions here!",
+					strict: false,
+					search: function(json){
+						$("#sm_advanced_search_box_value_0").val(json);
+					},
+					parameters: products_search_cols
+				});
+
+
+			var grid_pannel_width = $(".x-panel-tbar").width();
+			$('#sm_advanced_search_content').css('width',(grid_pannel_width/2.2));
+
+			// count = 0;
+			$("#sm_advanced_search_or").on('click', function () {
+				if ( fileExists != 1 ) {
+					$("#sm_advanced_search_or").attr('disabled','disabled');
+					Ext.notification.msg('Smart Manager', getText('This feature is available only in Pro version')); 
+					return;
+				} else {
+					$("#sm_advanced_search_or").removeAttr('disabled');
+					addAdvancedSearchCondition();
+				}
+			});
+			
+			$('#sm_advanced_search_submit').on('click',function(){ //listen for submit event
+
+				var search_query = new Array();
+				$('input[id^="sm_advanced_search_box_value_"]').each(function() {
+				    search_query.push($(this).val());
+				});
+
+				mask.show();
+
+				$.ajax({
+	                    type : 'POST',
+	                    url : ajaxurl + '?action=sm_include_file',
+	                    dataType: "text",
+	                    async: false,
+	                    data: {
+
+	                    	cmd: 'getData',
+							active_module: SM.activeModule,
+							start: 0,
+							limit: limit,
+							viewCols: Ext.encode(productsViewCols),
+							incVariation: SM.incVariation,
+				            SM_IS_WOO16: SM_IS_WOO16,
+				            SM_IS_WOO21: SM_IS_WOO21,
+				            file:  jsonURL,
+				            search_query: search_query,
+				            search: 'advanced_search'
+	                    },
+	                    // callback: function (options, success, response) {
+	                    success: function(response) {
+			
+							var myJsonObj = Ext.decode(response);
+							
+							try {
+								var records_cnt = myJsonObj.totalCount;
+								if (records_cnt == 0) myJsonObj.items = '';
+								if(SM.activeModule == 'Products')
+									productsStore.loadData(myJsonObj);
+								else if(SM.activeModule == 'Orders'){
+									ordersStore.loadData(myJsonObj);
+				                } else {
+									customersStore.loadData(myJsonObj);
+				                }
+								
+								mask.hide();
+
+							} catch (e) {
+								return;
+							}
+						}
+				});
+			});
+
+
+		});
+
 		hidePrintButton();
 		hideDeleteButton();
 		showAddProductButton();
@@ -1256,14 +1348,14 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 		for(var i=2;i<=8;i++)
 		editorGrid.getTopToolbar().get(i).hide();
 		editorGrid.getTopToolbar().get('incVariation').show();
-                editorGrid.getTopToolbar().get('duplicateButton').show();
+        editorGrid.getTopToolbar().get('duplicateButton').show();
 
 		productsStore.load();
 		pagingToolbar.bind(productsStore);
 
 		incvariation = editorGrid.getTopToolbar().get('incVariation').fireEvent('getState');
-                editorGrid.reconfigure(productsStore,productsColumnModel);
-                fieldsStore.loadData(productsFields);
+        editorGrid.reconfigure(productsStore,productsColumnModel);
+        fieldsStore.loadData(productsFields);
 
 		var firstToolbar       = batchUpdatePanel.items.items[0].items.items[0];
 		var textfield          = firstToolbar.items.items[5];
@@ -1808,10 +1900,6 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                    
                                 }}
                         });         
-        
-var mask = new Ext.LoadMask(Ext.getBody(), {
-	msg: getText('Please wait') + "..."
-});
 
 var batchMask = new Ext.LoadMask(Ext.getBody(), {
 	msg: getText('Please wait') + "..."
@@ -2058,6 +2146,7 @@ var searchLogic = function () {
 			limit: limit,
 			viewCols: Ext.encode(productsViewCols),
 			SM_IS_WOO16: SM_IS_WOO16,
+			SM_IS_WOO21: SM_IS_WOO21,
 			file:  jsonURL
 		}
 	};
@@ -3148,6 +3237,7 @@ var showCustomerDetails = function(record,rowIndex){
 			start: 0,
 			limit: limit,
             SM_IS_WOO16: SM_IS_WOO16,
+            SM_IS_WOO21: SM_IS_WOO21,
             file:  jsonURL
 		},
 		dirty:false,
@@ -3164,6 +3254,8 @@ var showCustomerDetails = function(record,rowIndex){
 			//initial steps when store: customers is loaded
 			SM.activeModule = 'Customers';
 			SM.dashboardComboBox.setValue(SM.activeModule);
+
+			jQuery("#sm_advanced_search_content").hide(); //Hiding the advanced search box
 
 			customersColumnModel.setEditable(1,true);
 			customersColumnModel.setEditable(2,true);
@@ -3361,6 +3453,7 @@ var showCustomerDetails = function(record,rowIndex){
 			limit: limit,
 			couponFields: Ext.encode(couponFields),
 			SM_IS_WOO16: SM_IS_WOO16,
+			SM_IS_WOO21: SM_IS_WOO21,
 			file:  jsonURL
 		},
 		dirty:false,
@@ -3379,7 +3472,9 @@ var showCustomerDetails = function(record,rowIndex){
 
         SM.activeModule = couponFields.coupon_dashbd.title;
 		SM.dashboardComboBox.setValue(SM.activeModule);
-                
+        
+		jQuery("#sm_advanced_search_content").hide(); //Hiding the advanced search box
+
 		couponstore.baseParams.searchText = ''; //clear the baseParams for couponstore
 		SM.searchTextField.reset(); 			  //to reset the searchTextField
 		
@@ -3694,6 +3789,7 @@ var showCustomerDetails = function(record,rowIndex){
 			start: 0,
 			limit: limit,
             SM_IS_WOO16: SM_IS_WOO16,
+            SM_IS_WOO21: SM_IS_WOO21,
             file:  jsonURL
 		},
 		dirty:false,
@@ -3711,6 +3807,8 @@ var showCustomerDetails = function(record,rowIndex){
 			//initial steps when store: orders is loaded
 			SM.activeModule = 'Orders';
 			SM.dashboardComboBox.setValue(SM.activeModule);
+
+			jQuery("#sm_advanced_search_content").hide(); //hiding the advanced search box
 
 			ordersColumnModel.setEditable(7,true);
 			ordersColumnModel.setEditable(9,true);
@@ -3793,7 +3891,7 @@ var showCustomerDetails = function(record,rowIndex){
 	stateId : 'productsEditorGridPanelWoo',
 	stateEvents : ['viewready','beforerender','columnresize', 'columnmove', 'columnvisible', 'columnsort','reconfigure'],
 	stateful: true,
-        defaults:{ autoScroll:true },
+    defaults:{ autoScroll:true },
 	store: productsStore,
 	cm: productsColumnModel,
 	renderTo: 'editor-grid',
@@ -3816,7 +3914,16 @@ var showCustomerDetails = function(record,rowIndex){
 			toComboSearchBox,
 			{xtype: 'tbspacer', id:'afterDateMenuTbspacer', width: 15},
 			SM.searchTextField,{ icon: imgURL + 'search.png', id:'searchIconId' },
-//			{xtype: 'tbspacer',width: 10, id:'afterSearchId'}
+
+			//Advanced Search Box [only for Products]
+			'<div id="sm_advanced_search_content" style="background-color:#d0def0;margin-top: -5px;margin-left: -10px;float:left;">'+
+			'<div style="width: 100%;"> <div id="sm_advanced_search_box" > <div id="sm_advanced_search_box_0" style="width:80%;margin-left:7px;margin-bottom:5px"> </div>'+
+			'<input type="text" id="sm_advanced_search_box_value_0" name="sm_advanced_search_box_value_0" hidden> </div>'+ 
+			'<input type="text" id="sm_advanced_search_query" hidden>'+
+			'<img src='+imgURL+'add_row.png id="sm_advanced_search_or" style="float: left;margin-top: -23px;margin-left: 83%;opacity: 0.75;" title="Add Another Condition">'+
+			'<button id="sm_advanced_search_submit" style="float: left;margin-top: -28px;margin-left: 88%;"><img src='+imgURL+'search.png style="vertical-align:middle"> Search </button>'+
+			'</div>',
+
 			'->',
 			{ 
 				xtype: 'checkbox',
@@ -3840,18 +3947,30 @@ var showCustomerDetails = function(record,rowIndex){
                                       SM.variation_state = this.checked;
                                 },
                                 
-			 	boxLabel: getText('Show Variations'),
-			 	listeners: {
-			 		check : function(checkbox, bool) {
-			 			if ( SM.dashboard_state == 'Products' ) {
-		                        mask.show();
-		                        SM.incVariation  = bool;
-				 				productsStore.setBaseParam('incVariation', SM.incVariation);
-				 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
-			 			}
-			 		}
-			 	}
-			},
+							 	boxLabel: getText('Show Variations'),
+							 	listeners: {
+							 		check : function(checkbox, bool) {
+							 			if ( SM.dashboard_state == 'Products' ) {
+						                        mask.show();
+						                        SM.incVariation  = bool;
+								 				productsStore.setBaseParam('incVariation', SM.incVariation);
+
+								 				// Code for getting the advanced search query
+												var search_query = new Array();
+												jQuery('input[id^="sm_advanced_search_box_value_"]').each(function() {
+												    search_query.push(jQuery(this).val());
+												});
+
+												if (search_query != '') {
+													productsStore.setBaseParam('search_query[]', search_query);
+													productsStore.setBaseParam('search', 'advanced_search');
+												}
+
+								 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
+							 			}
+							 		}
+							 	}
+							},
                          {xtype: 'tbspacer',width: 10, id:'afterShowVariation'},
                          SM.duplicateButton
                         ],

@@ -1903,7 +1903,8 @@ fieldset.x-panel-collapsed .x-fieldset-bwrap {
 }
 
 .x-toolbar td {
-	vertical-align:middle;
+    /*vertical-align:middle;*/
+	vertical-align:top;
 }
 
 .x-toolbar td,.x-toolbar span,.x-toolbar input,.x-toolbar div,.x-toolbar select,.x-toolbar label{
@@ -2104,7 +2105,8 @@ div.x-toolbar-no-items {
 }
 
 .x-toolbar-cell .x-form-checkbox, .x-toolbar-cell .x-form-radio{
-    margin-top: 5px;
+    /*margin-top: 5px;*/
+    margin-top: 3px;
 }
 
 .x-toolbar-cell .x-form-cb-label{
