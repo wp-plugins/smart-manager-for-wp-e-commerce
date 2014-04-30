@@ -368,6 +368,8 @@ if (WPSC_RUNNING === true) {
 
 } else if (WOO_RUNNING === true) {
 
+	$products_search_cols = array(); //array for advanced search autocomplete
+
 	// ==============================================================
 	// Coupons Code
 	// ==============================================================
@@ -557,6 +559,16 @@ if (WPSC_RUNNING === true) {
 	$products_cols['attributes']['tableName']="{$wpdb->prefix}postmeta";
 	$products_cols['attributes']['updateColName']='meta_value';
 
+
+	// 	if (value.value != 'id' || value.value != 'image' || value.value != 'post_parent' ) {
+ //    		productsSearchFields.push(value.name);
+ //    	} 
+
+
+	//Array for advanced search
+	$products_cols_advanced_search = $products_cols;
+
+	
 } 
 
 //Updating The Files Recieved in SM
@@ -603,7 +615,7 @@ if (WPSC_RUNNING === true) {
 				where taxonomy = 'product_cat' ORDER BY group_id ASC
 		        ";
 		
-		$attribute_list_query = "SELECT attribute_label, attribute_name FROM {$wpdb->prefix}woocommerce_attribute_taxonomies";
+		$attribute_list_query = "SELECT attribute_label, attribute_name, attribute_type FROM {$wpdb->prefix}woocommerce_attribute_taxonomies";
 }
 
 $result = mysql_query ( $query );
@@ -676,14 +688,18 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 	$attribute [$att_count] [] = $att_count;
 	$attribute [$att_count] [] = "Custom";
 	$attribute [$att_count] [] = "custom";
+	$attribute [$att_count] [] = "text";
 	$att_count++;
 	foreach ( $attribute_results AS $attribute_result ) {
 		$attribute [$att_count] [] = $att_count;
 		$attribute [$att_count] [] = $wpdb->_real_escape ( $attribute_result ['attribute_label'] );
 		$attribute [$att_count] [] = $wpdb->_real_escape ( $attribute_result ['attribute_name'] );
+		$attribute [$att_count] [] = $wpdb->_real_escape ( $attribute_result ['attribute_type'] );
 		$att_count++;
 	
 	}
+
+	$products_cols['group']['name'] = __( 'Categories', $sm_domain );
 	
 	$products_cols ["groupAttributeAdd"] ['name'] = __("Add Attribute",$sm_domain); 
 	$products_cols ["groupAttributeAdd"] ['actionType'] = "attribute_action";
@@ -703,7 +719,125 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 	$products_cols ["groupAttributeRemove"] ['tableName'] = "{$wpdb->prefix}term_relationships";		
 	$products_cols ["groupAttributeRemove"] ['colFilter'] = "AttributeRemove";
 
+	//Code for advanced Search
+	$index = 0;
+	foreach ($products_cols_advanced_search as $products_col) {
+		if (!empty($products_col['name']) && $products_col['name'] != 'id' && $products_col['name'] != 'image' && $products_col['name'] != 'From'
+			&& $products_col['name'] != 'To' && $products_col['name'] != 'Image' && $products_col['name'] != 'Attributes' && $products_col['name'] != 'Categories') {
+			$products_search_cols [$index] = array();
+			
+			$products_search_cols [$index]['key'] = $products_col['name'];
+
+			if ($products_col['name'] == 'Price' || $products_col['name'] == 'Sale Price' || $products_col['name'] == 'Inventory'
+				|| $products_col['name'] == 'Weight' || $products_col['name'] == 'Height' || $products_col['name'] == 'Width'
+				|| $products_col['name'] == 'Length' ) {
+
+				$products_search_cols [$index]['type'] = 'number';
+				$products_search_cols [$index]['min'] = 0;
+			} else {
+				$products_search_cols [$index]['type'] = 'String';	
+			}
+
+			if ($products_col['name'] == 'Visibility') {
+				$products_search_cols [$index]['values'] = array();
+				$products_search_cols [$index]['values'] = [__('Catalog & Search',$sm_domain),
+														__('Catalog',$sm_domain),
+														__('Search',$sm_domain),
+														__('Hidden',$sm_domain)];
+			} else if ($products_col['name'] == 'Tax Status') {
+				$products_search_cols [$index]['values'] = array();
+				$products_search_cols [$index]['values'] = [__('Taxable',$sm_domain),
+														__('Shipping only',$sm_domain),
+														__('None',$sm_domain)];
+			}  else if ($products_col['name'] == 'Publish') {
+				$products_search_cols [$index]['key'] = 'Post Status';
+				$products_search_cols [$index]['values'] = array();
+				$products_search_cols [$index]['values'] = [__('Publish',$sm_domain),
+														__('Draft',$sm_domain)];
+			}
+
+			$products_search_cols [$index]['category'] = "";
+			$products_search_cols [$index]['placeholder'] = "";
+			$products_search_cols [$index]['table_name'] = $products_col['tableName'];
+			$products_search_cols [$index]['col_name'] = ($products_col['colName'] == "category") ? 'product_cat' : $products_col['colName'];
+			$products_search_cols [$index]['maxlength'] = 10;
+
+			$index++;
+		}
+	}
+
+	$index = sizeof($products_search_cols);
+	$products_search_cols [$index]['key'] = 'Attributes: Custom';
+	$products_search_cols [$index]['type'] = 'string';
+	$products_search_cols [$index]['category'] = "";
+	$products_search_cols [$index]['placeholder'] = "";
+	$products_search_cols [$index]['table_name'] = "{$wpdb->prefix}postmeta";
+	$products_search_cols [$index]['col_name'] = "_product_attributes";
+	
+
+	// if (!empty($attribute)) {
+		
+		$query_attributes_advanced_search = "SELECT tt.term_taxonomy_id, t.name, wat.attribute_type,tt.taxonomy
+	                FROM {$wpdb->prefix}terms as t 
+	                    JOIN {$wpdb->prefix}term_taxonomy as tt on (t.term_id = tt.term_id) 
+	                    LEFT JOIN {$wpdb->prefix}woocommerce_attribute_taxonomies as wat on (concat('pa_',wat.attribute_name) = tt.taxonomy) 
+	                WHERE tt.taxonomy LIKE 'pa_%' OR tt.taxonomy LIKE 'product_cat'
+	                GROUP BY tt.taxonomy,tt.term_taxonomy_id";
+		$results_attributes_advanced_search = $wpdb->get_results ($query_attributes_advanced_search, 'ARRAY_A');
+	    $rows_attributes_advanced_search = $wpdb->num_rows;
+
+		if ($rows_attributes_advanced_search > 0) {
+
+			$attribute_name = '';
+			$index = sizeof($products_search_cols) - 1;
+			$categories_list = array();
+
+			foreach ($results_attributes_advanced_search as $results_attribute_advanced_search) {
+
+				if ($results_attribute_advanced_search['taxonomy'] != 'product_cat') {
+
+					if ($results_attribute_advanced_search['taxonomy'] != $attribute_name) {
+						$index++;
+						$products_search_cols [$index]['key'] = 'Attributes: ' . substr($results_attribute_advanced_search['taxonomy'],3);
+						$products_search_cols [$index]['type'] = 'string';
+						$products_search_cols [$index]['category'] = "";
+						$products_search_cols [$index]['placeholder'] = "";
+						$products_search_cols [$index]['table_name'] = "{$wpdb->prefix}term_relationships";
+						$products_search_cols [$index]['col_name'] = $results_attribute_advanced_search['taxonomy'];
+						$products_search_cols [$index]['values'] = array();
+					} 
+					// else {
+					$products_search_cols [$index]['values'][$results_attribute_advanced_search['term_taxonomy_id']] = $results_attribute_advanced_search['name'];
+					// }
+
+					$attribute_name = $results_attribute_advanced_search['taxonomy'];
+
+				} else {
+					$categories_list[] = $results_attribute_advanced_search['name'];
+				}	
+			}
+		}    
+	// }
+
+		if (!empty($categories_list)) {
+			$index = sizeof($products_search_cols);
+			$products_search_cols [$index]['key'] = __( 'Category', $sm_domain );
+			$products_search_cols [$index]['type'] = 'string';
+			$products_search_cols [$index]['category'] = "";
+			$products_search_cols [$index]['placeholder'] = "";
+			$products_search_cols [$index]['table_name'] = "{$wpdb->prefix}term_relationships";
+			$products_search_cols [$index]['col_name'] = 'product_cat';
+			$products_search_cols [$index]['values'] = $categories_list;
+		}
+
+	$products_search_cols= json_encode ($products_search_cols);
+
 }
+
+
+
+
+
 
 $encoded_categories = json_encode ( $categories );
 $products_cols = json_encode( $products_cols );
@@ -760,6 +894,7 @@ if (WPSC_RUNNING === true) {
 	var ordersStatus        =  '" . (isset($encodedOrderStatus) ? $encodedOrderStatus : '') . "';
 	var weightUnits         =  '" . (isset($encodedWeightUnits) ? $encodedWeightUnits : '') . "';
 	var couponFields        =  " . $encodedcouponfields . "; // For WooCoupons
+	var products_search_cols        =  " . $products_search_cols . "; // For advanced search
 	var attribute           =  '" . $attribute  . "';";
 }
 	echo "
@@ -1044,6 +1179,7 @@ if (WPSC_RUNNING === true) {
 	var j = 0;
 	
 	var productsFields        = new Array();
+	var productsSearchFields  = new Array();
 	productsFields.items      = new Array();
 	var prodFieldsStoreData   = new Array();
 	prodFieldsStoreData.items = new Array();
@@ -1072,13 +1208,14 @@ if (WPSC_RUNNING === true) {
 }
 
                 //Condition to skip the Description, Additional Description and Group column from SM Batch Update
-                
+ 
 //		echo "if(value.value != 'group' && value.value != 'desc' && value.value != 'addDesc'){
 		echo "if(value.value != 'group' && value.value != 'attributes'){
 				productsFields.items.push(value);
 				productsFields.totalCount = ++j;
 			}
 		}
+
 		prodFieldsStoreData.items.push(value);
 		prodFieldsStoreData.totalCount = ++i;
 	},this);

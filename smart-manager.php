@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.6.2
+Version: 3.7
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013, 2014 Store Apps All rights reserved.
@@ -67,29 +67,32 @@ define( 'STORE_APPS_URL', 'http://www.storeapps.org/' );
 
 include_once ABSPATH . 'wp-admin/includes/plugin.php';
 include_once (ABSPATH . WPINC . '/functions.php');
-$old_plugin = 'smart-manager/smart-manager.php';
 
-if (is_plugin_active( $old_plugin )) {
-	deactivate_plugins( $old_plugin );
-	$action_url = "plugins.php?action=activate&plugin=$plugin&plugin_status=all&paged=1";
-	$url = wp_nonce_url( $action_url, 'activate-plugin_' . $plugin );
-	update_option( 'recently_activated', array ($plugin => time() ) + ( array ) get_option( 'recently_activated' ) );
-	
-	if (headers_sent())
-		echo "<meta http-equiv='refresh' content='" . esc_attr( "0;url=plugins.php?deactivate=true&plugin_status=$status&paged=$page" ) . "' />";
-	else {
-		wp_redirect( str_replace( '&amp;', '&', $url ) );
-		exit();
-	}
-}
-
-add_action ( 'admin_notices', 'smart_admin_notices' );
+	add_action ( 'admin_notices', 'smart_admin_notices' );
 	//	admin_init is triggered before any other hook when a user access the admin area. 
 	// This hook doesn't provide any parameters, so it can only be used to callback a specified function.
 	add_action ( 'admin_init', 'smart_admin_init' );
 	
 	function smart_admin_init() {
                 global $wp_version;
+
+                $plugin = plugin_basename( __FILE__ );
+                $old_plugin = 'smart-manager/smart-manager.php';
+                if (is_plugin_active( $old_plugin )) {
+					deactivate_plugins( $old_plugin );
+					$action_url = "plugins.php?action=activate&plugin=$plugin&plugin_status=all&paged=1";
+					$url = wp_nonce_url( $action_url, 'activate-plugin_' . $plugin );
+					update_option( 'recently_activated', array ($plugin => time() ) + ( array ) get_option( 'recently_activated' ) );
+					
+					if (headers_sent())
+						echo "<meta http-equiv='refresh' content='" . esc_attr( "0;url=plugins.php?deactivate=true&plugin_status=$status&paged=$page" ) . "' />";
+					else {
+						wp_redirect( str_replace( '&amp;', '&', $url ) );
+						exit();
+					}
+				}
+
+
 
                 add_action( 'admin_head', 'remove_help_tab'); // For removing the help tab
                 
@@ -121,8 +124,19 @@ add_action ( 'admin_notices', 'smart_admin_notices' );
             
         }
 
-        wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
-        // wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array (), $ext_version );
+        if ( !wp_script_is( 'jquery' ) ) {
+            wp_enqueue_script( 'jquery' );
+        }
+
+        wp_register_script ( 'sm_visualsearch_underscore', plugins_url ( '/visualsearch/underscore.js', __FILE__ ), array ('jquery'), '0.0.1' );
+        wp_register_script ( 'sm_visualsearch_jquery_ui_widget', plugins_url ( '/visualsearch/jquery.ui.widget.js', __FILE__ ), array ('sm_visualsearch_underscore'), '0.0.1' );
+        wp_register_script ( 'sm_visualsearch_jquery_ui_menu', plugins_url ( '/visualsearch/jquery.ui.menu.js', __FILE__ ), array ('sm_visualsearch_jquery_ui_widget'), '0.0.1' );
+        wp_register_script ( 'sm_visualsearch_jquery_ui_autocomplete', plugins_url ( '/visualsearch/jquery.ui.autocomplete.js', __FILE__ ), array ('sm_visualsearch_jquery_ui_menu'), '0.0.1' );
+        wp_register_script ( 'sm_visualsearch_jquery_ui_position', plugins_url ( '/visualsearch/jquery.ui.position.js', __FILE__ ), array ('sm_visualsearch_jquery_ui_autocomplete'), '0.0.1' );
+        wp_register_script ( 'sm_visualsearch_dependencies', plugins_url ( '/visualsearch/backbone.js', __FILE__ ), array ('sm_visualsearch_jquery_ui_position'), '0.0.1' );
+        wp_register_script ( 'sm_search', plugins_url ( '/visualsearch/search.js', __FILE__ ), array ('sm_visualsearch_dependencies'), '0.0.1' );
+        wp_register_script ( 'sm_ext_base', plugins_url ( '/ext/ext-base.js', __FILE__ ), array ('sm_search'), $ext_version );
+
 		wp_register_script ( 'sm_ext_all', plugins_url ( '/ext/ext-all.js', __FILE__ ), array ('sm_ext_base' ), $ext_version );
 		if ( ( isset($_GET['post_type']) && $_GET['post_type'] == 'wpsc-product' ) || ( isset($_GET['page']) && $_GET['page'] == 'smart-manager-wpsc' ) ) {
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager.js', __FILE__ ), array ('sm_ext_all'), $sm_plugin_info ['Version'] );
@@ -132,7 +146,7 @@ add_action ( 'admin_notices', 'smart_admin_notices' );
 			define ( 'IS_WPSC37', version_compare ( WPSC_VERSION, '3.8', '<' ) );
 			define ( 'IS_WPSC38', version_compare ( WPSC_VERSION, '3.8', '>=' ) );
 			if ( IS_WPSC38 ) {		// WPEC 3.8.7 OR 3.8.8
-                                define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.8', '<' ));
+                define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.8', '<' ));
 				define('IS_WPSC388', version_compare ( WPSC_VERSION, '3.8.8', '>=' ));
 			}
 
@@ -164,7 +178,10 @@ add_action ( 'admin_notices', 'smart_admin_notices' );
 		}
 
 
-		wp_register_style ( 'sm_ext_all', plugins_url ( '/ext/ext-all.css', __FILE__ ), array (), $ext_version );
+		wp_register_style ( 'sm_search_reset', plugins_url ( '/visualsearch/reset.css', __FILE__ ), array (), '0.0.1' );
+		wp_register_style ( 'sm_search_icons', plugins_url ( '/visualsearch/icons.css', __FILE__ ), array ('sm_search_reset'), '0.0.1' );
+		wp_register_style ( 'sm_search_workspace', plugins_url ( '/visualsearch/workspace.css', __FILE__ ), array ('sm_search_icons'), '0.0.1' );
+		wp_register_style ( 'sm_ext_all', plugins_url ( '/ext/ext-all.css', __FILE__ ), array ('sm_search_workspace'), $ext_version );
 		wp_register_style ( 'sm_main', plugins_url ( '/sm/smart-manager.css', __FILE__ ), array ('sm_ext_all' ), $sm_plugin_info ['Version'] );
 		
 		if (file_exists ( (dirname ( __FILE__ )) . '/pro/sm.js' )) {
@@ -195,7 +212,6 @@ add_action ( 'admin_notices', 'smart_admin_notices' );
 	function sm_include_file() {
 
 		$json_filename = $_REQUEST['file'];
-
 		$base_path = WP_PLUGIN_DIR . '/' . str_replace( basename( __FILE__ ), "", plugin_basename( __FILE__ ) ) . 'sm/' . $json_filename . '.php';
 		include_once ( $base_path );
 	}
