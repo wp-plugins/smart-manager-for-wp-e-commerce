@@ -3,8 +3,8 @@ Contributors: storeapps, niravmehta, ratnakar.dubey, rupali, Tarun.Parswani, sun
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager, extension, premium, free, download
 Requires at least: 2.0.2
-Tested up to: 3.8.1
-Stable tag: 3.6.2
+Tested up to: 3.9
+Stable tag: 3.7
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -116,6 +116,14 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.7 =
+* New: Advanced Search functionality for Products Dashboard (WooCommerce)
+* Update: Performance related improvements in products loading and batch update functionality (WooCommerce)
+* Update: Compatibility with latest versions of WordPress & WooCommerce
+* Fix: Shipping Method not getting displayed in Orders Dashboard (WooCommerce)
+* Fix: Set to Regular Price and Set to Sales Price batch update options not working (WooCommerce)
+* Fix: Some minor fixes
 
 = 3.6.2 =
 * Fix: Removed major WP-Debug Warnings
@@ -499,6 +507,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.7 =
+New feature of Advanced Search functionality for Products Dashboard of WooCommerce along with some performance improvements and minor fixes. Recommended upgrade.
 
 = 3.6.2 =
 Removed major WP-Debug warnings along with some important fixes. Recommended upgrade.
