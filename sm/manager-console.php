@@ -739,21 +739,18 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 			}
 
 			if ($products_col['name'] == 'Visibility') {
-				$products_search_cols [$index]['values'] = array();
-				$products_search_cols [$index]['values'] = [__('Catalog & Search',$sm_domain),
-														__('Catalog',$sm_domain),
-														__('Search',$sm_domain),
-														__('Hidden',$sm_domain)];
+				$products_search_cols [$index]['values'] = array(__('Catalog & Search',$sm_domain),
+																__('Catalog',$sm_domain),
+																__('Search',$sm_domain),
+																__('Hidden',$sm_domain));
 			} else if ($products_col['name'] == 'Tax Status') {
-				$products_search_cols [$index]['values'] = array();
-				$products_search_cols [$index]['values'] = [__('Taxable',$sm_domain),
-														__('Shipping only',$sm_domain),
-														__('None',$sm_domain)];
+				$products_search_cols [$index]['values'] = array(__('Taxable',$sm_domain),
+																__('Shipping only',$sm_domain),
+																__('None',$sm_domain));
 			}  else if ($products_col['name'] == 'Publish') {
 				$products_search_cols [$index]['key'] = 'Post Status';
-				$products_search_cols [$index]['values'] = array();
-				$products_search_cols [$index]['values'] = [__('Publish',$sm_domain),
-														__('Draft',$sm_domain)];
+				$products_search_cols [$index]['values'] = array(__('Publish',$sm_domain),
+																__('Draft',$sm_domain));
 			}
 
 			$products_search_cols [$index]['category'] = "";
@@ -833,10 +830,6 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 	$products_search_cols= json_encode ($products_search_cols);
 
 }
-
-
-
-
 
 
 $encoded_categories = json_encode ( $categories );
