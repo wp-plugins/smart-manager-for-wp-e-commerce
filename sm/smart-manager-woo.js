@@ -3256,6 +3256,7 @@ var showCustomerDetails = function(record,rowIndex){
 			SM.dashboardComboBox.setValue(SM.activeModule);
 
 			jQuery("#sm_advanced_search_content").hide(); //Hiding the advanced search box
+			jQuery( "#sm_advanced_search_or").unbind( "click" );
 
 			customersColumnModel.setEditable(1,true);
 			customersColumnModel.setEditable(2,true);
@@ -3474,6 +3475,7 @@ var showCustomerDetails = function(record,rowIndex){
 		SM.dashboardComboBox.setValue(SM.activeModule);
         
 		jQuery("#sm_advanced_search_content").hide(); //Hiding the advanced search box
+		jQuery( "#sm_advanced_search_or").unbind( "click" );
 
 		couponstore.baseParams.searchText = ''; //clear the baseParams for couponstore
 		SM.searchTextField.reset(); 			  //to reset the searchTextField
@@ -3809,6 +3811,7 @@ var showCustomerDetails = function(record,rowIndex){
 			SM.dashboardComboBox.setValue(SM.activeModule);
 
 			jQuery("#sm_advanced_search_content").hide(); //hiding the advanced search box
+			jQuery( "#sm_advanced_search_or").unbind( "click" );
 
 			ordersColumnModel.setEditable(7,true);
 			ordersColumnModel.setEditable(9,true);
