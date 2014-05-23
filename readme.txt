@@ -3,8 +3,8 @@ Contributors: storeapps, niravmehta, ratnakar.dubey, rupali, Tarun.Parswani, sun
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager, extension, premium, free, download
 Requires at least: 2.0.2
-Tested up to: 3.9
-Stable tag: 3.7.1
+Tested up to: 3.9.1
+Stable tag: 3.8
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -116,6 +116,17 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.8 =
+* New: Advanced Search functionality for Products Dashboard (WPeC)
+* Update: Performance related improvements in products loading (WPeC)
+* Update: Compatibility with latest versions of WordPress, WPeC & WooCommerce
+* Update: 'Used for variations' checkbox will not get checked by default on add attribute (WooCommerce)
+* Fix: Pagination not working for advanced search results (WooCommerce)
+* Fix: Autocomplete not working for values in advanced search box (WooCommerce)
+* Fix: 'Shipping Method' not getting exported (WooCommerce)
+* Fix: Removed major WP-Debug Warnings
+* Fix: Some minor fixes
 
 = 3.7.1 =
 * Fix: "Parse error: syntax error"
@@ -511,6 +522,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.8 =
+New feature of Advanced Search functionality for Products Dashboard of WPeC along with some performance improvements, compatibility with latest versions of WooCommerce & WPeC and important fixes. Recommended upgrade.
 
 = 3.7.1 =
 Important fixes related to Smart Manager v3.7. Recommended upgrade.
