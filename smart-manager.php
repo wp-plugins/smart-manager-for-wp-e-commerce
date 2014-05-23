@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.7.1
+Version: 3.8
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013, 2014 Store Apps All rights reserved.
@@ -20,16 +20,30 @@ register_deactivation_hook( __FILE__, 'smart_deactivate' );
  */
 
 function smart_activate() {
+	global $wpdb;
+
 	$index_queries = generate_db_index_queries();
 	process_db_indexes( $index_queries ['add'] );
+
+	$sm_advanced_search_temp = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}sm_advanced_search_temp` (
+					  `product_id` bigint(20) unsigned NOT NULL default '0',
+					  `flag` bigint(20) unsigned NOT NULL default '0',
+					  `cat_flag` bigint(20) unsigned NOT NULL default '0') ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
+
+	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+	dbDelta( $sm_advanced_search_temp );
 }
 
 /**
  * Registers a plugin function to be run when the plugin is deactivated.
  */
 function smart_deactivate() {
+	global $wpdb;
+
 	$index_queries = generate_db_index_queries();
 	process_db_indexes( $index_queries ['remove'] );
+
+	$wpdb->query( "DROP TABLE {$wpdb->prefix}sm_advanced_search_temp" );
 }
 
 function smart_get_latest_version() {
@@ -74,7 +88,7 @@ include_once (ABSPATH . WPINC . '/functions.php');
 	add_action ( 'admin_init', 'smart_admin_init' );
 	
 	function smart_admin_init() {
-                global $wp_version;
+                global $wp_version,$wpdb;
 
                 $plugin = plugin_basename( __FILE__ );
                 $old_plugin = 'smart-manager/smart-manager.php';
@@ -91,8 +105,6 @@ include_once (ABSPATH . WPINC . '/functions.php');
 						exit();
 					}
 				}
-
-
 
                 add_action( 'admin_head', 'remove_help_tab'); // For removing the help tab
                 
@@ -142,12 +154,14 @@ include_once (ABSPATH . WPINC . '/functions.php');
 			wp_register_script ( 'sm_main', plugins_url ( '/sm/smart-manager.js', __FILE__ ), array ('sm_ext_all'), $sm_plugin_info ['Version'] );
 			define('WPSC_RUNNING', true);
 			define('WOO_RUNNING', false);
+
 			// checking the version for WPSC plugin
 			define ( 'IS_WPSC37', version_compare ( WPSC_VERSION, '3.8', '<' ) );
 			define ( 'IS_WPSC38', version_compare ( WPSC_VERSION, '3.8', '>=' ) );
-			if ( IS_WPSC38 ) {		// WPEC 3.8.7 OR 3.8.8
+			if ( IS_WPSC38 ) {		// WPEC 3.8.7 OR 3.8.8 OR 3.8.14
                 define('IS_WPSC387', version_compare ( WPSC_VERSION, '3.8.8', '<' ));
 				define('IS_WPSC388', version_compare ( WPSC_VERSION, '3.8.8', '>=' ));
+				define('IS_WPSC3814', version_compare ( WPSC_VERSION, '3.8.14', '>=' )); // Added as Database upgrade since 3.8.14
 			}
 
 		}  else if ( ( isset($_GET['post_type']) && $_GET['post_type'] == 'product' ) || ( isset($_GET['page']) && $_GET['page'] == 'smart-manager-woo' ) ) {
@@ -342,14 +356,23 @@ include_once (ABSPATH . WPINC . '/functions.php');
 		}
 
 		$current_user = wp_get_current_user(); // Sometimes conflict with SB-Welcome Email Editor
+			
 	        if ( !isset( $current_user->roles[0] ) ) {
 	            $roles = array_values( $current_user->roles );
 	        } else {
 	            $roles = $current_user->roles;
 	        }
+
+	        //Fix for the client
+			if ( !empty( $current_user->caps ) ) {
+	        	$caps = array_keys($current_user->caps);
+	        	$current_user_caps = $roles[0] = (!empty($caps)) ? $caps[0] : '';
+	        }
+
 		$query = "SELECT option_value FROM {$wpdb->prefix}options WHERE option_name = 'sm_" . $roles [0] . "_dashboard'";
 		$results = $wpdb->get_results( $query );
-	        if (! empty( $results [0]->option_value ) || $current_user->roles [0] == 'administrator') {
+	        if (! empty( $results [0]->option_value ) || $current_user->roles [0] == 'administrator' //modified cond for client fix
+	        	|| (!empty($current_user_caps) && $current_user_caps == 'administrator')) {
 			add_filter( 'wpsc_additional_pages', 'smart_wpsc_add_modules_admin_pages', 10, 2 );
 			add_action( 'admin_menu', 'smart_woo_add_modules_admin_pages' );
 		}

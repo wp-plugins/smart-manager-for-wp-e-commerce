@@ -99,6 +99,8 @@
 										return 'LIKE';
 									} else if (v === "not contains") {
 										return 'NOT LIKE';
+									} else if (v === "==") {
+										return '=';
 									} else {
 										return v;
 									}
@@ -424,6 +426,9 @@
 	};
 
 
+	var source_operator = new Array();
+	var source_value = new Array();
+
 	/* Parameter View */
 	VS.ParameterView = Backbone.View.extend({
 
@@ -470,7 +475,30 @@
 					delay     : 0,
 					source: parameters.category,
 					select: function( e, ui ) {
+
 						this.value = ui.item.value;
+						i = parameters.key.indexOf(this.value);
+
+						if(typeof parameters.operators != 'undefined'){
+							source_operator = parameters.operators[i];
+						}else{
+							if (parameters.type[i] == "number") {
+								source_operator = ["==", "!=", "<", ">", "<=", ">="];	
+							} else {
+								if (typeof parameters.values[i] != 'undefined') {
+									source_operator = ["is","is not"];
+								} else {
+									source_operator = ["is","contains","is not","not contains"];
+								}
+								
+							}
+						}
+
+						if (typeof parameters.values != 'undefined' ) {
+							source_value = parameters.values[i];	
+						}
+
+						// this.value = ui.item.value;
 						$(this).blur();
 					}
 				}
@@ -486,24 +514,28 @@
 				autocomplete: {
 					minLength : 0,
 					delay     : 0,
-					source: function(req, res){
-						var key 	= self.model.get('key'),
-							i = parameters.key.indexOf(key);
-						if(typeof parameters.operators != 'undefined'){
-							res(parameters.operators[i]);
-						}else{
-							if (parameters.type[i] == "number") {
-								res(["==", "!=", "<", ">", "<=", ">="]);	
-							} else {
-								if (typeof parameters.values[i] != 'undefined') {
-									res(["is","is not"]);
-								} else {
-									res(["is","contains", "is not", "not contains"]);
-								}
+					source: source_operator,
+					// source: function(req, res){
+					// 	var key 	= self.model.get('key'),
+					// 	i = parameters.key.indexOf(key);
+					// 	if(typeof parameters.operators != 'undefined'){
+					// 		res(parameters.operators[i]);
+					// 	}else{
+					// 		if (parameters.type[i] == "number") {
+					// 			res(["==", "!=", "<", ">", "<=", ">="]);	
+					// 		} else {
+					// 			if (typeof parameters.values[i] != 'undefined') {
+					// 				res(["is","is not"]);
+					// 			} else {
+					// 				res([{label:"is",value: "is"},
+					// 					{label:"contains",value: "contains"},
+					// 					{label:"is not" ,value: "is not"},
+					// 					{label:"not contains" ,value: "not contains"}]);
+					// 			}
 								
-							}
-						}
-					},
+					// 		}
+					// 	}
+					// },
 					select: function( e, ui ) {
 						this.value = ui.item.value;
 						$(this).blur();
@@ -526,14 +558,16 @@
 				autocomplete: {
 					minLength : 0,
 					delay     : 0,
-					source: function(req, res){
-						var key 	= self.model.get('key'),
-							i = parameters.key.indexOf(key);
-							if (typeof parameters.values != 'undefined' ) {
-								res(parameters.values[i]);	
-							}
+					source: source_value,
+					// source: function(req, res){
+						
+					// 	var key 	= self.model.get('key'),
+					// 	i = parameters.key.indexOf(key);
+					// 	if (typeof parameters.values != 'undefined' ) {
+					// 		res(parameters.values[i]);	
+					// 	}
 							
-					},
+					// },
 					select: function( e, ui ) {
 						this.value = ui.item.value;
 						$(this).blur();

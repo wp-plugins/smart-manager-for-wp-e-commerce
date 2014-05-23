@@ -306,147 +306,171 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
         $search = "";
         $search_condn = "";
-        
-        if (!empty($_POST['search_query'])) {
 
-            $advanced_search_query = array();
-            $i = 0;
+        //Code to clear the advanced search temp table
+        if (empty($_POST['search_query']) || empty($_POST['search_query'][0])) {
+            $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp");
+            delete_option('sm_advanced_search_query');
+        }        
 
-            foreach ($_POST['search_query'] as $search_string_array) {
+        $sm_advanced_search_results_persistent = 0; //flag to handle persistent search results
 
-                $search_string_array = json_decode(stripslashes($search_string_array),true);
+        //Code fo handling advanced search functionality
+        if (!empty($_POST['search_query']) && !empty($_POST['search_query'][0])) {
 
-                if (is_array($search_string_array)) {
+            $search_query_diff = (get_option('sm_advanced_search_query') != '') ? array_diff($_POST['search_query'],get_option('sm_advanced_search_query')) : $_POST['search_query'];
+            
+            if (!empty($search_query_diff)) {
 
-                    $advanced_search_query[$i] = array();
-                    $advanced_search_query[$i]['cond_posts'] = '';
-                    $advanced_search_query[$i]['cond_postmeta'] = '';
-                    $advanced_search_query[$i]['cond_terms'] = '';
+                $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp"); // query to reset advanced search temp table
 
-                    $advanced_search_query[$i]['cond_postmeta_col_name'] = '';
-                    $advanced_search_query[$i]['cond_postmeta_col_value'] = '';
-                    $advanced_search_query[$i]['cond_postmeta_operator'] = '';
+                $advanced_search_query = array();
+                $i = 0;
 
-                    $advanced_search_query[$i]['cond_terms_col_name'] = '';
-                    $advanced_search_query[$i]['cond_terms_col_value'] = '';
-                    $advanced_search_query[$i]['cond_terms_operator'] = '';
+                update_option('sm_advanced_search_query',$_POST['search_query']);
 
-                    $search_value_is_array = 0; //flag for array of search_values
+                foreach ($_POST['search_query'] as $search_string_array) {
 
-                    foreach ($search_string_array as $search_string) {
+                    $search_string_array = json_decode(stripslashes($search_string_array),true);
 
-                        $search_col = (!empty($search_string['col_name'])) ? $search_string['col_name'] : '';
-                        $search_operator = (!empty($search_string['operator'])) ? $search_string['operator'] : '';
-                        $search_data_type = (!empty($search_string['type'])) ? $search_string['type'] : 'string';
-                        $search_value = (!empty($search_string['value'])) ? $search_string['value'] : (($search_data_type == "number") ? '0' : '');
+                    if (is_array($search_string_array)) {
 
-                        if (!empty($search_string['table_name']) && $search_string['table_name'] == $wpdb->prefix.'posts') {
+                        $advanced_search_query[$i] = array();
+                        $advanced_search_query[$i]['cond_posts'] = '';
+                        $advanced_search_query[$i]['cond_postmeta'] = '';
+                        $advanced_search_query[$i]['cond_terms'] = '';
 
-                            if ($search_data_type == "number") {
-                                $advanced_search_query[$i]['cond_posts'] .= $search_string['table_name'].".".$search_col . " ". $search_operator ." " . $search_value;
-                            } else {
-                                if ($search_operator == 'is') {
-                                    $advanced_search_query[$i]['cond_posts'] .= $search_string['table_name'].".".$search_col . " LIKE '" . $search_value . "'";
-                                } else if ($search_operator == 'is not') {
-                                    $advanced_search_query[$i]['cond_posts'] .= $search_string['table_name'].".".$search_col . " NOT LIKE '" . $search_value . "'";
+                        $advanced_search_query[$i]['cond_postmeta_col_name'] = '';
+                        $advanced_search_query[$i]['cond_postmeta_col_value'] = '';
+                        $advanced_search_query[$i]['cond_postmeta_operator'] = '';
+
+                        $advanced_search_query[$i]['cond_terms_col_name'] = '';
+                        $advanced_search_query[$i]['cond_terms_col_value'] = '';
+                        $advanced_search_query[$i]['cond_terms_operator'] = '';
+
+                        $search_value_is_array = 0; //flag for array of search_values
+
+                        foreach ($search_string_array as $search_string) {
+
+                            $search_col = (!empty($search_string['col_name'])) ? $search_string['col_name'] : '';
+                            $search_operator = (!empty($search_string['operator'])) ? $search_string['operator'] : '';
+                            $search_data_type = (!empty($search_string['type'])) ? $search_string['type'] : 'string';
+                            $search_value = (!empty($search_string['value'])) ? $search_string['value'] : (($search_data_type == "number") ? '0' : '');
+
+                            if (!empty($search_string['table_name']) && $search_string['table_name'] == $wpdb->prefix.'posts') {
+
+                                if ($search_data_type == "number") {
+                                    $advanced_search_query[$i]['cond_posts'] .= $search_string['table_name'].".".$search_col . " ". $search_operator ." " . $search_value;
                                 } else {
-                                    $advanced_search_query[$i]['cond_posts'] .= $search_string['table_name'].".".$search_col . " ". $search_operator ."'%" . $search_value . "%'";
-                                }
-                                
-                            }
-                            
-                            $advanced_search_query[$i]['cond_posts'] .= " AND ";
-
-                        } else if (!empty($search_string['table_name']) && $search_string['table_name'] == $wpdb->prefix.'postmeta') {
-                        
-                            $advanced_search_query[$i]['cond_postmeta_col_name'] .= $search_col;
-                            $advanced_search_query[$i]['cond_postmeta_col_value'] .= $search_value;
-
-                            if ($search_data_type == "number") {
-                                $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value ". $search_operator ." " . $search_value . " )";
-                                $advanced_search_query[$i]['cond_postmeta_operator'] .= $search_operator;
-                            } else {
-                                if ($search_operator == 'is') {
-
-                                    $advanced_search_query[$i]['cond_postmeta_operator'] .= 'LIKE';
-
-                                    if ($search_col == '_product_attributes') {
-                                        $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value LIKE '%" . $search_value . "%'" . " )";
+                                    if ($search_operator == 'is') {
+                                        $advanced_search_query[$i]['cond_posts'] .= $search_string['table_name'].".".$search_col . " LIKE '" . $search_value . "'";
+                                    } else if ($search_operator == 'is not') {
+                                        $advanced_search_query[$i]['cond_posts'] .= $search_string['table_name'].".".$search_col . " NOT LIKE '" . $search_value . "'";
                                     } else {
-                                        $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value LIKE '" . $search_value . "'" . " )";
+                                        $advanced_search_query[$i]['cond_posts'] .= $search_string['table_name'].".".$search_col . " ". $search_operator ."'%" . $search_value . "%'";
                                     }
-
-                                    
-                                } else if ($search_operator == 'is not') {
-
-                                    $advanced_search_query[$i]['cond_postmeta_operator'] .= 'NOT LIKE';
-
-                                    if ($search_col == '_product_attributes') {
-                                        $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value NOT LIKE '%" . $search_value . "%'" . " )";
-                                    }else {
-                                        $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value NOT LIKE '" . $search_value . "'" . " )";
-                                        
-                                    }
-
-                                } else {
-
-                                    $advanced_search_query[$i]['cond_postmeta_operator'] .= $search_operator;
-
-                                    $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value ". $search_operator ."'%" . $search_value . "%'" . " )";
                                 }
-                                
+                                $advanced_search_query[$i]['cond_posts'] .= " AND ";
+
+                            } else if (!empty($search_string['table_name']) && $search_string['table_name'] == $wpdb->prefix.'postmeta') {
+                            
+                                if ( $search_col == '_tax_status' && $search_value == 'Shipping only' ) {
+                                    $search_value = 'shipping';
+                                } else if ( $search_col == '_visibility' && $search_value == 'Catalog & Search' ) {
+                                    $search_value = 'visible';
+                                }
+
+                                $advanced_search_query[$i]['cond_postmeta_col_name'] .= $search_col;
+                                $advanced_search_query[$i]['cond_postmeta_col_value'] .= $search_value;
+
+                                if ($search_data_type == "number") {
+                                    $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value ". $search_operator ." " . $search_value . " )";
+                                    $advanced_search_query[$i]['cond_postmeta_operator'] .= $search_operator;
+                                } else {
+                                    if ($search_operator == 'is') {
+
+                                        $advanced_search_query[$i]['cond_postmeta_operator'] .= 'LIKE';
+
+                                        if ($search_col == '_product_attributes') {
+                                            $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value LIKE '%" . $search_value . "%'" . " )";
+                                        } else {
+                                            $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value LIKE '" . $search_value . "'" . " )";
+                                        }
+
+                                        
+                                    } else if ($search_operator == 'is not') {
+
+                                        $advanced_search_query[$i]['cond_postmeta_operator'] .= 'NOT LIKE';
+
+                                        if ($search_col == '_product_attributes') {
+                                            $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value NOT LIKE '%" . $search_value . "%'" . " )";
+                                        }else {
+                                            $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value NOT LIKE '" . $search_value . "'" . " )";
+                                            
+                                        }
+
+                                    } else {
+
+                                        $advanced_search_query[$i]['cond_postmeta_operator'] .= $search_operator;
+
+                                        $advanced_search_query[$i]['cond_postmeta'] .= " ( ". $search_string['table_name'].".meta_key LIKE '". $search_col . "' AND ". $search_string['table_name'] .".meta_value ". $search_operator ."'%" . $search_value . "%'" . " )";
+                                    }
+                                    
+                                }
+
+                                $advanced_search_query[$i]['cond_postmeta'] .= " AND ";
+                                $advanced_search_query[$i]['cond_postmeta_col_name'] .= " AND ";
+                                $advanced_search_query[$i]['cond_postmeta_col_value'] .= " AND ";
+                                $advanced_search_query[$i]['cond_postmeta_operator'] .= " AND ";
+
+
+                            } else if (!empty($search_string['table_name']) && $search_string['table_name'] == $wpdb->prefix.'term_relationships') {
+
+
+                                $advanced_search_query[$i]['cond_terms_col_name'] .= $search_col;
+                                $advanced_search_query[$i]['cond_terms_col_value'] .= $search_value;
+
+                                if ($search_operator == 'is') {
+                                    $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.name LIKE '" . $search_value . "'" . " )";
+                                    $advanced_search_query[$i]['cond_terms_operator'] .= 'LIKE';
+                                } else if ($search_operator == 'is not') {
+                                    $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.name NOT LIKE '" . $search_value . "'" . " )";
+                                    $advanced_search_query[$i]['cond_terms_operator'] .= 'NOT LIKE';
+                                } else {
+                                    $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.name ". $search_operator ."'%" . $search_value . "%'" . " )";
+                                    $advanced_search_query[$i]['cond_terms_operator'] .= $search_operator;
+                                }
+
+                                $advanced_search_query[$i]['cond_terms'] .= " AND ";
+                                $advanced_search_query[$i]['cond_terms_col_name'] .= " AND ";
+                                $advanced_search_query[$i]['cond_terms_col_value'] .= " AND ";
+                                $advanced_search_query[$i]['cond_terms_operator'] .= " AND ";
+
                             }
-
-                            $advanced_search_query[$i]['cond_postmeta'] .= " AND ";
-                            $advanced_search_query[$i]['cond_postmeta_col_name'] .= " AND ";
-                            $advanced_search_query[$i]['cond_postmeta_col_value'] .= " AND ";
-                            $advanced_search_query[$i]['cond_postmeta_operator'] .= " AND ";
-
-
-                        } else if (!empty($search_string['table_name']) && $search_string['table_name'] == $wpdb->prefix.'term_relationships') {
-
-
-                            $advanced_search_query[$i]['cond_terms_col_name'] .= $search_col;
-                            $advanced_search_query[$i]['cond_terms_col_value'] .= $search_value;
-
-                            if ($search_operator == 'is') {
-                                $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.name LIKE '" . $search_value . "'" . " )";
-                                $advanced_search_query[$i]['cond_terms_operator'] .= 'LIKE';
-                            } else if ($search_operator == 'is not') {
-                                $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.name NOT LIKE '" . $search_value . "'" . " )";
-                                $advanced_search_query[$i]['cond_terms_operator'] .= 'NOT LIKE';
-                            } else {
-                                $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.name ". $search_operator ."'%" . $search_value . "%'" . " )";
-                                $advanced_search_query[$i]['cond_terms_operator'] .= $search_operator;
-                            }
-
-                            $advanced_search_query[$i]['cond_terms'] .= " AND ";
-                            $advanced_search_query[$i]['cond_terms_col_name'] .= " AND ";
-                            $advanced_search_query[$i]['cond_terms_col_value'] .= " AND ";
-                            $advanced_search_query[$i]['cond_terms_operator'] .= " AND ";
-
                         }
+
+                        $advanced_search_query[$i]['cond_posts'] = (!empty($advanced_search_query[$i]['cond_posts'])) ? substr( $advanced_search_query[$i]['cond_posts'], 0, -4 ) : '';
+                        $advanced_search_query[$i]['cond_postmeta'] = (!empty($advanced_search_query[$i]['cond_postmeta'])) ? substr( $advanced_search_query[$i]['cond_postmeta'], 0, -4 ) : '';
+                        $advanced_search_query[$i]['cond_terms'] = (!empty($advanced_search_query[$i]['cond_terms'])) ? substr( $advanced_search_query[$i]['cond_terms'], 0, -4 ) : '';
+
+                        $advanced_search_query[$i]['cond_postmeta_col_name'] = (!empty($advanced_search_query[$i]['cond_postmeta_col_name'])) ? substr( $advanced_search_query[$i]['cond_postmeta_col_name'], 0, -4 ) : '';
+                        $advanced_search_query[$i]['cond_postmeta_col_value'] = (!empty($advanced_search_query[$i]['cond_postmeta_col_value'])) ? substr( $advanced_search_query[$i]['cond_postmeta_col_value'], 0, -4 ) : '';
+                        $advanced_search_query[$i]['cond_postmeta_operator'] = (!empty($advanced_search_query[$i]['cond_postmeta_operator'])) ? substr( $advanced_search_query[$i]['cond_postmeta_operator'], 0, -4 ) : '';
+
+                        $advanced_search_query[$i]['cond_terms_col_name'] = (!empty($advanced_search_query[$i]['cond_terms_col_name'])) ? substr( $advanced_search_query[$i]['cond_terms_col_name'], 0, -4 ) : '';
+                        $advanced_search_query[$i]['cond_terms_col_value'] = (!empty($advanced_search_query[$i]['cond_terms_col_value'])) ? substr( $advanced_search_query[$i]['cond_terms_col_value'], 0, -4 ) : '';
+                        $advanced_search_query[$i]['cond_terms_operator'] = (!empty($advanced_search_query[$i]['cond_terms_operator'])) ? substr( $advanced_search_query[$i]['cond_terms_operator'], 0, -4 ) : '';
+
+
                     }
 
-                    $advanced_search_query[$i]['cond_posts'] = (!empty($advanced_search_query[$i]['cond_posts'])) ? substr( $advanced_search_query[$i]['cond_posts'], 0, -4 ) : '';
-                    $advanced_search_query[$i]['cond_postmeta'] = (!empty($advanced_search_query[$i]['cond_postmeta'])) ? substr( $advanced_search_query[$i]['cond_postmeta'], 0, -4 ) : '';
-                    $advanced_search_query[$i]['cond_terms'] = (!empty($advanced_search_query[$i]['cond_terms'])) ? substr( $advanced_search_query[$i]['cond_terms'], 0, -4 ) : '';
-
-                    $advanced_search_query[$i]['cond_postmeta_col_name'] = (!empty($advanced_search_query[$i]['cond_postmeta_col_name'])) ? substr( $advanced_search_query[$i]['cond_postmeta_col_name'], 0, -4 ) : '';
-                    $advanced_search_query[$i]['cond_postmeta_col_value'] = (!empty($advanced_search_query[$i]['cond_postmeta_col_value'])) ? substr( $advanced_search_query[$i]['cond_postmeta_col_value'], 0, -4 ) : '';
-                    $advanced_search_query[$i]['cond_postmeta_operator'] = (!empty($advanced_search_query[$i]['cond_postmeta_operator'])) ? substr( $advanced_search_query[$i]['cond_postmeta_operator'], 0, -4 ) : '';
-
-                    $advanced_search_query[$i]['cond_terms_col_name'] = (!empty($advanced_search_query[$i]['cond_terms_col_name'])) ? substr( $advanced_search_query[$i]['cond_terms_col_name'], 0, -4 ) : '';
-                    $advanced_search_query[$i]['cond_terms_col_value'] = (!empty($advanced_search_query[$i]['cond_terms_col_value'])) ? substr( $advanced_search_query[$i]['cond_terms_col_value'], 0, -4 ) : '';
-                    $advanced_search_query[$i]['cond_terms_operator'] = (!empty($advanced_search_query[$i]['cond_terms_operator'])) ? substr( $advanced_search_query[$i]['cond_terms_operator'], 0, -4 ) : '';
-
-
+                    $i++;
                 }
 
-                $i++;
+            } else {
+                $sm_advanced_search_results_persistent = 1;
             }
         }
-
 
         if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
             $search_on = trim ( $_POST ['searchText'] );
@@ -600,10 +624,14 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         }
 		} 
 
-        //Code for term_relationships
+        //Code for handling advanced search conditions
         if (!empty($advanced_search_query)) {
 
+            $index_search_string = 1; // index to keep a track of flags in the advanced search temp 
+
             foreach ($advanced_search_query as &$advanced_search_query_string) {
+
+                //Condn for terms
 
                 if (!empty($advanced_search_query_string['cond_terms'])) {
 
@@ -617,59 +645,115 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     $cond_cat_post_ids = array(); // array for storing the cat post ids
 
                     $index=0;
+                    $terms_cat_search_taxonomy_ids = array();
+                    $terms_att_search_flag = 0;
+
+                    $query_terms_search_count_array = array();
 
                     foreach ($cond_terms_array as $cond_terms) {
 
-                        $query_terms_search = "SELECT {$wpdb->prefix}term_relationships.object_id
-                                                FROM {$wpdb->prefix}term_relationships
-                                                    JOIN {$wpdb->prefix}term_taxonomy
-                                                        ON ({$wpdb->prefix}term_taxonomy.term_taxonomy_id = {$wpdb->prefix}term_relationships.term_taxonomy_id)
-                                                    JOIN {$wpdb->prefix}terms
-                                                        ON ( {$wpdb->prefix}terms.term_id = {$wpdb->prefix}term_taxonomy.term_id)
-                                                WHERE ".$cond_terms . " " .
-                                                    $cond_terms_post_ids;
-                        $result_terms_search = $wpdb->get_col ( $query_terms_search );
+                        $query_advanced_search_taxonomy_id = "SELECT {$wpdb->prefix}term_taxonomy.term_taxonomy_id
+                                                              FROM {$wpdb->prefix}term_taxonomy
+                                                                JOIN {$wpdb->prefix}terms
+                                                                    ON ( {$wpdb->prefix}terms.term_id = {$wpdb->prefix}term_taxonomy.term_id)
+                                                              WHERE ".$cond_terms;
+                        $result_advanced_search_taxonomy_id = $wpdb->get_col ( $query_advanced_search_taxonomy_id );
 
-                        if ( trim($cond_terms_col_name[$index]) != 'product_cat' ) {
-                            $query_postmeta_search = "SELECT {$wpdb->prefix}postmeta.post_id
-                                                FROM {$wpdb->prefix}postmeta
-                                                WHERE {$wpdb->prefix}postmeta.meta_key LIKE 'attribute_".trim($cond_terms_col_name[$index]) . 
-                                                "' AND {$wpdb->prefix}postmeta.meta_value ". $cond_terms_operator[$index] ." '". trim($cond_terms_col_value[$index])."'";
-                            $result_postmeta_search = $wpdb->get_col ( $query_postmeta_search );
+                        if (!empty($result_advanced_search_taxonomy_id)) {
 
-                            if (!empty($result_postmeta_search)) {
-                                $result_terms_search = array_merge($result_terms_search,$result_postmeta_search);    
+                            $terms_search_result_flag = ( $index == (sizeof($cond_terms_array) - 1) ) ? ', '.$index_search_string : ', 0';
+
+                            $terms_advanced_search_select = "SELECT DISTINCT {$wpdb->prefix}posts.id ". $terms_search_result_flag;
+
+                            //code for getting the post ids for attributes
+                            if ( trim($cond_terms_col_name[$index]) != 'product_cat' ) {
+
+                                $terms_advanced_search_select .= " ,0";
+
+                                $terms_advanced_search_from = " FROM {$wpdb->prefix}posts
+                                                                LEFT JOIN {$wpdb->prefix}term_relationships
+                                                                    ON ({$wpdb->prefix}term_relationships.object_id = {$wpdb->prefix}posts.id)
+                                                                JOIN {$wpdb->prefix}postmeta
+                                                                    ON ( {$wpdb->prefix}postmeta.post_id = {$wpdb->prefix}posts.id)";
+                                
+                                $terms_advanced_search_where = "WHERE (({$wpdb->prefix}term_relationships.term_taxonomy_id IN (". implode(",",$result_advanced_search_taxonomy_id) .") )
+                                                                OR ({$wpdb->prefix}postmeta.meta_key LIKE 'attribute_".trim($cond_terms_col_name[$index]) . 
+                                                                "' AND {$wpdb->prefix}postmeta.meta_value ". $cond_terms_operator[$index] ." '". trim($cond_terms_col_value[$index])."'))";
+
+                                //Flag to handle the child ids for cat advanced search
+                                $terms_att_search_flag = 1;
+
+                            } else if ( trim($cond_terms_col_name[$index]) == 'product_cat' ) {
+
+                                $terms_advanced_search_select .= " ,1";
+
+                                $terms_advanced_search_from = "FROM {$wpdb->prefix}posts
+                                                            JOIN {$wpdb->prefix}term_relationships
+                                                                ON ({$wpdb->prefix}term_relationships.object_id = {$wpdb->prefix}posts.id)";
+
+                                $terms_advanced_search_where = "WHERE {$wpdb->prefix}term_relationships.term_taxonomy_id IN (". implode(",",$result_advanced_search_taxonomy_id) .")";
+
+                            }
+
+
+                            //Query to find if there are any previous conditions
+                            $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp 
+                                                                        SET flag = 0
+                                                                        WHERE flag = ". $index_search_string);
+
+                            //Code to handle condition if the ids of previous cond are present in temp table
+                            if (($index == 0 && $count_temp_previous_cond > 0) || (!empty($result_terms_search))) {
+                                $terms_advanced_search_from .= " JOIN {$wpdb->prefix}sm_advanced_search_temp
+                                                                    ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
+
+                                $terms_advanced_search_where .= "AND {$wpdb->prefix}sm_advanced_search_temp.flag = 0";
+                            }
+
+                            $query_terms_search = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                                                            (".$terms_advanced_search_select . " " .
+                                                                $terms_advanced_search_from . " " .
+                                                                $terms_advanced_search_where . " " .")";
+
+                            $result_terms_search = $wpdb->query ( $query_terms_search );
+                            
+                            //Code to handle child ids in case of category search
+                            if (!empty($result_terms_search) && trim($cond_terms_col_name[$index]) == 'product_cat') {
+
+                                //query when attr cond has been applied
+                                if ( $terms_att_search_flag == 1 ){
+                                    $query_terms_search_cat_child = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                                                                    ( SELECT {$wpdb->prefix}posts.id ". $terms_search_result_flag ." ,1
+                                                                        FROM {$wpdb->prefix}posts
+                                                                        JOIN {$wpdb->prefix}sm_advanced_search_temp AS temp1
+                                                                            ON (temp1.product_id = {$wpdb->prefix}posts.id)
+                                                                        JOIN {$wpdb->prefix}sm_advanced_search_temp AS temp2
+                                                                            ON (temp2.product_id = {$wpdb->prefix}posts.post_parent)
+                                                                        WHERE temp2.cat_flag = 1 )";    
+                                } else {
+                                    //query when no attr cond has been applied
+                                    $query_terms_search_cat_child = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                                                                        ( SELECT {$wpdb->prefix}posts.id ". $terms_search_result_flag ." ,1
+                                                                            FROM {$wpdb->prefix}posts 
+                                                                            JOIN {$wpdb->prefix}sm_advanced_search_temp
+                                                                                ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.post_parent)
+                                                                            WHERE {$wpdb->prefix}sm_advanced_search_temp.cat_flag = 1 )";
+                                }
+                                
+                                $result_terms_search_cat_child = $wpdb->query ( $query_terms_search_cat_child );
                             }
                         }
 
-                        $cond_terms_post_ids = (!empty($result_terms_search)) ? " AND ({$wpdb->prefix}term_relationships.object_id IN (" . implode(",",$result_terms_search) ." ) )" : '';
-
-                        if ( trim($cond_terms_col_name[$index]) == 'product_cat' ) {
-                            $cond_cat_post_ids = (!empty($result_terms_search)) ? array_merge($result_terms_search,$cond_cat_post_ids) : $cond_cat_post_ids;
-                        } 
-                        
                         $index++;
                     }
 
-                    $cond_cat_parent_post_ids  = (!empty($result_terms_search) && !empty($cond_cat_post_ids)) ? array_intersect($result_terms_search, $cond_cat_post_ids) : '';
+                    //Query to reset the cat_flag
+                    $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp SET cat_flag = 0");
 
-                    if (!empty($result_terms_search)) {
-                        $advanced_search_query_string['cond_terms'] = (!empty($cond_cat_parent_post_ids)) ? " ({$wpdb->prefix}posts.id IN (" . implode(",",array_unique($result_terms_search)) ." ) OR {$wpdb->prefix}posts.post_parent IN (" . implode(",",array_unique($cond_cat_parent_post_ids)) ." )  )" : " ({$wpdb->prefix}posts.id IN (" . implode(",",array_unique($result_terms_search)) ." ) )";
-                    } else {
-                        $advanced_search_query_string['cond_terms'] = 'no terms results';
-                    }
-
+                    //Code to delete the unwanted post_ids
+                    $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp WHERE flag = 0");
                 }
-            }
-        }
 
-        // OR {$wpdb->prefix}posts.post_parent IN (" . implode(",",array_unique($result_terms_search)) ." )
-
-        //Code for Postmeta
-        if (!empty($advanced_search_query)) {
-
-            foreach ($advanced_search_query as &$advanced_search_query_string) {
-
+                //Cond for postmeta
                 if (!empty($advanced_search_query_string['cond_postmeta'])) {
 
                     $cond_postmeta_array = explode(" AND  ",$advanced_search_query_string['cond_postmeta']);
@@ -678,11 +762,14 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     $cond_postmeta_col_value = (!empty($advanced_search_query_string['cond_postmeta_col_value'])) ? explode(" AND ",$advanced_search_query_string['cond_postmeta_col_value']) : '';
                     $cond_postmeta_operator = (!empty($advanced_search_query_string['cond_postmeta_operator'])) ? explode(" AND ",$advanced_search_query_string['cond_postmeta_operator']) : '';
 
-                    $cond_postmeta_post_ids = '';
-
                     $index = 0;
+                    $cond_postmeta_post_ids = '';
+                    $result_postmeta_search = '';
 
                     foreach ($cond_postmeta_array as $cond_postmeta) {
+
+                        $postmeta_advanced_search_from = '';
+                        $postmeta_advanced_search_where = '';
 
                         $cond_postmeta_col_name1 = (!empty($cond_postmeta_col_name[$index])) ? trim($cond_postmeta_col_name[$index]) : '';
                         $cond_postmeta_col_value1 = (!empty($cond_postmeta_col_value[$index])) ? trim($cond_postmeta_col_value[$index]) : '';
@@ -690,44 +777,96 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
                         $cond_postmeta_custom_att = ( $cond_postmeta_col_name1 == '_product_attributes' ) ? " OR (wp_postmeta.meta_key LIKE 'attribute%' AND wp_postmeta.meta_value ". $cond_postmeta_operator1 ." '%". $cond_postmeta_col_value1 ."%')" : '';
 
-                        $query_postmeta_search = "SELECT {$wpdb->prefix}postmeta.post_id
-                                                FROM {$wpdb->prefix}postmeta
-                                                WHERE ".$cond_postmeta . " " .
-                                                    $cond_postmeta_post_ids ." ".
-                                                    $cond_postmeta_custom_att;
-                        $result_postmeta_search = $wpdb->get_col ( $query_postmeta_search );
+                        $postmeta_search_result_flag = ( $index == (sizeof($cond_postmeta_array) - 1) ) ? ', '.$index_search_string : ', 0';
 
-                        $cond_postmeta_post_ids = (!empty($result_postmeta_search)) ? " AND ({$wpdb->prefix}postmeta.post_id IN (" . implode(",",$result_postmeta_search) ." ) )" : '';                        
+                        //Query to find if there are any previous conditions
+                        $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp 
+                                                                    SET flag = 0
+                                                                    WHERE flag = ". $index_search_string);
+
+                        //Code to handle condition if the ids of previous cond are present in temp table
+                        if (($index == 0 && $count_temp_previous_cond > 0) || (!empty($result_postmeta_search))) {
+                            $postmeta_advanced_search_from = " JOIN {$wpdb->prefix}sm_advanced_search_temp
+                                                                ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}postmeta.posts_id)";
+
+                            $postmeta_advanced_search_where = " AND {$wpdb->prefix}sm_advanced_search_temp.flag = 0";
+                        }
+
+                        $query_postmeta_search = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                                                        (SELECT DISTINCT {$wpdb->prefix}postmeta.post_id ". $postmeta_search_result_flag ." ,0
+                                                        FROM {$wpdb->prefix}postmeta ". $postmeta_advanced_search_from ."
+                                                        WHERE ".$cond_postmeta . " " .
+                                                            $cond_postmeta_custom_att ." ".
+                                                            $postmeta_advanced_search_where.")";
+                        $result_postmeta_search = $wpdb->query ( $query_postmeta_search );
 
                         $index++;
 
                     }
 
-                    // OR {$wpdb->prefix}posts.post_parent IN (" . implode(",", array_unique($result_postmeta_search)) ." )
-
-                    $advanced_search_query_string['cond_postmeta'] = (!empty($result_postmeta_search)) ? " ({$wpdb->prefix}posts.id IN (" . implode(",", array_unique($result_postmeta_search)) ." ) )" : 'no postmeta results';
+                    //Query to delete the unwanted post_ids
+                    $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp WHERE flag = 0");
                 }
+
+                //Cond for posts
+                if (!empty($advanced_search_query_string['cond_posts'])) {
+
+                    $cond_posts_array = explode(" AND ",$advanced_search_query_string['cond_posts']);
+
+                    $index = 0;
+                    $cond_posts_post_ids = '';
+                    $result_posts_search = '';
+
+                    foreach ( $cond_posts_array as $cond_posts ) {
+
+                        $posts_advanced_search_from = '';
+                        $posts_advanced_search_where = '';
+
+                        $posts_search_result_flag = ( $index == (sizeof($cond_posts_array) - 1) ) ? ', '.$index_search_string : ', 0';
+
+                        //Query to find if there are any previous conditions
+                        $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp 
+                                                                    SET flag = 0
+                                                                    WHERE flag = ". $index_search_string);
+
+
+                        //Code to handle condition if the ids of previous cond are present in temp table
+                        if (($index == 0 && $count_temp_previous_cond > 0) || (!empty($result_posts_search))) {
+                            $posts_advanced_search_from = " JOIN {$wpdb->prefix}sm_advanced_search_temp
+                                                                ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
+
+                            $posts_advanced_search_where = " AND {$wpdb->prefix}sm_advanced_search_temp.flag = 0";
+                        }
+
+                        $query_posts_search = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                                                        (SELECT DISTINCT {$wpdb->prefix}posts.id ". $posts_search_result_flag ." ,0
+                                                        FROM {$wpdb->prefix}posts ". $posts_advanced_search_from ."
+                                                        WHERE ".$cond_posts . " " .
+                                                            $posts_advanced_search_where .")";
+                        $result_posts_search = $wpdb->query ( $query_posts_search );
+
+                        $index++;
+                    }
+
+                    //Query to delete the unwanted post_ids
+                    $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp WHERE flag = 0");
+
+                }
+                $index_search_string++;
             }
         }
 
+
+
         //for combined
-        $advanced_search_string = '';
-        if (!empty($advanced_search_query)) {
+        $advanced_search_from = '';
+        $advanced_search_where = '';
 
-            $advanced_search_string = ' AND (';
+        if (!empty($advanced_search_query) || $sm_advanced_search_results_persistent == 1) {
 
-            foreach ($advanced_search_query as $advanced_search_query1) {
-                $search_string = ' ( ';
-                if ($advanced_search_query1['cond_postmeta'] != 'no postmeta results' && $advanced_search_query1['cond_terms'] != 'no terms results') {
-                    $search_string .= (!empty($advanced_search_query1['cond_posts'])) ? ' ( '. $advanced_search_query1['cond_posts'] .' ) AND ' : '';
-                    $search_string .= (!empty($advanced_search_query1['cond_postmeta'])) ? ' ( '. $advanced_search_query1['cond_postmeta'] .' ) AND ' : '';    
-                    $search_string .= (!empty($advanced_search_query1['cond_terms'])) ? ' ( '. $advanced_search_query1['cond_terms'] .' ) AND ' : '';    
-                }
-                
-                $advanced_search_string .= ($search_string != ' ( ') ? substr( $search_string, 0, -4 ). ' )  OR ' : '';
-                // $advanced_search_string .= (!empty($advanced_search_query_string['cond_posts'])) ? ' ( '. $advanced_search_query_string['cond_posts'] .' ) OR ' : '';
-            }
-            $advanced_search_string = ($advanced_search_string != ' AND (') ? substr( $advanced_search_string, 0, -3 ). ' )' : '';
+            $advanced_search_from = " JOIN {$wpdb->prefix}sm_advanced_search_temp
+                                        ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
+            $advanced_search_where = " AND {$wpdb->prefix}sm_advanced_search_temp.flag > 0";
         }
 
         $from = "FROM {$wpdb->prefix}posts";
@@ -739,40 +878,22 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 		$where	= " WHERE {$wpdb->prefix}posts.post_status IN $post_status
 						AND {$wpdb->prefix}posts.post_type IN $post_type
                                                 $trash_id
-                                                $search
-                                                $advanced_search_string";
+                                                $search";
 
 		$group_by = " GROUP BY {$wpdb->prefix}posts.id ";
-
-  //       //Query for getting the actual data loaded into the smartManager
-  //       $query  = (!empty($_POST['func_nm']) && $_POST['func_nm'] == 'exportCsvWoo') ? "$select $from_export $where $group_by $search_condn $order_by $limit_string;" : "$select $from $where $group_by $search_condn $order_by $limit_string;";
-  //       // $query  = "$select $from_export $where $group_by $search_condn $order_by";
-
-		// $records = $wpdb->get_results ( $query, 'ARRAY_A' );
-		// $num_rows = $wpdb->num_rows;
-
-  //       //Query for getting the count of the number of products loaded into the smartManager
-  //       $recordcount_result = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
-  //       $num_records = $recordcount_result[0]['count'];
-
-
         
-        
-        if (!empty($advanced_search_query) && empty($advanced_search_string)) {
-            $num_rows = $num_records = 0;
-        } else {
+        //Query for getting the actual data loaded into the smartManager
+        $query  = (!empty($_POST['func_nm']) && $_POST['func_nm'] == 'exportCsvWoo') ? "$select $from_export $advanced_search_from $where $advanced_search_where $group_by $search_condn $order_by $limit_string;" : "$select $from $advanced_search_from $where $advanced_search_where $group_by $search_condn $order_by $limit_string;";
+        // $query  = "$select $from_export $where $group_by $search_condn $order_by";
 
-            //Query for getting the actual data loaded into the smartManager
-            $query  = (!empty($_POST['func_nm']) && $_POST['func_nm'] == 'exportCsvWoo') ? "$select $from_export $where $group_by $search_condn $order_by $limit_string;" : "$select $from $where $group_by $search_condn $order_by $limit_string;";
-            // $query  = "$select $from_export $where $group_by $search_condn $order_by";
+        $records = $wpdb->get_results ( $query, 'ARRAY_A' );
+        $num_rows = $wpdb->num_rows;
 
-            $records = $wpdb->get_results ( $query, 'ARRAY_A' );
-            $num_rows = $wpdb->num_rows;
 
-            //Query for getting the count of the number of products loaded into the smartManager
-            $recordcount_result = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
-            $num_records = $recordcount_result[0]['count'];
-        }
+
+        //Query for getting the count of the number of products loaded into the smartManager
+        $recordcount_result = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
+        $num_records = $recordcount_result[0]['count'];
 
         if ($num_rows <= 0) {
             $encoded ['totalCount'] = '';
@@ -1012,7 +1133,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 $post_id_guest = $wpdb->get_col($query_post_guest); 
                 $num_guest 	 =  $wpdb->num_rows;
             
-
+                $result_max_id = '';
               if($num_guest > 0) {
                 $query_max_id="SELECT GROUP_CONCAT(distinct postmeta1.post_ID 
                                         ORDER BY posts.post_date DESC SEPARATOR ',' ) AS all_id,
@@ -1070,18 +1191,19 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             //Code for generating the total orders, count of orders , max ids and last order total arrays
             for ($i=0;$i<sizeof($result_max_id);$i++) {
                 
-                $temp = explode (",",$result_max_id[$i]['all_id']);
-                $max_ids[$i] = $temp[0];
+                $temp = (!empty($result_max_id[$i]['all_id'])) ? explode (",",$result_max_id[$i]['all_id']) : array();
+                $max_ids[$i] = (!empty($temp)) ? $temp[0] : 0;
                 
-                $order_count[$max_ids[$i]] = $result_max_id[$i]['count'];
-                $order_total[$max_ids[$i]] = $result_max_id[$i]['total'];
+                $order_count[$max_ids[$i]] = (!empty($result_max_id[$i]['count'])) ? $result_max_id[$i]['count'] : '';
+                $order_total[$max_ids[$i]] = (!empty($result_max_id[$i]['total'])) ? $result_max_id[$i]['total'] : '';
                 
                 //Code for getting the last Order Total
-                $temp = explode (",",$result_max_id[$i]['order_total']);
-                $last_order_total[$max_ids[$i]] = $temp[0];
+                $temp = (!empty($result_max_id[$i]['order_total'])) ? explode (",",$result_max_id[$i]['order_total']) : '';
+                $last_order_total[$max_ids[$i]] = (!empty($temp)) ? $temp[0] : '';
                 
             }
 
+            $j=$k=$l=$m=0; //initiliazing variables
             if (!empty($result_max_id)) {
                 $j=sizeof($max_ids);
                 $k=sizeof($order_count);
@@ -1092,17 +1214,21 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             
             for ( $i=0;$i<sizeof($result_max_user);$i++,$j++,$k++,$l++,$m++ ) {
                 
-                $temp = explode (",",$result_max_user[$i]['all_id']);
-                $max_ids[$j] = $temp[0];
-                $order_count[$max_ids[$j]] = $result_max_user[$i]['count'];
-                $order_total[$max_ids[$j]] = $result_max_user[$i]['total'];
+                $temp = (!empty($result_max_user[$i]['all_id'])) ? explode (",",$result_max_user[$i]['all_id']) : '';
+                $max_ids[$j] = (!empty($temp[0])) ? $temp[0] : 0;
+                $order_count[$max_ids[$j]] = (!empty($result_max_user[$i]['count'])) ? $result_max_user[$i]['count'] : '';
+                $order_total[$max_ids[$j]] = (!empty($result_max_user[$i]['total'])) ? $result_max_user[$i]['total'] : '';
                 
-                $temp = explode (",",$result_max_user[$i]['order_total']);
-                $last_order_total[$max_ids[$j]] = $temp[0];
+                $temp = (!empty($result_max_user[$i]['order_total'])) ? explode (",",$result_max_user[$i]['order_total']) : '';
+                $last_order_total[$max_ids[$j]] = (!empty($temp[0])) ? $temp[0] : '';
                 
             }
             
-            $max_id = implode(",",$max_ids);
+            $max_id = (!empty($max_ids)) ? implode(",",$max_ids) : '';
+
+            $postid_cond = (!empty($max_ids)) ? "AND posts.ID IN ($max_id)" : '';
+
+            $orderby_cond = (!empty($max_ids)) ? "ORDER BY FIND_IN_SET(posts.ID,'$max_id')" : "ORDER BY posts.ID";
 
 
             $customers_query = "SELECT SQL_CALC_FOUND_ROWS
@@ -1123,11 +1249,11 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
 			$where = " WHERE posts.post_type LIKE 'shop_order' 
 					   AND posts.post_status IN ('publish')
-					   AND posts.ID IN ($max_id)";
+					   $postid_cond";
 			
 			$group_by    = " GROUP BY posts.ID";
 					
-			$limit_query = " ORDER BY FIND_IN_SET(posts.ID,'$max_id') $limit_string";
+			$limit_query = " $orderby_cond $limit_string";
 			
 		$query    	 = "$customers_query $where $group_by $search_condn $limit_query;";
 		$result   	 =  $wpdb->get_results ( $query, 'ARRAY_A' );
@@ -1753,7 +1879,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                     
                                     $variation_att_all = array();
 
-                                    if ( is_array( $results_variation_att ) && count( $results_variation_att ) > 0 ) {
+                                    if ( !empty($results_variation_att) && is_array( $results_variation_att ) && count( $results_variation_att ) > 0 ) {
                                         
                                         for ($i=0;$i<sizeof($results_variation_att);$i++) {
                                             $variation_attributes = explode(", ",$results_variation_att [$i]['meta_value']);
@@ -1890,7 +2016,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 						unset($data ['meta_value']);
 						$postmeta ['_shipping_method'] = isset($postmeta ['_shipping_method_title']) ? $postmeta ['_shipping_method_title'] : (!empty($postmeta ['_shipping_method']) ? $postmeta ['_shipping_method'] : '');
                         $postmeta ['_shipping_method'] = (!empty($order_shipping_method[$data['id']])) ? $order_shipping_method[$data['id']] : $postmeta ['_shipping_method'];
-                        
+
 						$postmeta ['_payment_method'] = isset($postmeta ['_payment_method_title']) ? $postmeta ['_payment_method_title'] : $postmeta ['_payment_method'];
 						$postmeta ['_shipping_state'] = isset($woocommerce->countries->states[$postmeta ['_shipping_country']][$postmeta ['_shipping_state']]) ? $woocommerce->countries->states[$postmeta ['_shipping_country']][$postmeta ['_shipping_state']] : $postmeta ['_shipping_state'];
 						$postmeta ['_shipping_country'] = isset($woocommerce->countries->countries[$postmeta ['_shipping_country']]) ? $woocommerce->countries->countries[$postmeta ['_shipping_country']] : $postmeta ['_shipping_country'];
@@ -2125,8 +2251,8 @@ if (isset ( $_GET ['func_nm'] ) && $_GET ['func_nm'] == 'exportCsvWoo') {
 				$columns_header['products_name'] 			= __('Order Items (Product Name [SKU][Qty][Price])', $sm_domain);
 				$columns_header['_payment_method_title'] 	= __('Payment Method', $sm_domain);
 				$columns_header['order_status'] 			= __('Order Status', $sm_domain);
-				$columns_header['_shipping_method_title'] 	= __('Shipping Method', $sm_domain);
-				$columns_header['_shipping_first_name'] 	= __('Shipping First Name', $sm_domain);
+                $columns_header['_shipping_method_title']   = __('Shipping Method', $sm_domain);
+                $columns_header['_shipping_first_name'] 	= __('Shipping First Name', $sm_domain);
 				$columns_header['_shipping_last_name'] 		= __('Shipping Last Name', $sm_domain);
 				$columns_header['_shipping_address'] 		= __('Shipping Address', $sm_domain);
 				$columns_header['_shipping_postcode'] 		= __('Shipping Postcode', $sm_domain);
@@ -2137,10 +2263,8 @@ if (isset ( $_GET ['func_nm'] ) && $_GET ['func_nm'] == 'exportCsvWoo') {
 			break;
 	}
 
-
-
 	$file_data = export_csv_woo ( $active_module, $columns_header, $data );
-	
+
 	header("Content-type: text/x-csv; charset=UTF-8"); 
 	header("Content-Transfer-Encoding: binary");
 	header("Content-Disposition: attachment; filename=".$file_data['file_name']); 
@@ -2153,10 +2277,8 @@ if (isset ( $_GET ['func_nm'] ) && $_GET ['func_nm'] == 'exportCsvWoo') {
         ob_clean();
     }
 
-        echo $file_data['file_content'];
-		
-
-
+    echo $file_data['file_content'];
+	
 	exit;
 }
 //Pro Version
