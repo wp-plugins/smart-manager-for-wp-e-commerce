@@ -76,6 +76,7 @@ if (WPSC_RUNNING === true) {
 	$query = "SELECT processed,track_id,notes FROM " . WPSC_TABLE_PURCHASE_LOGS;
 	$result = mysql_query ( $query );
 	
+	$ordersfield_result = '';
 	//@todo work on mysql_num_fields instead of data
 	if (mysql_num_rows ( $result ) >= 1) {
 		while ( $data = mysql_fetch_assoc ( $result ) )
@@ -250,7 +251,8 @@ $products_cols['sku']['actionType']='modStrActions';
 $products_cols['sku']['tableName']="{$wpdb->prefix}postmeta";
 $products_cols['sku']['updateColName']='meta_value';
 
-$products_cols['group']['name']=__( 'Group', $sm_domain );
+// $products_cols['group']['name']=__( 'Group', $sm_domain );
+$products_cols['group']['name']=__( 'Categories', $sm_domain );
 $products_cols['group']['actionType']='setAdDelActions';
 $products_cols['group']['colName']='category';
 $products_cols['group']['tableName']="{$wpdb->prefix}term_relationships";
@@ -322,6 +324,11 @@ if (WPSC_RUNNING === true) {
 	$products_cols['weightUnit']['colName']='weight_unit';
 	$products_cols['weightUnit']['tableName']="{$wpdb->prefix}postmeta";
 	
+	$products_cols['dimensionUnit']['name']=__( 'Dimensions Unit', $sm_domain );
+	$products_cols['dimensionUnit']['actionType']='setStrActions';
+	$products_cols['dimensionUnit']['colName']='dimension_unit';
+	$products_cols['dimensionUnit']['tableName']="{$wpdb->prefix}postmeta";
+	
 	$products_cols['heightUnit']['name']=__( 'Unit', $sm_domain );
 	$products_cols['heightUnit']['actionType']='';
 	$products_cols['heightUnit']['colName']='height_unit';
@@ -355,6 +362,7 @@ if (WPSC_RUNNING === true) {
 	$products_cols['height']['colFilter']='meta_key:_wpsc_product_metadata';
 	$products_cols['heightUnit']['colFilter']='meta_key:_wpsc_product_metadata';
 	$products_cols['width']['colFilter']='meta_key:_wpsc_product_metadata';
+	$products_cols['dimensionUnit']['colFilter']='meta_key:_wpsc_product_metadata';
 	$products_cols['widthUnit']['colFilter']='meta_key:_wpsc_product_metadata';
 	$products_cols['lengthCol']['colFilter']='meta_key:_wpsc_product_metadata';
 	$products_cols['lengthUnit']['colFilter']='meta_key:_wpsc_product_metadata';
@@ -365,6 +373,9 @@ if (WPSC_RUNNING === true) {
 	$products_cols['sku']['colFilter']='meta_key:_wpsc_sku';
 	$products_cols['qtyLimited']['colName']='_wpsc_stock';// @todo: check the serialized quantity limited value
 	$products_cols['qtyLimited']['colFilter']='meta_key:_wpsc_stock';	
+
+	//Array for advanced search
+	$wpec_products_cols_advanced_search = $products_cols;
 
 } else if (WOO_RUNNING === true) {
 
@@ -650,17 +661,22 @@ while ( $data = mysql_fetch_assoc ( $result ) ) {
 
 if (WPSC_RUNNING === true && IS_WPSC38) {
 	
-	$query = "SELECT {$wpdb->prefix}term_taxonomy.term_id as category_id,
-			          {$wpdb->prefix}terms.name as category_name,
-			          {$wpdb->prefix}term_taxonomy.parent as group_id,
-			          IFNULL(parent_terms.name,'Sets') as group_name
-			          
-					FROM {$wpdb->prefix}term_taxonomy join  {$wpdb->prefix}terms on ({$wpdb->prefix}terms.term_id = {$wpdb->prefix}term_taxonomy.term_id)
-					left join {$wpdb->prefix}terms as parent_terms on (parent_terms.term_id = {$wpdb->prefix}term_taxonomy.parent)
-					where taxonomy = 'wpsc-variation' ORDER BY group_id
-			        ";
+	global $wpdb;
+
+	$query_categories = "SELECT {$wpdb->prefix}term_taxonomy.term_id as category_id,
+				          {$wpdb->prefix}terms.name as category_name,
+				          {$wpdb->prefix}term_taxonomy.parent as group_id,
+				          IFNULL(parent_terms.name,'Sets') as group_name
+				          
+						FROM {$wpdb->prefix}term_taxonomy join  {$wpdb->prefix}terms on ({$wpdb->prefix}terms.term_id = {$wpdb->prefix}term_taxonomy.term_id)
+						left join {$wpdb->prefix}terms as parent_terms on (parent_terms.term_id = {$wpdb->prefix}term_taxonomy.parent)
+						where taxonomy = 'wpsc-variation' ORDER BY group_id
+				        ";
 	
-	$result = mysql_query ( $query );
+	$result = mysql_query ( $query_categories );
+	// $result_categories = $wpdb->get_results ( $query_categories, 'ARRAY_A' );
+	$wpec_category_rows = $wpdb->num_rows;
+
 	while ( $data = mysql_fetch_assoc ( $result ) ) {
 
 		$count = ($old_group_id != $data ['group_id']) ? 0 : ++ $count;
@@ -680,7 +696,122 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 		$products_cols ["groupVariation" . $data ['group_id']] ['colFilter'] = "Variation" . $wpdb->_real_escape ( $data ['group_id'] );
 		$old_group_id = $data ['group_id']; //string the group_id as old id
 	}
+
+	//advanced search product cols for WPeC
+
+	$index = 0;
+
 	
+	foreach ($wpec_products_cols_advanced_search as $products_col) {
+		if (!empty($products_col['name']) && $products_col['name'] != 'id' && $products_col['name'] != 'image' && $products_col['name'] != 'From'
+			&& $products_col['name'] != 'To' && $products_col['name'] != 'Image' && $products_col['name'] != 'Categories') {
+			$wpec_products_search_cols [$index] = array();
+			
+			$wpec_products_search_cols [$index]['key'] = $products_col['name'];
+
+			//handling different display names
+
+			if ($products_col['colName'] == "weight_unit") {
+				$wpec_products_search_cols [$index]['key'] = __('Weight Unit',$sm_domain);				
+			} else if ($products_col['colName'] == "height_unit") {
+				$wpec_products_search_cols [$index]['key'] = __('Height Unit',$sm_domain);				
+			} else if ($products_col['colName'] == "width_unit") {
+				$wpec_products_search_cols [$index]['key'] = __('Width Unit',$sm_domain);				
+			} else if ($products_col['colName'] == "length_unit") {
+				$wpec_products_search_cols [$index]['key'] = __('Length Unit',$sm_domain);				
+			}
+
+			if ($products_col['name'] == 'Price' || $products_col['name'] == 'Sale Price' || $products_col['name'] == 'Inventory'
+				|| $products_col['name'] == 'Weight' || $products_col['name'] == 'Height' || $products_col['name'] == 'Width'
+				|| $products_col['name'] == 'Length' || $products_col['name'] == 'Local Shipping Fee'
+				|| $products_col['name'] == 'International Shipping Fee' ) {
+
+				$wpec_products_search_cols [$index]['type'] = 'number';
+				$wpec_products_search_cols [$index]['min'] = 0;
+			} else {
+				$wpec_products_search_cols [$index]['type'] = 'String';	
+			}
+
+			if ($products_col['name'] == 'Disregard Shipping' || $products_col['name'] == 'Stock: Quantity Limited'
+				|| $products_col['name'] == 'Stock: Inform When Out Of Stock') {
+				$wpec_products_search_cols [$index]['values'] = array(__('Yes',$sm_domain),
+																	  __('No',$sm_domain));
+			} else if ( $products_col['colName'] == "height_unit" ||
+					$products_col['colName'] == "width_unit" || $products_col['colName'] == "length_unit" || (( defined('IS_WPSC3814') && IS_WPSC3814 ) && $products_col['colName'] == "dimension_unit")) {
+				$wpec_products_search_cols [$index]['values'] = array(__('inches',$sm_domain),
+																	  __('cm',$sm_domain),
+																	  __('meter',$sm_domain));
+			} else if ($products_col['colName'] == "weight_unit") {
+				$wpec_products_search_cols [$index]['values'] = array(__('pounds',$sm_domain),
+																	  __('ounces',$sm_domain),
+																	  __('grams',$sm_domain),
+																	  __('kilograms',$sm_domain));
+			}
+
+			$wpec_products_search_cols [$index]['category'] = "";
+			$wpec_products_search_cols [$index]['placeholder'] = "";
+			$wpec_products_search_cols [$index]['table_name'] = $products_col['tableName'];
+			$wpec_products_search_cols [$index]['col_name'] = $products_col['colName'];
+			$wpec_products_search_cols [$index]['maxlength'] = 10;
+
+			$index++;
+		}
+	}
+		
+		$query_wpec_categories_advanced_search = "SELECT tt.term_taxonomy_id, t.name,tt.taxonomy,tt.parent,tt.term_id
+							                FROM {$wpdb->prefix}terms as t 
+							                    JOIN {$wpdb->prefix}term_taxonomy as tt on (t.term_id = tt.term_id)
+							                WHERE tt.taxonomy LIKE 'wpsc_product_category'
+							                	OR tt.taxonomy LIKE 'wpsc-variation'
+							                GROUP BY tt.taxonomy,tt.term_taxonomy_id";
+		$results_wpec_categories_advanced_search = $wpdb->get_results ($query_wpec_categories_advanced_search, 'ARRAY_A');
+	    $rows_wpec_categories_advanced_search = $wpdb->num_rows;
+
+		if ($rows_wpec_categories_advanced_search > 0) {
+
+			$attribute_id = 0;
+			$index = sizeof($wpec_products_search_cols) - 1;
+			$categories_list = array();
+
+			foreach ($results_wpec_categories_advanced_search as $results_wpec_category_advanced_search) {
+
+				if ($results_wpec_category_advanced_search['taxonomy'] != 'wpsc_product_category') {
+
+					if ($results_wpec_category_advanced_search['term_id'] != $attribute_id && $results_wpec_category_advanced_search['parent'] == 0) {
+						$index++;
+						$wpec_products_search_cols [$index]['key'] = 'Variations: ' . $results_wpec_category_advanced_search['name'];
+						$wpec_products_search_cols [$index]['type'] = 'string';
+						$wpec_products_search_cols [$index]['category'] = "";
+						$wpec_products_search_cols [$index]['placeholder'] = "";
+						$wpec_products_search_cols [$index]['table_name'] = "{$wpdb->prefix}term_relationships";
+						$wpec_products_search_cols [$index]['col_name'] = $results_wpec_category_advanced_search['taxonomy'];
+						$wpec_products_search_cols [$index]['values'] = array();
+
+						$attribute_id = $results_wpec_category_advanced_search['term_id'];
+					} 
+					else {
+						$wpec_products_search_cols [$index]['values'][$results_wpec_category_advanced_search['term_taxonomy_id']] = $results_wpec_category_advanced_search['name'];
+					}
+
+				} else {
+					$categories_list[] = $results_wpec_category_advanced_search['name'];	
+				}
+			}
+		}    
+
+		if (!empty($categories_list)) {
+			$index = sizeof($wpec_products_search_cols);
+			$wpec_products_search_cols [$index]['key'] = __( 'Category', $sm_domain );
+			$wpec_products_search_cols [$index]['type'] = 'string';
+			$wpec_products_search_cols [$index]['category'] = "";
+			$wpec_products_search_cols [$index]['placeholder'] = "";
+			$wpec_products_search_cols [$index]['table_name'] = "{$wpdb->prefix}term_relationships";
+			$wpec_products_search_cols [$index]['col_name'] = 'wpsc_product_category';
+			$wpec_products_search_cols [$index]['values'] = $categories_list;
+		}
+
+		$wpec_products_search_cols= json_encode ($wpec_products_search_cols);
+
 } elseif (WOO_RUNNING === true) {
 	
 	$attribute_results = $wpdb->get_results( $attribute_list_query, 'ARRAY_A' );
@@ -699,7 +830,7 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 	
 	}
 
-	$products_cols['group']['name'] = __( 'Categories', $sm_domain );
+	// $products_cols['group']['name'] = __( 'Categories', $sm_domain );
 	
 	$products_cols ["groupAttributeAdd"] ['name'] = __("Add Attribute",$sm_domain); 
 	$products_cols ["groupAttributeAdd"] ['actionType'] = "attribute_action";
@@ -851,6 +982,7 @@ if ( isset( $attribute ) ) {
 	
 	var isWPSC37            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC37 : '') . "';
         var isWPSC38            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC38 : '') . "';
+        var isWPSC3814            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC3814 : '') . "';
         var SM_IS_WOO16            =  '" . ((WOO_RUNNING === true) ? SM_IS_WOO16 : '') . "';
         var SM_IS_WOO21            =  '" . ((WOO_RUNNING === true) ? SM_IS_WOO21 : '') . "';
         var IS_WP35             =  '" . ((version_compare ( $wp_version, '3.5', '>=' )) ? IS_WP35 : '') . "';
@@ -877,18 +1009,19 @@ if ( MULTISITE == 1 ) {
 if (WPSC_RUNNING === true) {
 	echo "
         var regions             =  " . $encodedRegions . ";
-	var ordersStatus        =  " . $encodedOrderStatus . ";
-	var weightUnits         =  " . $encodedWeightUnits . ";
-	var wpscUploadUrl       =  '" . WPSC_UPLOAD_URL . "';";
+		var ordersStatus        =  " . $encodedOrderStatus . ";
+		var weightUnits         =  " . $encodedWeightUnits . ";
+		var wpscUploadUrl       =  '" . WPSC_UPLOAD_URL . "';
+		var wpec_products_search_cols       =  " . $wpec_products_search_cols . ";"; // For advanced search
         
 } else {
 	echo "
         var regions             =  '" . (isset($encodedRegions) ? $encodedRegions : '') . "';
-	var ordersStatus        =  '" . (isset($encodedOrderStatus) ? $encodedOrderStatus : '') . "';
-	var weightUnits         =  '" . (isset($encodedWeightUnits) ? $encodedWeightUnits : '') . "';
-	var couponFields        =  " . $encodedcouponfields . "; // For WooCoupons
-	var products_search_cols        =  " . $products_search_cols . "; // For advanced search
-	var attribute           =  '" . $attribute  . "';";
+		var ordersStatus        =  '" . (isset($encodedOrderStatus) ? $encodedOrderStatus : '') . "';
+		var weightUnits         =  '" . (isset($encodedWeightUnits) ? $encodedWeightUnits : '') . "';
+		var couponFields        =  " . $encodedcouponfields . "; // For WooCoupons
+		var products_search_cols        =  " . $products_search_cols . "; // For advanced search
+		var attribute           =  '" . $attribute  . "';";
 }
 	echo "
 	var newCatName          = '" . (isset($cat_name) ? $cat_name : '') . "';
@@ -1195,24 +1328,31 @@ if (WPSC_RUNNING === true) {
 					}
 				}
 			}
-		}else if(isWPSC38 != '' && value.actionType != ''){";   // dropdown without unwanted columns for
+		}else if(isWPSC38 != '' && value.actionType != ''){
+			if(value.value != 'group' && value.value != 'attributes'){
+				if(isWPSC3814 == '1' || (isWPSC3814 != '1' && value.value != 'dimensionUnit')){
+						productsFields.items.push(value);
+						productsFields.totalCount = ++j;
+				}
+			}
+		}";   // dropdown without unwanted columns for
 } elseif (WOO_RUNNING === true) {
-		echo "if(value.actionType != ''){";
+		echo "if(value.actionType != ''){
+				if(value.value != 'group' && value.value != 'attributes'){
+					productsFields.items.push(value);
+					productsFields.totalCount = ++j;
+				}
+			}";
 }
 
                 //Condition to skip the Description, Additional Description and Group column from SM Batch Update
  
 //		echo "if(value.value != 'group' && value.value != 'desc' && value.value != 'addDesc'){
-		echo "if(value.value != 'group' && value.value != 'attributes'){
-				productsFields.items.push(value);
-				productsFields.totalCount = ++j;
-			}
-		}
-
+		echo "
 		prodFieldsStoreData.items.push(value);
 		prodFieldsStoreData.totalCount = ++i;
 	},this);
-	
+
 	for(var prodcol in SM.productsCols) { 
             if ( productsViewCols.indexOf( SM.productsCols[prodcol]['colName'] ) < 0 ) {
                 productsViewCols.push(SM.productsCols[prodcol]['colName']);

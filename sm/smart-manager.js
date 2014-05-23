@@ -754,6 +754,15 @@ Ext.onReady(function () {
           }
         });
 
+
+        var wpec_dimension_flag = true;
+        var wpec_dimension_unit_flag = false;
+
+        if (isWPSC3814 == '1') {
+        	wpec_dimension_flag = false;
+        	wpec_dimension_unit_flag = true;
+        }
+
         var productsColumnModel = new Ext.ProductsColumnModel({
 		columns: [editorGridSelectionModel,
 		{
@@ -973,6 +982,7 @@ Ext.onReady(function () {
 			hidden: true,
 			sortable: true,
 			width: 40,
+			hideable: wpec_dimension_flag,
 			dataIndex: SM.productsCols.heightUnit.colName,
 			tooltip: getText('Height Unit'),
 			editor: dimensionCombo,
@@ -994,17 +1004,21 @@ Ext.onReady(function () {
 				allowNegative: false,
 				decimalPrecision:sm_dimensions_decimal_precision
 			})
-		},{
+		}
+		,{
 			header: SM.productsCols.widthUnit.name,
 			id: 'widthUnit',
 			hidden: true,
 			sortable: true,
-                        width: 40,
+			hideable: wpec_dimension_flag,
+            width: 40,
 			dataIndex: SM.productsCols.widthUnit.colName,
 			tooltip: getText('Width Unit'),
 			editor: dimensionCombo,
 			renderer: Ext.util.Format.comboRenderer(dimensionCombo)
-		},{
+		}
+			// width_unit
+		,{
 			header: SM.productsCols.lengthCol.name,
 			id: 'lengthCol',
 			colSpan: 2,
@@ -1026,9 +1040,22 @@ Ext.onReady(function () {
 			sortable: true,
 			hidden: true,
 			id: 'lengthUnit',
-                        width: 40,
+            width: 40,
+            hideable: wpec_dimension_flag,
 			dataIndex: SM.productsCols.lengthUnit.colName,
 			tooltip: getText('Length Unit'),
+			editor: dimensionCombo,
+			renderer: Ext.util.Format.comboRenderer(dimensionCombo)
+		}
+		,{
+			header: SM.productsCols.dimensionUnit.name,
+			sortable: true,
+			hidden: true,
+			id: 'dimensionUnit',
+			hideable: wpec_dimension_unit_flag,
+            width: 40,
+			dataIndex: SM.productsCols.dimensionUnit.colName,
+			tooltip: getText('Dimension Unit'),
 			editor: dimensionCombo,
 			renderer: Ext.util.Format.comboRenderer(dimensionCombo)
 		},{
@@ -1079,35 +1106,64 @@ Ext.onReady(function () {
 			return this.readRecords(o);
 		}
 	});
+
+	var wpec_products_fields = new Array();
+	if (isWPSC3814 == '1') {
+		wpec_products_fields = [
+									{name: SM.productsCols.id.colName,                type: 'int'},
+									{name: SM.productsCols.name.colName,              type: 'string'},
+									{name: SM.productsCols.price.colName,             type: 'string'},
+									{name: SM.productsCols.salePrice.colName,         type: 'string'},
+									{name: SM.productsCols.inventory.colName,         type: 'string'},
+									{name: SM.productsCols.publish.colName,           type: 'string'},
+									{name: SM.productsCols.sku.colName,               type: 'string'},
+									{name: SM.productsCols.group.colName,             type: 'string'},
+									{name: SM.productsCols.disregardShipping.colName, type: 'string'},
+									{name: SM.productsCols.desc.colName,              type: 'string'},
+									{name: SM.productsCols.addDesc.colName,           type: 'string'},
+									{name: SM.productsCols.pnp.colName,               type: 'float'},
+									{name: SM.productsCols.intPnp.colName,            type: 'float'},
+									{name: SM.productsCols.weight.colName,            type: 'string'},
+									{name: SM.productsCols.weightUnit.colName,        type: 'string'},
+									{name: SM.productsCols.height.colName,            type: 'string'},
+									{name: SM.productsCols.width.colName,             type: 'string'},
+									{name: SM.productsCols.lengthCol.colName,         type: 'string'},
+									{name: SM.productsCols.dimensionUnit.colName,     type: 'string'},
+									{name: SM.productsCols.post_parent.colName,	      type: 'int'},
+									{name: SM.productsCols.image.colName,	      	  type: 'string'}
+								];
+	} else {
+		wpec_products_fields = [
+									{name: SM.productsCols.id.colName,                type: 'int'},
+									{name: SM.productsCols.name.colName,              type: 'string'},
+									{name: SM.productsCols.price.colName,             type: 'string'},
+									{name: SM.productsCols.salePrice.colName,         type: 'string'},
+									{name: SM.productsCols.inventory.colName,         type: 'string'},
+									{name: SM.productsCols.publish.colName,           type: 'string'},
+									{name: SM.productsCols.sku.colName,               type: 'string'},
+									{name: SM.productsCols.group.colName,             type: 'string'},
+									{name: SM.productsCols.disregardShipping.colName, type: 'string'},
+									{name: SM.productsCols.desc.colName,              type: 'string'},
+									{name: SM.productsCols.addDesc.colName,           type: 'string'},
+									{name: SM.productsCols.pnp.colName,               type: 'float'},
+									{name: SM.productsCols.intPnp.colName,            type: 'float'},
+									{name: SM.productsCols.weight.colName,            type: 'string'},
+									{name: SM.productsCols.weightUnit.colName,        type: 'string'},
+									{name: SM.productsCols.height.colName,            type: 'string'},
+									{name: SM.productsCols.heightUnit.colName,        type: 'string'},
+									{name: SM.productsCols.width.colName,             type: 'string'},
+									{name: SM.productsCols.widthUnit.colName,         type: 'string'},
+									{name: SM.productsCols.lengthCol.colName,         type: 'string'},
+									{name: SM.productsCols.lengthUnit.colName,        type: 'string'},
+									{name: SM.productsCols.post_parent.colName,	      type: 'int'},
+									{name: SM.productsCols.image.colName,	      	  type: 'string'}
+								];
+	}
 	
 	var productsJsonReader = new Ext.data.customJsonReader({
 		totalProperty: 'totalCount',
 		root: 'items',
-		fields: [
-				{name: SM.productsCols.id.colName,                type: 'int'},
-				{name: SM.productsCols.name.colName,              type: 'string'},
-				{name: SM.productsCols.price.colName,             type: 'string'},
-				{name: SM.productsCols.salePrice.colName,         type: 'string'},
-				{name: SM.productsCols.inventory.colName,         type: 'string'},
-				{name: SM.productsCols.publish.colName,           type: 'string'},
-				{name: SM.productsCols.sku.colName,               type: 'string'},
-				{name: SM.productsCols.group.colName,             type: 'string'},
-				{name: SM.productsCols.disregardShipping.colName, type: 'string'},
-				{name: SM.productsCols.desc.colName,              type: 'string'},
-				{name: SM.productsCols.addDesc.colName,           type: 'string'},
-				{name: SM.productsCols.pnp.colName,               type: 'float'},
-				{name: SM.productsCols.intPnp.colName,            type: 'float'},
-				{name: SM.productsCols.weight.colName,            type: 'string'},
-				{name: SM.productsCols.weightUnit.colName,        type: 'string'},
-				{name: SM.productsCols.height.colName,            type: 'string'},
-				{name: SM.productsCols.heightUnit.colName,        type: 'string'},
-				{name: SM.productsCols.width.colName,             type: 'string'},
-				{name: SM.productsCols.widthUnit.colName,         type: 'string'},
-				{name: SM.productsCols.lengthCol.colName,         type: 'string'},
-				{name: SM.productsCols.lengthUnit.colName,        type: 'string'},
-				{name: SM.productsCols.post_parent.colName,	      type: 'int'},
-				{name: SM.productsCols.image.colName,	      	  type: 'string'}
-				]
+		fields: wpec_products_fields
 	});	
 	
 	var productsStore = new Ext.data.Store({
@@ -1143,6 +1199,99 @@ Ext.onReady(function () {
 		productsStore.baseParams.searchText = ''; //clear the baseParams for productsStore
 		SM.searchTextField.reset(); 			  //to reset the searchTextField
 
+		productsStore.baseParams.searchText = ''; //clear the baseParams for productsStore
+		SM.searchTextField.reset(); 			  //to reset the searchTextField
+		SM.searchTextField.hide(); 			  //to reset the searchTextField
+		
+		jQuery("#sm_advanced_search_content").show(); //showing the advanced search box
+
+		editorGrid.getTopToolbar().get('searchIconId').hide();
+
+		jQuery(function($){
+			window.visualSearch = new VisualSearch({
+					el		: $("#sm_advanced_search_box_0"),
+					placeholder: "Enter your search conditions here!",
+					strict: false,
+					search: function(json){
+						$("#sm_advanced_search_box_value_0").val(json);
+					},
+					parameters: wpec_products_search_cols
+				});
+
+
+			var grid_pannel_width = $(".x-panel-tbar").width();
+			$('#sm_advanced_search_content').css('width',(grid_pannel_width/2.2));
+
+			// count = 0;
+			$("#sm_advanced_search_or").on('click', function () {
+				if ( fileExists != 1 ) {
+					$("#sm_advanced_search_or").attr('disabled','disabled');
+					Ext.notification.msg('Smart Manager', getText('This feature is available only in Pro version')); 
+					return;
+				} else {
+					$("#sm_advanced_search_or").removeAttr('disabled');
+					addAdvancedSearchCondition();
+				}
+			});
+			
+			$('#sm_advanced_search_submit').on('click',function(){ //listen for submit event
+
+				var search_query = new Array();
+				$('input[id^="sm_advanced_search_box_value_"]').each(function() {
+				    search_query.push($(this).val());
+				});
+
+				// Code to get the search params in ajax request
+				productsStore.setBaseParam('search_query[]', search_query);
+				productsStore.setBaseParam('search', 'advanced_search');
+				
+				mask.show();
+
+				$.ajax({
+	                    type : 'POST',
+	                    url : ajaxurl + '?action=sm_include_file',
+	                    dataType: "text",
+	                    async: false,
+	                    data: {
+
+	                    	cmd: 'getData',
+							active_module: SM.activeModule,
+							start: 0,
+							limit: limit,
+							viewCols: Ext.encode(productsViewCols),
+							incVariation: SM.incVariation,
+							file:  jsonURL,
+				            search_query: search_query,
+				            search: 'advanced_search'
+	                    },
+	                    // callback: function (options, success, response) {
+	                    success: function(response) {
+			
+							var myJsonObj = Ext.decode(response);
+							
+							try {
+								var records_cnt = myJsonObj.totalCount;
+								if (records_cnt == 0) myJsonObj.items = '';
+								if(SM.activeModule == 'Products')
+									productsStore.loadData(myJsonObj);
+								else if(SM.activeModule == 'Orders'){
+									ordersStore.loadData(myJsonObj);
+				                } else {
+									customersStore.loadData(myJsonObj);
+				                }
+								
+								mask.hide();
+
+							} catch (e) {
+								return;
+							}
+						}
+				});
+			});
+
+
+		});
+
 		hidePrintButton();
 		hideDeleteButton();
 		showAddProductButton();
@@ -1152,7 +1301,7 @@ Ext.onReady(function () {
 		for(var i=2;i<=8;i++)
 		editorGrid.getTopToolbar().get(i).hide();
 		editorGrid.getTopToolbar().get('incVariation').show();
-                editorGrid.getTopToolbar().get('duplicateButton').show();
+        editorGrid.getTopToolbar().get('duplicateButton').show();
 
 		productsStore.load();
 		pagingToolbar.bind(productsStore);
@@ -1283,10 +1432,18 @@ var pagingToolbar = new Ext.PagingToolbar({
 		scope: this,
 		listeners: { 
 			click: function () { 
+
 				if ( fileExists != 1 ) {
 					Ext.notification.msg('Smart Manager', getText('Export CSV feature is available only in Pro version') ); 
 					return;
 				}
+
+				// Code for getting the advanced search query
+				var search_query = new Array();
+				jQuery('input[id^="sm_advanced_search_box_value_"]').each(function() {
+				    search_query.push(jQuery(this).val());
+				});
+
 				Ext.DomHelper.append(Ext.getBody(), { 
                     tag: 'iframe', 
                     id:'downloadIframe', 
@@ -1295,7 +1452,8 @@ var pagingToolbar = new Ext.PagingToolbar({
                     height: 0,
                     css: 'display:none;visibility:hidden;height:0px;', 
                     // src: jsonURL+'?cmd=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
-                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
+                    // src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
+                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWpsc&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
                 }); 
 			}
 		}
@@ -1368,6 +1526,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 				cmd:'saveData',
 				active_module: SM.activeModule,
 				edited:Ext.encode(edited),
+				isWPSC3814: isWPSC3814,
 				file:  jsonURL
 			}};
 			Ext.Ajax.request(o);
@@ -2159,6 +2318,9 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 			SM.activeModule = 'Customers';
 			SM.dashboardComboBox.setValue(SM.activeModule);
 
+			jQuery("#sm_advanced_search_content").hide(); //Hiding the advanced search box
+			jQuery( "#sm_advanced_search_or").unbind( "click" );
+
 			if(cellClicked == false){
 				ordersStore.baseParams.searchText = ''; //clear the baseParams for ordersStore
 				SM.searchTextField.reset(); 			//to reset the searchTextField
@@ -2510,6 +2672,9 @@ if(isWPSC38 == '1'){
 			SM.activeModule = 'Orders';
 			SM.dashboardComboBox.setValue(SM.activeModule);
 			
+			jQuery("#sm_advanced_search_content").hide(); //hiding the advanced search box
+			jQuery( "#sm_advanced_search_or").unbind( "click" );
+
 			ordersColumnModel.setEditable(6,true);
 			ordersColumnModel.setEditable(8,true);
 			ordersColumnModel.setEditable(9,true);
@@ -2811,7 +2976,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								comboWeightUnitCmp.hide();
 								setTextfield.show();
 								comboCategoriesActionCmp.hide();
-                                                                lblImg.hide();
+                                lblImg.hide();
 							}else if(field_name == 'Orders Status' || field_name.indexOf('Country') != -1){
 								if(field_name.indexOf('Country') != -1) {
                                                                         textState.emptyText="Enter State/Region...";
@@ -2827,8 +2992,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							}else if(field_type == 'YesNoActions'){
 								setTextfield.hide();
                                                                 lblImg.hide();
-							}
-                                                        else if(field_name == 'Image'){
+							}else if(field_name == 'Image'){
 								if (IS_WP35) {
                                                                     setTextfield.hide();
                                                                     comboWeightUnitCmp.hide();
@@ -2843,10 +3007,15 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
                                                                     comboCategoriesActionCmp.hide();
                                                                     Ext.notification.msg('Note', 'This feature is available from Wordpress 3.5 onwards');
                                                                 }
-							}
-                                                        else {
+							}else if (isWPSC3814 == '1' && field_name == 'Dimensions Unit') {
+								weightUnitStore.loadData(dimensionUnits);
+								setTextfield.hide();
+								comboWeightUnitCmp.show();
+								comboCategoriesActionCmp.hide();
+                                lblImg.hide();
+							}else {
 								setTextfield.show();
-                                                                if (field_type == 'blob' || field_type == 'modStrActions') {
+                             if (field_type == 'blob' || field_type == 'modStrActions') {
 									objRegExp = '';
 									regexError = '';
 								}
@@ -2949,28 +3118,37 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 
 							if(wpscRunning == 1){
 
-                                                            if(field_name == 'Price' || field_name == 'Sale Price') {
-                                                                setTextfield.show();
-                                                            }
+                                if(field_name == 'Price' || field_name == 'Sale Price') {
+                                    setTextfield.show();
+                                }
 
-                                                            if (comboactionvalue == 'YES' || comboactionvalue == 'NO' || comboactionvalue == 'SET_TO_SALES_PRICE' || comboactionvalue == 'SET_TO_REGULAR_PRICE') {
-                                                                setTextfield.hide();
-                                                            }
-                                                            
-                                                            
-                                                            if (field_name == 'Weight' || field_name == 'Variations: Weight'||field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
+                                if (comboactionvalue == 'YES' || comboactionvalue == 'NO' || comboactionvalue == 'SET_TO_SALES_PRICE' || comboactionvalue == 'SET_TO_REGULAR_PRICE') {
+                                    setTextfield.hide();
+                                }
+                                               
+
+                                if (field_name == 'Weight' || field_name == 'Variations: Weight'||field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length' ||field_name == 'Dimensions Unit') {
 								if (field_name == 'Weight' || field_name == 'Variations: Weight') {
 									weightUnitStore.loadData(weightUnits);
 								}
-								else if(field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
+								else if( (isWPSC3814 != '1' && (field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length'))) {
 									weightUnitStore.loadData(dimensionUnits);
+								} else if (isWPSC3814 == '1' && field_name == 'Dimensions Unit') {
+									setTextfield.hide();
+									weightUnitStore.loadData(dimensionUnits);
+									comboWeightUnitCmp.show();
+									
 								}
 								if(comboactionvalue == 'SET_TO') {
-                                                                    comboWeightUnitCmp.show();
-                                                                }
+									if (isWPSC3814 != '1' || (isWPSC3814 == '1' && field_name != 'Height' && field_name != 'Width' && field_name != 'Length')) {
+										comboWeightUnitCmp.show();	
+									} else {
+										comboWeightUnitCmp.hide();
+									}
+	                            }
 								else {
-                                                                    comboWeightUnitCmp.hide();
-                                                                }
+	                                comboWeightUnitCmp.hide();
+	                            }
 									
 							}}
 					}
@@ -3463,6 +3641,16 @@ var showCustomerDetails = function(record,rowIndex){
 			toComboSearchBox,
 			{xtype: 'tbspacer', id:'afterDateMenuTbspacer', width: 15},
 			SM.searchTextField,{ icon: imgURL + 'search.png', id:'searchIconId' },
+
+			//Advanced Search Box [only for Products]
+			'<div id="sm_advanced_search_content" style="background-color:#d0def0;margin-top: -5px;margin-left: -10px;float:left;">'+
+			'<div style="width: 100%;"> <div id="sm_advanced_search_box" > <div id="sm_advanced_search_box_0" style="width:80%;margin-left:7px;margin-bottom:5px"> </div>'+
+			'<input type="text" id="sm_advanced_search_box_value_0" name="sm_advanced_search_box_value_0" hidden> </div>'+ 
+			'<input type="text" id="sm_advanced_search_query" hidden>'+
+			'<img src='+imgURL+'add_row.png id="sm_advanced_search_or" style="float: left;margin-top: -23px;margin-left: 83%;opacity: 0.75;cursor: pointer;" title="Add Another Condition">'+
+			'<button id="sm_advanced_search_submit" style="float: left;margin-top: -28px;margin-left: 88%;cursor: pointer;"><img src='+imgURL+'search.png style="vertical-align:middle"> Search </button>'+
+			'</div>',
+
 //			{xtype: 'tbspacer',width: 10, id:'afterSearchId'}
 			'->',
 			{ 

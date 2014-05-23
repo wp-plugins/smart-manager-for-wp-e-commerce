@@ -89,6 +89,7 @@ Ext.onReady(function () {
         SM.dashboard_state = "";
         SM.variation_state = "";
         SM.editor_state = "";
+        SM.advanced_search_query = new Array();
         
         
 	
@@ -231,7 +232,7 @@ Ext.onReady(function () {
 
 	// var amountRenderer = Ext.util.Format.numberRenderer('0,0.00'),
 		
-                //setting Date fields.
+    //setting Date fields.
 	var	fromDateTxt    = new Ext.form.TextField({emptyText:'From Date',readOnly: true,width: 80, id:'fromDateTxtId'}),
 		toDateTxt      = new Ext.form.TextField({emptyText:'To Date',readOnly: true,width: 80, id:'toDateTxtId'
 	}),
@@ -1206,6 +1207,8 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 		
 	});	
 
+	//Code to get the advanced search query string
+
 	var productsStore = new Ext.data.Store({
 		reader: productsJsonReader,
 		proxy: new Ext.data.HttpProxy({
@@ -1228,14 +1231,13 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 		listeners: {
 			//Products Store onload function.
 			load: function (store,records,obj) {
-
 				cnt = -1;
 				cnt_array = [];
 				editorGridSelectionModel.clearSelections();
 				pagingToolbar.saveButton.disable();
 				productsColumnModel.getColumnById('publish').editor = productStatusCombo;
-                                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;  
-                                productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
+                productsColumnModel.getColumnById('visibility').editor = visibilityCombo;  
+                productsColumnModel.getColumnById('taxStatus').editor = taxStatusCombo;
 			}
 		}
 	});
@@ -1288,6 +1290,12 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 				$('input[id^="sm_advanced_search_box_value_"]').each(function() {
 				    search_query.push($(this).val());
 				});
+
+				// Code to get the search params in ajax request
+				productsStore.setBaseParam('search_query[]', search_query);
+				productsStore.setBaseParam('search', 'advanced_search');
+
+				SM.advanced_search_query = search_query;
 
 				mask.show();
 
@@ -1437,10 +1445,18 @@ var pagingToolbar = new Ext.PagingToolbar({
 		scope: this,
 		listeners: { 
 			click: function () {
+
 				if ( fileExists != 1 ) {
-					// Ext.notification.msg('Smart Manager', getText('Export CSV feature is available only in Pro version') ); 
+					Ext.notification.msg('Smart Manager', getText('Export CSV feature is available only in Pro version') ); 
 					return;
 				}
+
+				// Code for getting the advanced search query
+				var search_query = new Array();
+				jQuery('input[id^="sm_advanced_search_box_value_"]').each(function() {
+				    search_query.push(jQuery(this).val());
+				});
+
                 Ext.DomHelper.append(Ext.getBody(), { 
                     tag: 'iframe', 
                     id:'downloadIframe', 
@@ -1449,7 +1465,8 @@ var pagingToolbar = new Ext.PagingToolbar({
                     height: 0, 
                     css: 'display:none;visibility:hidden;height:0px;', 
                     // src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
-                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
+                    // src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
+                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
                 }); 
 			}
 		}
@@ -3923,8 +3940,8 @@ var showCustomerDetails = function(record,rowIndex){
 			'<div style="width: 100%;"> <div id="sm_advanced_search_box" > <div id="sm_advanced_search_box_0" style="width:80%;margin-left:7px;margin-bottom:5px"> </div>'+
 			'<input type="text" id="sm_advanced_search_box_value_0" name="sm_advanced_search_box_value_0" hidden> </div>'+ 
 			'<input type="text" id="sm_advanced_search_query" hidden>'+
-			'<img src='+imgURL+'add_row.png id="sm_advanced_search_or" style="float: left;margin-top: -23px;margin-left: 83%;opacity: 0.75;" title="Add Another Condition">'+
-			'<button id="sm_advanced_search_submit" style="float: left;margin-top: -28px;margin-left: 88%;"><img src='+imgURL+'search.png style="vertical-align:middle"> Search </button>'+
+			'<img src='+imgURL+'add_row.png id="sm_advanced_search_or" style="float: left;margin-top: -23px;margin-left: 83%;opacity: 0.75;cursor: pointer;" title="Add Another Condition">'+
+			'<button id="sm_advanced_search_submit" style="float: left;margin-top: -28px;margin-left: 88%;cursor: pointer;"><img src='+imgURL+'search.png style="vertical-align:middle"> Search </button>'+
 			'</div>',
 
 			'->',
