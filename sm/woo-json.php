@@ -856,8 +856,6 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             }
         }
 
-
-
         //for combined
         $advanced_search_from = '';
         $advanced_search_where = '';
@@ -871,9 +869,11 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
         $from = "FROM {$wpdb->prefix}posts";
 
+            // and
+            //             {$wpdb->prefix}postmeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price','_thumbnail_id','_tax_status','_min_variation_regular_price','_min_variation_sale_price','_min_variation_price','_visibility','_product_attributes','" . implode( "','", $variation ) . "') 
+
 		$from_export = "FROM {$wpdb->prefix}posts
-						JOIN {$wpdb->prefix}postmeta ON ({$wpdb->prefix}postmeta.post_id = {$wpdb->prefix}posts.id and
-						{$wpdb->prefix}postmeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price','_thumbnail_id','_tax_status','_min_variation_regular_price','_min_variation_sale_price','_min_variation_price','_visibility','_product_attributes','" . implode( "','", $variation ) . "') )";
+						JOIN {$wpdb->prefix}postmeta ON ({$wpdb->prefix}postmeta.post_id = {$wpdb->prefix}posts.id)";
 						
 		$where	= " WHERE {$wpdb->prefix}posts.post_status IN $post_status
 						AND {$wpdb->prefix}posts.post_type IN $post_type
@@ -888,8 +888,6 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
         $records = $wpdb->get_results ( $query, 'ARRAY_A' );
         $num_rows = $wpdb->num_rows;
-
-
 
         //Query for getting the count of the number of products loaded into the smartManager
         $recordcount_result = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
@@ -908,13 +906,15 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     $post_ids[] = $record['id'];    
                 }
 
+                // and
+                //                     prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price','_thumbnail_id','_tax_status','_min_variation_regular_price','_min_variation_sale_price','_min_variation_price','_visibility','_product_attributes','" . implode( "','", $variation ) . "')
+
                 $query_postmeta = "SELECT prod_othermeta.post_id as post_id,
 
                                 GROUP_CONCAT(prod_othermeta.meta_key order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_key,
                                 GROUP_CONCAT(prod_othermeta.meta_value order by prod_othermeta.meta_id SEPARATOR '###') AS prod_othermeta_value
                     FROM {$wpdb->prefix}postmeta as prod_othermeta 
-                    WHERE post_id IN (". implode(",",$post_ids) .") and
-                                    prod_othermeta.meta_key IN ('_regular_price','_sale_price','_sale_price_dates_from','_sale_price_dates_to','_sku','_stock','_weight','_height','_length','_width','_price','_thumbnail_id','_tax_status','_min_variation_regular_price','_min_variation_sale_price','_min_variation_price','_visibility','_product_attributes','" . implode( "','", $variation ) . "')
+                    WHERE post_id IN (". implode(",",$post_ids) .") 
                     GROUP BY post_id";
 
                 $records_postmeta = $wpdb->get_results ( $query_postmeta, 'ARRAY_A' );
@@ -935,6 +935,8 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                 }
             }
 
+            $export_column_header = array();
+
             for ($i = 0; $i < $num_rows; $i++) {
 
                 // $records[$i]['post_content'] = str_replace('"','\'',$records[$i]['post_content']);
@@ -945,6 +947,10 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
                 if (count($prod_meta_values) != count($prod_meta_key))
                     continue;
+
+                if (!empty($_POST['func_nm']) && $_POST['func_nm'] == 'exportCsvWoo' && empty($export_column_header))
+                    $export_column_header = $prod_meta_key;
+
                 unset($records[$i]['prod_othermeta_value']);
                 unset($records[$i]['prod_othermeta_key']);
                 $prod_meta_key_values = array_combine($prod_meta_key, $prod_meta_values);
@@ -1258,7 +1264,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 		$query    	 = "$customers_query $where $group_by $search_condn $limit_query;";
 		$result   	 =  $wpdb->get_results ( $query, 'ARRAY_A' );
 		$num_rows 	 =  $wpdb->num_rows;
-		
+
 		//To get Total count
 		$customers_count_result = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
 		$num_records = $customers_count_result[0]['count'];
@@ -1269,6 +1275,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 			$encoded ['msg'] = __('No Records Found','smart-manager');
 		} else {
             $postmeta = array();
+            $user = array();
 
                     $j=0;$k=0;
             for ( $i=0;$i<sizeof($result);$i++ ) {
@@ -1294,7 +1301,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             }
 
                     //Query for getting th Registered Users data from wp_usermeta and wp_users table
-                    if(!(is_null($user))){
+                    if(!empty($user)){
                         $user_ids = implode(",",$user);
                         $query_users = "SELECT users.ID,users.user_email,
                                               GROUP_CONCAT( usermeta.meta_value ORDER BY usermeta.umeta_id SEPARATOR '###' ) AS meta_value,
@@ -2017,7 +2024,9 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 						$postmeta ['_shipping_method'] = isset($postmeta ['_shipping_method_title']) ? $postmeta ['_shipping_method_title'] : (!empty($postmeta ['_shipping_method']) ? $postmeta ['_shipping_method'] : '');
                         $postmeta ['_shipping_method'] = (!empty($order_shipping_method[$data['id']])) ? $order_shipping_method[$data['id']] : $postmeta ['_shipping_method'];
 
-						$postmeta ['_payment_method'] = isset($postmeta ['_payment_method_title']) ? $postmeta ['_payment_method_title'] : $postmeta ['_payment_method'];
+                        $payment_method = (!empty($postmeta ['_payment_method'])) ? $postmeta ['_payment_method'] : '';
+
+						$postmeta ['_payment_method'] = isset($postmeta ['_payment_method_title']) ? $postmeta ['_payment_method_title'] : $payment_method;
 						$postmeta ['_shipping_state'] = isset($woocommerce->countries->states[$postmeta ['_shipping_country']][$postmeta ['_shipping_state']]) ? $woocommerce->countries->states[$postmeta ['_shipping_country']][$postmeta ['_shipping_state']] : $postmeta ['_shipping_state'];
 						$postmeta ['_shipping_country'] = isset($woocommerce->countries->countries[$postmeta ['_shipping_country']]) ? $woocommerce->countries->countries[$postmeta ['_shipping_country']] : $postmeta ['_shipping_country'];
 
@@ -2041,6 +2050,12 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 	if (!isset($_POST['label']) || ( (!empty($_POST['label'])) && $_POST['label'] != 'getPurchaseLogs' )){
         $encoded ['items'] = $records;
         $encoded ['totalCount'] = $num_records;
+
+        // Code for passing the column headers for export for handling custom columns
+        if (!empty($_POST['func_nm']) && $_POST['func_nm'] == 'exportCsvWoo' && $active_module == 'Products') {
+            $encoded ['column_header'] = $export_column_header;
+        }
+
         unset($records);
         return $encoded;
     }
@@ -2191,7 +2206,9 @@ if (isset ( $_GET ['func_nm'] ) && $_GET ['func_nm'] == 'exportCsvWoo') {
 	$encoded = get_data_woo ( $_GET, $offset, $limit, true );
 
 	$data = $encoded ['items'];
+    $column_header_custom = (!empty($encoded ['column_header'])) ? $encoded ['column_header'] : '';
 	unset($encoded);
+
 	$columns_header = array();
 	$active_module = $_GET ['active_module'];
 	switch ( $active_module ) {
@@ -2262,6 +2279,16 @@ if (isset ( $_GET ['func_nm'] ) && $_GET ['func_nm'] == 'exportCsvWoo') {
 				$columns_header['order_note'] 		        = __('Order Notes', $sm_domain);
 			break;
 	}
+
+    //code to merge the column headers for custom columns
+    if ($active_module == 'Products' && !empty($column_header_custom)) {
+        foreach ($column_header_custom as $header_custom) {
+            if (!isset($columns_header['$header_custom']) && $header_custom != '_edit_last' && $header_custom != '_edit_lock'
+                    && $header_custom != '_product_attributes') {
+                $columns_header[$header_custom] = __(ucwords(str_replace('_', ' ', $header_custom)), $sm_domain);
+            }
+        }
+    }
 
 	$file_data = export_csv_woo ( $active_module, $columns_header, $data );
 
@@ -2521,7 +2548,8 @@ function woo_insert_update_data($post) {
                                     'comment_count'             => isset($post->comment_count) ? $post->comment_count : 0,
                                     'ancestors'                 => isset($post->ancestors) ? $post->ancestors : Array(),
                                     'filter'                    => isset($post->filter) ? $post->filter : 'raw',
-                                    '_product_attributes'       => isset($product_custom_fields['_product_attributes'][0]) ? $product_custom_fields['_product_attributes'][0] : serialize(array()),
+                                    // '_product_attributes'       => isset($product_custom_fields['_product_attributes'][0]) ? $product_custom_fields['_product_attributes'][0] : serialize(array()),
+                                    '_product_attributes'       => isset($obj->_product_attributes) ? $obj->_product_attributes : serialize(array()),
                                     'user_ID'                   => 1,
                                     'action'                    => 'editpost',
                                     'originalaction'            => 'editpost',
@@ -2537,9 +2565,12 @@ function woo_insert_update_data($post) {
                                     'newproduct_cat_parent'     => -1,
                                     'content'                   => isset($obj->post_content) ? $obj->post_content : $post->post_content,
                                     'product-type'              => isset($product_type) ? $product_type : 'simple',
-                                    '_virtual'                  => isset($product_custom_fields['_virtual'][0]) ? $product_custom_fields['_virtual'][0] : 'no',
-                                    '_downloadable'             => isset($product_custom_fields['_downloadable'][0]) ? $product_custom_fields['_downloadable'][0] : 'no',
-                                    '_featured'                 => isset($product_custom_fields['_featured'][0]) ? $product_custom_fields['_featured'][0] : 'no',
+                                    // '_virtual'                  => isset($product_custom_fields['_virtual'][0]) ? $product_custom_fields['_virtual'][0] : 'no',
+                                    '_virtual'                  => isset($obj->_virtual) ? $obj->_virtual : 'no',
+                                    // '_downloadable'             => isset($product_custom_fields['_downloadable'][0]) ? $product_custom_fields['_downloadable'][0] : 'no',
+                                    '_downloadable'             => isset($obj->_downloadable) ? $obj->_downloadable : 'no',
+                                    // '_featured'                 => isset($product_custom_fields['_featured'][0]) ? $product_custom_fields['_featured'][0] : 'no',
+                                    '_featured'                 => isset($obj->_featured) ? $obj->_featured : 'no',
                                     '_sku'                      => isset($obj->_sku) ? $obj->_sku : '',
 //                      '_price'                    => ( ($obj->post_parent == 0 && $obj->product_type != 'variable') || ($product_type_parent[0] == "grouped") ) ? $price : $obj->_regular_price,
                                     '_price'                    =>  $price,
@@ -2552,15 +2583,27 @@ function woo_insert_update_data($post) {
                                     '_width'                    => isset($obj->_width) ? $obj->_width : '',
                                     '_height'                   => isset($obj->_height) ? $obj->_height : '',
                                     '_tax_status'               => isset($obj->_tax_status) ? $obj->_tax_status : 'taxable',
-                                    '_tax_class'                => isset($product_custom_fields['_tax_class'][0]) ? $product_custom_fields['_tax_class'][0] : '',                                    
-                                    '_manage_stock'             => isset($product_custom_fields['_manage_stock'][0]) ? $product_custom_fields['_manage_stock'][0] : '',
-                                    '_stock_status'             => isset($product_custom_fields['_stock_status'][0]) ? $product_custom_fields['_stock_status'][0] : '',
-                                    '_backorders'               => isset($product_custom_fields['_backorders'][0]) ? $product_custom_fields['_backorders'][0] : 'no',
+                                    // '_tax_class'                => isset($product_custom_fields['_tax_class'][0]) ? $product_custom_fields['_tax_class'][0] : '',                                    
+                                    '_tax_class'                => isset($obj->_tax_class) ? $obj->_tax_class : '',                                    
+                                    // '_manage_stock'             => isset($product_custom_fields['_manage_stock'][0]) ? $product_custom_fields['_manage_stock'][0] : '',
+                                    '_manage_stock'             => isset($obj->_manage_stock) ? $obj->_manage_stock : '',
+                                    // '_stock_status'             => isset($product_custom_fields['_stock_status'][0]) ? $product_custom_fields['_stock_status'][0] : '',
+                                    '_stock_status'             => isset($obj->_stock_status) ? $obj->_stock_status : '',
+                                    // '_backorders'               => isset($product_custom_fields['_backorders'][0]) ? $product_custom_fields['_backorders'][0] : 'no',
+                                    '_backorders'               => isset($obj->_backorders) ? $obj->_backorders : 'no',
                                     '_stock'                    => isset($obj->_stock) ? $obj->_stock : '',
                                     'excerpt'                   => isset($obj->post_excerpt) ? $obj->post_excerpt : $post->post_excerpt,
                                     'advanced_view'             => 1
                             );
 
+
+                            //Code to handle inline editing for custom columns
+                            foreach($obj as $key => $value) {
+                                
+                                if (!isset($postarr[$key])) {
+                                    $postarr[$key] = (!empty($value)) ? $value : '';
+                                }
+                            }
 
                             if ( ($obj->post_parent == 0 && $obj->product_type != 'variable') || ($product_type_parent[0] == "grouped") ) {
                                     $post_id = wp_insert_post($postarr);
@@ -3193,7 +3236,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
     while(ob_get_contents()) {
         ob_clean();
     }
-    
+
         echo json_encode ( $thumbnail );
 
         exit;

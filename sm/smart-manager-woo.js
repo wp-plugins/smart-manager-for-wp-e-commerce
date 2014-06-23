@@ -848,15 +848,430 @@ Ext.override(Ext.grid.HeaderDragZone, {
     }
 });
 
+
+//custom columns for Products Dashboard
+
+var products_columns = new Array();
+var products_render_fields = new Array();
+
+products_columns = [editorGridSelectionModel,
+				{
+					header: '',
+					id: 'type',
+					dataIndex: SM.productsCols.post_parent.colName,
+					tooltip: getText('Type'),
+		                	width: 10,
+					hidden: true,
+		                        dragable:false,
+					renderer: function (value, metaData, record, rowIndex, colIndex, store) {
+						return (value == 0 ? '<img id=editUrl src="' + imgURL + 'fav.gif"/>' : '');
+					}
+				},
+				{
+					header: SM.productsCols.image.name,
+					id: 'image',
+					dataIndex: SM.productsCols.image.colName,
+					tooltip: getText('Product Images'),
+		                        width: 30,
+					hidden: true,
+					renderer: function (value, metaData, record, rowIndex, colIndex, store) {
+						return (record.data.thumbnail != 'false' ? '<img width=16px height=16px src="' + record.data.thumbnail + '"/>' : '');
+					}
+				},
+				{
+					header: SM.productsCols.name.name,
+					id: 'name_products',
+					sortable: true,
+					dataIndex: SM.productsCols.name.colName,
+					tooltip: getText('Product Name'),
+		                	width: 250,
+					editor: new fm.TextField({
+						allowBlank: false,
+		                width: 250
+					})
+				},
+				{
+					header: SM.productsCols.price.name,
+					id: 'price',
+					align: 'right',
+					sortable: true,
+					dataIndex: SM.productsCols.price.colName,
+					tooltip: getText('Price'),
+					renderer: amountRenderer,
+		            width: 70,
+					editor: new fm.NumberField({
+						allowBlank: true,
+		                allowNegative: true,
+		                width: 70,
+		                decimalPrecision:sm_amount_decimal_precision
+					})
+				},{
+					header: SM.productsCols.salePrice.name,
+					id: 'salePrice',
+					sortable: true,
+					align: 'right',
+		            width: 70,
+					dataIndex: SM.productsCols.salePrice.colName,
+					renderer: amountRenderer,
+					tooltip: getText('Sale Price'),
+					editor: new fm.NumberField({
+						allowBlank: true,
+						allowNegative: true,
+		                width: 70,
+		                decimalPrecision:sm_amount_decimal_precision
+					})
+				},{
+		            header: SM.productsCols.salePriceFrom.name,
+		            id: 'salePriceFrom',
+					sortable: true,
+		            hidden: true,
+					tooltip: getText('Sale Price From'),
+		            dataIndex: SM.productsCols.salePriceFrom.colName,
+		            renderer: formatDate,
+		                            width: 80,
+		            editor: new fm.DateField({
+		                format: 'm/d/y',
+		                editable: true,
+		                allowBlank: true,
+						allowNegative: false,
+		                width: 80
+		            })
+		        },{
+		            header: SM.productsCols.salePriceTo.name,
+		            id: 'salePriceTo',
+					sortable: true,
+		            hidden: true,
+		            tooltip: getText('Sale Price To'),
+		            width: 80,
+		            dataIndex: SM.productsCols.salePriceTo.colName,
+		            renderer: formatDate,
+		            editor: new fm.DateField({
+		                format: 'm/d/y',
+		                editable: true,
+		                allowBlank: true,
+		                allowNegative: false,
+		                width: 80
+		            })
+		        },{
+					header: SM.productsCols.inventory.name,
+					id: 'inventory',
+					sortable: true,
+		                        width: 40,
+					align: 'right',
+					dataIndex: SM.productsCols.inventory.colName,
+					tooltip: getText('Inventory'),
+					editor: new fm.NumberField({
+						allowBlank: true,
+						allowNegative: true,
+		                                size: 22
+					})
+				},{
+					header: SM.productsCols.sku.name,
+					id: 'sku',
+		                        width: 70,
+					sortable: true,
+					dataIndex: SM.productsCols.sku.colName,
+					tooltip: getText('SKU'),
+					editor: new fm.TextField({
+						allowBlank: true,
+		                                width: 70
+					})
+				},{
+					header: SM.productsCols.group.name,
+					id: 'group',
+		                        width: 100,
+					sortable: true,
+					dataIndex: SM.productsCols.group.colName,
+					tooltip: getText('Category')
+				},{
+					header: SM.productsCols.attributes.name,
+					id: 'attributes',
+		            width: 100,
+		            hidden: true,
+					sortable: true,
+					dataIndex: SM.productsCols.attributes.colName,
+					tooltip: getText('Attributes')
+				},{
+					header: SM.productsCols.weight.name,
+					id: 'weight',
+					colSpan: 2,
+		            width: 60,
+					sortable: true,
+					align: 'right',
+					dataIndex: SM.productsCols.weight.colName,
+					tooltip: getText('Weight'),
+					// renderer: amountRenderer,
+					renderer: dimensionsRenderer,
+					editor: new fm.NumberField({
+						allowBlank: true,
+						allowNegative: false,
+		                width: 60,
+		                decimalPrecision:sm_dimensions_decimal_precision
+					})
+				},{
+					header: SM.productsCols.publish.name,
+					id: 'publish',
+					width: 60,
+					sortable: true,
+					dataIndex: SM.productsCols.publish.colName,
+					tooltip: getText('Product Status'),
+					renderer: Ext.util.Format.comboRenderer(productStatusCombo)
+				},{
+					header: SM.productsCols.desc.name,
+					id: 'desc',
+		//			dataIndex: SM.productsCols.desc.colName,
+					tooltip: getText('Description'),
+					width: 180,
+		                        hideable: false,
+		                        hidden: true,
+					editor: new fm.TextArea({				
+						autoHeight: true,
+						grow: true,
+		                                width: 180,
+						growMax: 10000
+					})
+				},{
+					header: SM.productsCols.addDesc.name,
+					id: 'addDesc',
+					hidden: true,
+		                        width: 180,
+		//			dataIndex: SM.productsCols.addDesc.colName,
+					tooltip: getText('Additional Description'),
+					hideable: false,
+					editor: new fm.TextArea({
+						autoHeight: true,
+						grow: true,
+						growMax: 10000
+					})
+				},{
+					header: SM.productsCols.height.name,
+					id: 'height',
+					hidden: true,
+		            width: 60,
+					colSpan: 2,
+					sortable: true,
+					align: 'right',
+					dataIndex: SM.productsCols.height.colName,
+					tooltip: getText('Height'),		
+					// renderer: amountRenderer,
+					renderer: dimensionsRenderer,
+					editor: new fm.NumberField({
+						allowBlank: true,
+						allowNegative: false,
+						decimalPrecision:sm_dimensions_decimal_precision
+					})
+				},{
+					header: SM.productsCols.width.name,
+					id: 'width',
+					hidden: true,
+		                        width: 60,
+					colSpan: 2,
+					sortable: true,
+					align: 'right',
+					dataIndex: SM.productsCols.width.colName,
+					tooltip: getText('Width'),
+					// renderer: amountRenderer,
+					renderer: dimensionsRenderer,
+					editor: new fm.NumberField({
+						allowBlank: true,
+						allowNegative: false,
+						decimalPrecision:sm_dimensions_decimal_precision
+					})
+				},{
+					header: SM.productsCols.lengthCol.name,
+					id: 'lengthCol',
+					hidden: true,
+		            width: 60,
+					colSpan: 2,
+					sortable: true,
+					align: 'right',
+					dataIndex: SM.productsCols.lengthCol.colName,
+					tooltip: getText('Length'),		
+					// renderer: amountRenderer,
+					renderer: dimensionsRenderer,
+					editor: new fm.NumberField({
+						allowBlank: true,
+						allowNegative: false,
+						decimalPrecision:sm_dimensions_decimal_precision
+					})
+				},{
+		            header: SM.productsCols.visibility.name,
+		            id: 'visibility',
+		            width: 100,
+		            sortable: true,
+		            hidden: true,
+		            dataIndex: SM.productsCols.visibility.colName,
+		            tooltip: getText('Product Visibility'),
+		            renderer: Ext.util.Format.comboRenderer(visibilityCombo)
+		        },{
+					header: SM.productsCols.taxStatus.name,
+					id: 'taxStatus',
+					width: 90,
+					hidden: true,
+					sortable: true,
+					dataIndex: SM.productsCols.taxStatus.colName,
+					tooltip: getText('Tax Status'),
+		            renderer: Ext.util.Format.comboRenderer(taxStatusCombo)
+				}];
+
+// Code to create render fields array for products dashboard
+var products_render_fields = new Array();
+
+products_render_fields = [
+							{name: SM.productsCols.id.colName,                type: 'int'},
+							{name: SM.productsCols.name.colName,              type: 'string'},
+							{name: SM.productsCols.price.colName,             type: 'string'},
+							{name: SM.productsCols.salePrice.colName,         type: 'string'},
+							{name: SM.productsCols.salePriceFrom.colName,     type: 'date', dateFormat: 'Y-m-d'},
+							{name: SM.productsCols.salePriceTo.colName,       type: 'date', dateFormat: 'Y-m-d'},
+							{name: SM.productsCols.inventory.colName,         type: 'string'},
+							{name: SM.productsCols.publish.colName,           type: 'string'},
+							{name: SM.productsCols.sku.colName,               type: 'string'},
+							{name: SM.productsCols.group.colName,             type: 'string'},
+							{name: SM.productsCols.attributes.colName,             type: 'string'},
+							{name: SM.productsCols.desc.colName,              type: 'string'},
+							{name: SM.productsCols.addDesc.colName,           type: 'string'},
+							{name: SM.productsCols.weight.colName,            type: 'string'},
+							{name: SM.productsCols.height.colName,            type: 'string'},
+							{name: SM.productsCols.width.colName,             type: 'string'},
+							{name: SM.productsCols.lengthCol.colName,         type: 'string'},
+							{name: SM.productsCols.post_parent.colName,	      type: 'int'},
+							{name: SM.productsCols.image.colName,	      	  type: 'string'},
+							{name: SM.productsCols.taxStatus.colName,	      type: 'string'},
+			                {name: SM.productsCols.visibility.colName,        type: 'string'}
+			            ];
+
+jQuery(function($) {
+	
+	column_index = products_columns.length;
+	render_index = products_render_fields.length;
+
+	$.each(SM.productsCols, function(index, value) {
+
+	    if (value.hasOwnProperty('colType') && value.colType == 'custom_column' && value.name != 'Other Meta') {
+
+	    	var product_column = new Object();
+        	product_column.header = value.name;
+        	product_column.dataIndex = value.value;
+        	product_column.width = 50;
+        	product_column.editable = true;
+        	product_column.hidden = true;
+        	product_column.type = 'custom'; // field to detect custom fields
+
+        	if (value.dataType == "bool") {
+        		product_column.editor = yesNoCombo_inline;
+        	} else if (value.dataType == "date") {
+        		product_column.editor = new fm.DateField({
+					format: 'm/d/y',
+					editable: false,
+					allowBlank: false,
+					allowNegative: false,
+					width: 50
+				});
+        	} else if (value.dataType == "select") {
+
+        		var select = new Array();
+        		var temp = value.values;
+				var array_index = 0;
+
+        		$.each(temp, function(index, value) {
+		    		select [array_index] = new Array();
+		    		select [array_index][0] = index;
+		    		select [array_index][1] = value;
+		    		array_index++;
+		    	});
+
+        		product_column.editor = new Ext.form.ComboBox({
+											typeAhead: true,
+											triggerAction: 'all',
+											lazyRender:true,
+											editable: false,
+											mode: 'local',
+											store: new Ext.data.ArrayStore({
+														id: 0,
+														fields: ['value','name'],
+														data: select
+													}),
+											valueField: 'value',
+											displayField: 'name'
+										});
+        	} else if (value.dataType == "int") {
+				product_column.editor = new fm.NumberField({
+											allowBlank: true,
+											allowNegative: false,
+							                width: 50,
+							                decimalPrecision:sm_dimensions_decimal_precision
+										});
+        	}else {
+        		product_column.editor= new fm.TextField({ allowBlank: true, allowNegative: true});	
+        	}
+
+        	products_columns [column_index] = product_column;
+
+        	column_index++;
+
+
+	        //Code for rendering array
+
+        	if (fileExists == 1) {
+		    	var product_column_render = new Object();
+	        	product_column_render.name = value.value;
+	        	product_column_render.type = value.dataType;
+	        	product_column_render.table = value.tableName;
+	        	products_render_fields [render_index] = product_column_render;
+
+	        	render_index++;
+        	}
+	    }
+	});
+});
+
+render_index = products_columns.length;
+
+products_columns [render_index] = {
+											header: getText('Edit'),
+											id: 'edit',
+											width: 30,
+											sortable: true,
+											tooltip: getText('Product Info'),
+											dataIndex: 'edit_url',
+								                        dragable:false,
+											renderer: function (value, metaData, record, rowIndex, colIndex, store) {
+								            
+								                        if(record.get('post_parent') == 0 || record['json']['product_type'] == "grouped") {
+								                    return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
+								                }
+											}
+										};
+
+render_index++;
+
+products_columns [render_index] = {
+											header: '',
+						                    id: 'products_scroll',
+						                    width: 6.9,
+						                    Fixed: true,
+						                    sortable:false,
+						                    menuDisabled : true,
+						                    hideable: false,
+						                    dragable:false
+										};
+
+
 //Code to enable disabling any column to be moved to the place of the one which cannot be dragged
 Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
   moveColumn: function (oldIndex, newIndex) {
     
+  	var product_scroll_index = products_columns.length - 1;
+  	var edit_url_index = products_columns.length - 2;
+
+  	var new_index_calc = products_columns.length - 3;
+
     if (newIndex == 1) {
       newIndex = 2;
     }
-    else if (newIndex == 21 || newIndex == 20) {
-      newIndex = 19;
+    else if (newIndex == edit_url_index || newIndex == product_scroll_index) {
+      newIndex = new_index_calc;
     }
     
     var c = this.config[oldIndex];
@@ -866,302 +1281,26 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
     this.fireEvent("columnmoved", this, oldIndex, newIndex);
   }
 });  
-        
-	var productsColumnModel = new Ext.ProductsColumnModel({
-                
 
+var productsColumnModel = new Ext.ProductsColumnModel({
+	columns: products_columns,
+	listeners: {
+		hiddenchange: function( ColumnModel,columnIndex, hidden ){
 
-		columns: [editorGridSelectionModel,
-		{
-			header: '',
-			id: 'type',
-			dataIndex: SM.productsCols.post_parent.colName,
-			tooltip: getText('Type'),
-                	width: 10,
-			hidden: true,
-                        dragable:false,
-			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-				return (value == 0 ? '<img id=editUrl src="' + imgURL + 'fav.gif"/>' : '');
+			if (ColumnModel.columns[columnIndex].hasOwnProperty('type')) {
+				if (ColumnModel.columns[columnIndex].type == 'custom' && fileExists == 0) {
+					Ext.notification.msg('Smart Manager',"Custom fields available only in Pro version" );
+					ColumnModel.columns[columnIndex].hidden = true;
+					return true;
+				}	
 			}
-		},
-		{
-			header: SM.productsCols.image.name,
-			id: 'image',
-			dataIndex: SM.productsCols.image.colName,
-			tooltip: getText('Product Images'),
-                        width: 30,
-			hidden: true,
-			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-				return (record.data.thumbnail != 'false' ? '<img width=16px height=16px src="' + record.data.thumbnail + '"/>' : '');
-			}
-		},
-		{
-			header: SM.productsCols.name.name,
-			id: 'name_products',
-			sortable: true,
-			dataIndex: SM.productsCols.name.colName,
-			tooltip: getText('Product Name'),
-                	width: 250,
-			editor: new fm.TextField({
-				allowBlank: false,
-                                width: 250
-			})
-		},
-		{
-			header: SM.productsCols.price.name,
-			id: 'price',
-			align: 'right',
-			sortable: true,
-			dataIndex: SM.productsCols.price.colName,
-			tooltip: getText('Price'),
-			renderer: amountRenderer,
-            width: 70,
-			editor: new fm.NumberField({
-				allowBlank: true,
-                allowNegative: true,
-                width: 70,
-                decimalPrecision:sm_amount_decimal_precision
-			})
-		},{
-			header: SM.productsCols.salePrice.name,
-			id: 'salePrice',
-			sortable: true,
-			align: 'right',
-            width: 70,
-			dataIndex: SM.productsCols.salePrice.colName,
-			renderer: amountRenderer,
-			tooltip: getText('Sale Price'),
-			editor: new fm.NumberField({
-				allowBlank: true,
-				allowNegative: true,
-                width: 70,
-                decimalPrecision:sm_amount_decimal_precision
-			})
-		},{
-            header: SM.productsCols.salePriceFrom.name,
-            id: 'salePriceFrom',
-			sortable: true,
-            hidden: true,
-			tooltip: getText('Sale Price From'),
-            dataIndex: SM.productsCols.salePriceFrom.colName,
-            renderer: formatDate,
-                            width: 80,
-            editor: new fm.DateField({
-                format: 'm/d/y',
-                editable: true,
-                allowBlank: true,
-				allowNegative: false,
-                width: 80
-            })
-        },{
-            header: SM.productsCols.salePriceTo.name,
-            id: 'salePriceTo',
-			sortable: true,
-            hidden: true,
-            tooltip: getText('Sale Price To'),
-            width: 80,
-            dataIndex: SM.productsCols.salePriceTo.colName,
-            renderer: formatDate,
-            editor: new fm.DateField({
-                format: 'm/d/y',
-                editable: true,
-                allowBlank: true,
-                allowNegative: false,
-                width: 80
-            })
-        },{
-			header: SM.productsCols.inventory.name,
-			id: 'inventory',
-			sortable: true,
-                        width: 40,
-			align: 'right',
-			dataIndex: SM.productsCols.inventory.colName,
-			tooltip: getText('Inventory'),
-			editor: new fm.NumberField({
-				allowBlank: true,
-				allowNegative: true,
-                                size: 22
-			})
-		},{
-			header: SM.productsCols.sku.name,
-			id: 'sku',
-                        width: 70,
-			sortable: true,
-			dataIndex: SM.productsCols.sku.colName,
-			tooltip: getText('SKU'),
-			editor: new fm.TextField({
-				allowBlank: true,
-                                width: 70
-			})
-		},{
-			header: SM.productsCols.group.name,
-			id: 'group',
-                        width: 100,
-			sortable: true,
-			dataIndex: SM.productsCols.group.colName,
-			tooltip: getText('Category')
-		},{
-			header: SM.productsCols.attributes.name,
-			id: 'attributes',
-            width: 100,
-            hidden: true,
-			sortable: true,
-			dataIndex: SM.productsCols.attributes.colName,
-			tooltip: getText('Attributes')
-		},{
-			header: SM.productsCols.weight.name,
-			id: 'weight',
-			colSpan: 2,
-            width: 60,
-			sortable: true,
-			align: 'right',
-			dataIndex: SM.productsCols.weight.colName,
-			tooltip: getText('Weight'),
-			// renderer: amountRenderer,
-			renderer: dimensionsRenderer,
-			editor: new fm.NumberField({
-				allowBlank: true,
-				allowNegative: false,
-                width: 60,
-                decimalPrecision:sm_dimensions_decimal_precision
-			})
-		},{
-			header: SM.productsCols.publish.name,
-			id: 'publish',
-			width: 60,
-			sortable: true,
-			dataIndex: SM.productsCols.publish.colName,
-			tooltip: getText('Product Status'),
-			renderer: Ext.util.Format.comboRenderer(productStatusCombo)
-		},{
-			header: SM.productsCols.desc.name,
-			id: 'desc',
-//			dataIndex: SM.productsCols.desc.colName,
-			tooltip: getText('Description'),
-			width: 180,
-                        hideable: false,
-                        hidden: true,
-			editor: new fm.TextArea({				
-				autoHeight: true,
-				grow: true,
-                                width: 180,
-				growMax: 10000
-			})
-		},{
-			header: SM.productsCols.addDesc.name,
-			id: 'addDesc',
-			hidden: true,
-                        width: 180,
-//			dataIndex: SM.productsCols.addDesc.colName,
-			tooltip: getText('Additional Description'),
-			hideable: false,
-			editor: new fm.TextArea({
-				autoHeight: true,
-				grow: true,
-				growMax: 10000
-			})
-		},{
-			header: SM.productsCols.height.name,
-			id: 'height',
-			hidden: true,
-            width: 60,
-			colSpan: 2,
-			sortable: true,
-			align: 'right',
-			dataIndex: SM.productsCols.height.colName,
-			tooltip: getText('Height'),		
-			// renderer: amountRenderer,
-			renderer: dimensionsRenderer,
-			editor: new fm.NumberField({
-				allowBlank: true,
-				allowNegative: false,
-				decimalPrecision:sm_dimensions_decimal_precision
-			})
-		},{
-			header: SM.productsCols.width.name,
-			id: 'width',
-			hidden: true,
-                        width: 60,
-			colSpan: 2,
-			sortable: true,
-			align: 'right',
-			dataIndex: SM.productsCols.width.colName,
-			tooltip: getText('Width'),
-			// renderer: amountRenderer,
-			renderer: dimensionsRenderer,
-			editor: new fm.NumberField({
-				allowBlank: true,
-				allowNegative: false,
-				decimalPrecision:sm_dimensions_decimal_precision
-			})
-		},{
-			header: SM.productsCols.lengthCol.name,
-			id: 'lengthCol',
-			hidden: true,
-            width: 60,
-			colSpan: 2,
-			sortable: true,
-			align: 'right',
-			dataIndex: SM.productsCols.lengthCol.colName,
-			tooltip: getText('Length'),		
-			// renderer: amountRenderer,
-			renderer: dimensionsRenderer,
-			editor: new fm.NumberField({
-				allowBlank: true,
-				allowNegative: false,
-				decimalPrecision:sm_dimensions_decimal_precision
-			})
-		},{
-            header: SM.productsCols.visibility.name,
-            id: 'visibility',
-            width: 100,
-            sortable: true,
-            hidden: true,
-            dataIndex: SM.productsCols.visibility.colName,
-            tooltip: getText('Product Visibility'),
-            renderer: Ext.util.Format.comboRenderer(visibilityCombo)
-        },{
-			header: SM.productsCols.taxStatus.name,
-			id: 'taxStatus',
-			width: 90,
-			hidden: true,
-			sortable: true,
-			dataIndex: SM.productsCols.taxStatus.colName,
-			tooltip: getText('Tax Status'),
-            renderer: Ext.util.Format.comboRenderer(taxStatusCombo)
-		},{
-			header: getText('Edit'),
-			id: 'edit',
-			width: 30,
-			sortable: true,
-			tooltip: getText('Product Info'),
-			dataIndex: 'edit_url',
-                        dragable:false,
-			renderer: function (value, metaData, record, rowIndex, colIndex, store) {
-            
-                        if(record.get('post_parent') == 0 || record['json']['product_type'] == "grouped") {
-                    return '<img id=editUrl src="' + imgURL + 'edit.gif"/>';
-                }
-			}
-		},{
-			header: '',
-                        id: 'products_scroll',
-                        width: 6.9,
-                        Fixed: true,
-                        sortable:false,
-                        menuDisabled : true,
-                        hideable: false,
-                        dragable:false
-		}],
-		listeners: {
-			hiddenchange: function( ColumnModel,columnIndex, hidden ){
-                            state_apply = true;
-			}
-                        
-		},
-		defaultSortable: true
-	});	
-			
+            state_apply = true;
+		}
+                    
+	},
+	defaultSortable: true
+});	
+
 	// created a custom jsonreader by extending JsonReader and overridding read function 
 	// to escape invisible/white space characters from the responseText
 	Ext.data.customJsonReader = Ext.extend(Ext.data.JsonReader,{
@@ -1181,29 +1320,7 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 	var productsJsonReader = new Ext.data.JsonReader({
 		totalProperty: 'totalCount',
 		root: 'items',
-		fields: [
-				{name: SM.productsCols.id.colName,                type: 'int'},
-				{name: SM.productsCols.name.colName,              type: 'string'},
-				{name: SM.productsCols.price.colName,             type: 'string'},
-				{name: SM.productsCols.salePrice.colName,         type: 'string'},
-				{name: SM.productsCols.salePriceFrom.colName,     type: 'date', dateFormat: 'Y-m-d'},
-				{name: SM.productsCols.salePriceTo.colName,       type: 'date', dateFormat: 'Y-m-d'},
-				{name: SM.productsCols.inventory.colName,         type: 'string'},
-				{name: SM.productsCols.publish.colName,           type: 'string'},
-				{name: SM.productsCols.sku.colName,               type: 'string'},
-				{name: SM.productsCols.group.colName,             type: 'string'},
-				{name: SM.productsCols.attributes.colName,             type: 'string'},
-				{name: SM.productsCols.desc.colName,              type: 'string'},
-				{name: SM.productsCols.addDesc.colName,           type: 'string'},
-				{name: SM.productsCols.weight.colName,            type: 'string'},
-				{name: SM.productsCols.height.colName,            type: 'string'},
-				{name: SM.productsCols.width.colName,             type: 'string'},
-				{name: SM.productsCols.lengthCol.colName,         type: 'string'},
-				{name: SM.productsCols.post_parent.colName,	      type: 'int'},
-				{name: SM.productsCols.image.colName,	      	  type: 'string'},
-				{name: SM.productsCols.taxStatus.colName,	      type: 'string'},
-                {name: SM.productsCols.visibility.colName,        type: 'string'}
-                ]
+		fields: products_render_fields
 		
 	});	
 
@@ -1351,7 +1468,9 @@ Ext.ProductsColumnModel = Ext.extend(Ext.grid.ColumnModel, {
 		showAddProductButton();
 		showDeleteButton();
 		pagingToolbar.doLayout(true,true);
-		batchUpdateToolbar.items.items[2].show();		
+
+		batchUpdateToolbar.items.items[2].show();
+		// batchUpdateToolbar.items.items[0].items.items[13].show();		
 		
 		for(var i=2;i<=8;i++)
 		editorGrid.getTopToolbar().get(i).hide();
@@ -1456,6 +1575,13 @@ var pagingToolbar = new Ext.PagingToolbar({
 				jQuery('input[id^="sm_advanced_search_box_value_"]').each(function() {
 				    search_query.push(jQuery(this).val());
 				});
+
+				// var column_headers = '';
+
+				// if ( SM.activeModule == 'Products' ) {
+				// 	column_headers = Ext.encode(products_columns);
+				// 	// column_headers = products_columns;
+				// }
 
                 Ext.DomHelper.append(Ext.getBody(), { 
                     tag: 'iframe', 
@@ -1589,13 +1715,22 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 
             firstToolbar.items.items[8].reset();
             firstToolbar.items.items[8].hide();
+
+            firstToolbar.items.items[10].reset();
+            firstToolbar.items.items[10].hide();
+
+            firstToolbar.items.items[12].hide(); // hide the warning icon
             
+            batchUpdatePanel.items.items[0].items.items[2].show(); // show the add row btn
+
             firstToolbar.items.items[9].hide();
             firstToolbar.items.items[2].show(); // As the same is hidden if the Image functionality not available
-            
+           
             //Code for reseting the Image button icon
             jQuery('.x-batchimage').css('background-image', 'url(' + imgURL + 'batch_image.gif' + ')');
             jQuery('.x-batchimage').css('background-size', '100% 100%');
+
+            toolbarCount = 1; // re-initialize the toolbarCount variable
         }
 
         // Function to duplicate the Selected Products
@@ -2199,12 +2334,39 @@ var categoryStore = new Ext.data.ArrayStore({
 	autoDestroy: false
 });
 
+
+// Code to create the stores for custom columns
+var storedata_array = new Array();
+
+jQuery(function($) {
+	$.each(SM.productsCols, function(index, value) {
+	    if (value.hasOwnProperty('values')) {
+	    	// storenm = index + 'StoreData';
+	    	storenm = index;
+			storedata_array [storenm] = new Array();
+			var array_index = 0;
+
+	    	var temp = value.values;
+
+	    	$.each(temp, function(index, value) {
+	    		storedata_array [storenm][array_index] = new Array();
+	    		storedata_array [storenm][array_index][0] = index;
+	    		storedata_array [storenm][array_index][1] = value;
+	    		array_index++;
+	    	});
+	    }
+	});
+});
+
+ 
 var taxStatusStoreData = new Array();
 	taxStatusStoreData = [
 							[ 'taxable', getText('Taxable') ],
 							[ 'shipping', getText('Shipping only') ],
 							[ 'none', getText('None') ]
 						 ];
+
+console.log("taxStatusStoreData",taxStatusStoreData);
 
 var visibilityStoreData = new Array();
     visibilityStoreData = [
@@ -2314,8 +2476,12 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							var field_type = SM['productsCols'][this.value].actionType;
 						else
 							var field_type = this.store.reader.jsonData.items[selectedFieldIndex].type;
+						var field = {};
+						field = this.store.reader.jsonData.items[selectedFieldIndex];
 						var field_name = this.store.reader.jsonData.items[selectedFieldIndex].name;
 						var colName = this.store.reader.jsonData.items[selectedFieldIndex].colName;
+						
+
 						var actionsData = new Array();
 						var toolbarParent = this.findParentByType(batchUpdateToolbarInstance, true);
 						var comboCategoriesActionCmp = toolbarParent.get(7);
@@ -2324,51 +2490,69 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var comboCountriesCmp = toolbarParent.get(4);
 						var selectedActionvalue = comboActionCmp.value;
 						var textField2Cmp      = toolbarParent.get(8);
-                                                var lblImg = toolbarParent.get(9);
-                                                var comboFieldCmp = toolbarParent.get(0);
-						
+                        var lblImg = toolbarParent.get(9);
+                        var setTextarea = toolbarParent.get(10); // For description and additional Description
+                        var comboFieldCmp = toolbarParent.get(0);
+
 						toolbarParent.get(5).hide();			//to hide extra space on batchUpdateToolbar
 						comboActionCmp.show(); // As the same is hidden if the Image functionality not available
                                                 
+						toolbarParent.get(12).hide(); // to hide the warning icon
+
 						objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;;
 						regexError = getText('Only numbers are allowed');
 						
+						//Code for handling custom fields columns
+						var actionType = '';
+						if(SM.activeModule == 'Products'){
+							actionType = this.store.reader.jsonData.items[selectedFieldIndex].actionType;
+						}
+
 							if(SM['productsCols'][this.value] != undefined ){
 								var categoryActionType = SM['productsCols'][this.value].actionType;
 							}							
-                                                        setTextfield.emptyText="Enter the Value...";
+                        	setTextfield.emptyText="Enter the Value...";
+                        	setTextarea.emptyText="Enter the Value...";
+
 							if (field_type == 'category' || categoryActionType == 'category_actions') {
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
-                                                                lblImg.hide();
+                                lblImg.hide();
+                                setTextarea.hide();
 							} else if(colName == '_tax_status' || colName == '_visibility'){
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
-                                                                lblImg.hide();
+                                lblImg.hide();
+                                setTextarea.hide();
 							} else if(field_type == 'attribute_action'){
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
-                                                                lblImg.hide();
+                                lblImg.hide();
+                                setTextarea.hide();
 							} else if (field_type == 'string') {
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
-                                                                lblImg.hide();
-							} else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping') {								
+                                lblImg.hide();
+								setTextarea.hide();
+							} else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping' || actionType == 'YesNoActions') {
+								
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
-                                                                lblImg.hide();
+                                lblImg.hide();
+                                setTextarea.hide();
 							} else if (field_name == 'Weight' || field_name == 'Variations: Weight'||field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
 								setTextfield.show();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
-                                                                lblImg.hide();
+                                lblImg.hide();
+                                setTextarea.hide();
 							} else if(field_name == 'Order Status'){
 								actions_index = field_type;
 								setTextfield.hide();
@@ -2376,46 +2560,85 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
                                                                 comboCountriesCmp.hide();
 								comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
-                                                                lblImg.hide();
+								lblImg.hide();
+								setTextarea.hide();
 							} else if (field_name.indexOf('Country') != -1) {
 								actions_index = 'bigint';
 								setTextfield.hide();
-                                                                setTextfield.emptyText="Enter State/Region...";
+                                setTextfield.emptyText="Enter State/Region...";
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.hide();
 								comboCountriesCmp.show();
 								comboCountriesCmp.reset();
-                                                                lblImg.hide();
+                                lblImg.hide();
+                                setTextarea.hide();
 							} else if (field_name == 'Image') {
-                                                                if (IS_WP35) {
-                                                                    setTextfield.hide();
-                                                                    textField2Cmp.hide();
-                                                                    comboCategoriesActionCmp.hide();
-                                                                    lblImg.show();
-                                                                }
-                                                                else {
-                                                                    comboFieldCmp.setValue(getText('Select a field') + '...');
-                                                                    comboActionCmp.hide();
-                                                                    setTextfield.hide();
-                                                                    textField2Cmp.hide();
-                                                                    comboCategoriesActionCmp.hide();
-                                                                    Ext.notification.msg('Note', 'This feature is available from Wordpress 3.5 onwards');
-                                                                }
+                                if (IS_WP35) {
+                                    setTextfield.hide();
+                                    textField2Cmp.hide();
+                                    comboCategoriesActionCmp.hide();
+                                    lblImg.show();
+                                }
+                                else {
+                                    comboFieldCmp.setValue(getText('Select a field') + '...');
+                                    comboActionCmp.hide();
+                                    setTextfield.hide();
+                                    textField2Cmp.hide();
+                                    comboCategoriesActionCmp.hide();
+                                    Ext.notification.msg('Note', 'This feature is available from Wordpress 3.5 onwards');
+                                }
+                                setTextarea.hide();
 								
+							} else if (field_name == 'Description' || field_name == 'Additional Description') {
+
+								setTextarea.show();
+								setTextfield.hide();
+								textField2Cmp.hide();
+								comboCountriesCmp.hide();
+								comboCategoriesActionCmp.hide();
+								lblImg.hide();
+
+							} else if (field_name == 'Other Meta') {
+
+								setTextfield.emptyText = getText('Enter Meta Key') + '...';
+								setTextfield.reset();
+
+								textField2Cmp.emptyText = getText('Enter Meta Value') + '...';
+								textField2Cmp.reset();
+
+								Ext.QuickTips.register({
+								    target: textField2Cmp.el,
+								    title: getText('Important:'),
+								    text: getText('Enter Meta Value')
+								});
+
+								setTextfield.show();
+								textField2Cmp.show();
+								setTextarea.hide();
+								comboCountriesCmp.hide();
+								comboCategoriesActionCmp.hide();
+								lblImg.hide();
+
+								objRegExp = '';
+								regexError = '';
+
+								toolbarParent.get(12).show(); // to hide the warning icon
+
 							} else {
 								setTextfield.show();
 								textField2Cmp.hide();
-								if (field_type == 'blob' || field_type == 'modStrActions') {
+								if (field_type == 'blob' || field_type == 'modStrActions' || actionType == 'setStrActions') {
 									objRegExp = '';
 									regexError = '';
 								}
 								comboCountriesCmp.hide();
 								comboCategoriesActionCmp.hide();
 								actions_index = field_type;
-                                                                lblImg.hide();
+                                lblImg.hide();
+                                setTextarea.hide();
 							}
 						
-                                                    if(SM.activeModule == 'Orders' || SM.activeModule == 'Customers'){
+                            if(SM.activeModule == 'Orders' || SM.activeModule == 'Customers'){
 							for (j = 0; j < actions[actions_index].length; j++) {
 								actionsData[j] = new Array();
 								actionsData[j][0] = actions[actions_index][j].id;
@@ -2438,6 +2661,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							setTextfield.regexText = regexError;	
 						}
 						setTextfield.reset();
+						setTextarea.reset();
 						comboActionCmp.reset();
 						
 											
@@ -2513,16 +2737,26 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var selectedActionvalue = comboactionCmp.value;
 						var comboCategoriesActionCmp = toolbarParent.get(7);
 						var textField2Cmp      = toolbarParent.get(8);
+						var setTextarea        = toolbarParent.get(10);
 						var comboactionvalue   = comboactionCmp.value;
-                                                var combofieldvalue    = comboFieldCmp.value;
-						
-                                                if(SM.activeModule == 'Products' && field_name != 'Image') {
-                                                    textField1Cmp.show();
-                                                }
-                                                
-                                                if (comboactionvalue == 'YES' || comboactionvalue == 'NO' || comboactionvalue == 'SET_TO_SALES_PRICE' || comboactionvalue == 'SET_TO_REGULAR_PRICE' || (comboactionvalue == 'SET_TO' && (combofieldvalue == 'visibility' || combofieldvalue == 'taxStatus'))) {
-                                                    textField1Cmp.hide();
-                                                }
+                        var combofieldvalue    = comboFieldCmp.value;
+
+                        var colName = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].colName;
+
+                        if(SM.activeModule == 'Products' && field_name != 'Image') {
+                        	if (field_name == 'Description' || field_name == 'Additional Description') {
+                        		textField1Cmp.hide();
+                        		setTextarea.show();
+                        	} else {
+                        		textField1Cmp.show();
+                        		setTextarea.hide();	
+                        	}
+                            
+                        }
+                        
+                        if (comboactionvalue == 'YES' || comboactionvalue == 'NO' || comboactionvalue == 'SET_TO_SALES_PRICE' || comboactionvalue == 'SET_TO_REGULAR_PRICE' || (comboactionvalue == 'SET_TO' && (combofieldvalue == 'visibility' || combofieldvalue == 'taxStatus' || storedata_array[colName] != undefined))) {
+                            textField1Cmp.hide();
+                        }
                                                 
 						if ( selectedValue.substring( 0, 14 ) == 'groupAttribute' ){
 							if( selectedActionvalue == 'custom'){
@@ -2531,9 +2765,18 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								textField1Cmp.emptyText = getText('Enter Attribute Name') + '...';
 								textField1Cmp.regex = null;
 								textField1Cmp.show();
+								textField2Cmp.emptyText = getText('Enter values') + '...';
+
+								Ext.QuickTips.register({
+								    target: textField2Cmp.el,
+								    title: getText('Important:'),
+								    text: getText('For more than one values, use pipe (|) as delimiter')
+								});
+								
 								textField2Cmp.show();
 								textField1Cmp.reset();
 								textField2Cmp.reset();
+								setTextarea.hide();	
 							} else {
 
 								comboCategoriesActionCmp.hide();
@@ -2542,6 +2785,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								textField2Cmp.reset();
 								textField1Cmp.hide();
 								textField2Cmp.hide();
+								setTextarea.hide();	
 								var object = {
 												// url:jsonURL
 												url: ajaxurl + '?action=sm_include_file'
@@ -2582,6 +2826,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						} else if ( selectedValue.substring( 0, 5 ) == 'group' ) {
                                                     textField1Cmp.hide();
                                                     textField2Cmp.hide();
+                                                    setTextarea.hide();	
                                                 }
 					}
 				}
@@ -2710,14 +2955,19 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var selectedValue      = comboFieldCmp.value;
 						var field_name		   = toolbarParent.items.items[0].store.reader.jsonData.items[selectedFieldIndex].name;
 						var colName			   = toolbarParent.items.items[0].store.reader.jsonData.items[selectedFieldIndex].colName;
-						
+						var actionType		   = toolbarParent.items.items[0].store.reader.jsonData.items[selectedFieldIndex].actionType;
+					
+						// storedata_array
+
 						if (SM.activeModule == 'Products') {
 							if ( selectedValue.substring( 0, 14 ) != 'groupAttribute' ){
 								if ( colName == '_tax_status' ) {
                                     categoryStore.loadData( taxStatusStoreData );
                                 } else if ( field_name == 'Visibility' ) {
                                     categoryStore.loadData( visibilityStoreData );
-                                } else {
+                                } else if (storedata_array[colName] != 'undefined') {
+                                	categoryStore.loadData( storedata_array[colName] );
+                                }else {
                                     var category = categories["category-"+SM['productsCols'][selectedValue].colFilter];
                                     if ( category instanceof Object ) {
                                         var categoryData = [];
@@ -2814,14 +3064,71 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
                                         
                                         file_frame.open();
                                 }
-                        }, '->',
+                        },{
+				xtype: 'textarea',
+				width: 170,
+				allowBlank: true,
+				style: {
+					fontSize: '12px',
+					paddingLeft: '2px'
+				},
+				enableKeyEvents: true,
+				autoScroll: true,
+				displayField: 'fullname',
+				emptyText: getText('Enter the value') + '...',
+				cls: 'searchPanel',
+				hidden: true,
+				selectOnFocus: true,
+				listeners: {
+					beforerender: function( cmp ) {
+						cmp.emptyText = getText('Enter the value') + '...'; 
+					}
+				}
+			}, '->',
 			{
+
+				icon: imgURL + 'warning.png',
+				tooltip: getText('Caution It is critical to put valid data in the expected format otherwise it can wreak havoc')
+			},
+			{
+				text: getText('Add Row'),
+				tooltip: getText('Add a new row') ,
+				ref: 'addRowButton',
+				icon: imgURL + 'add_row.png',
+				handler: function () {
+					var newBatchUpdateToolbar = new batchUpdateToolbarInstance();
+					toolbarCount++;
+					batchUpdatePanel.add(newBatchUpdateToolbar);
+					batchUpdatePanel.doLayout();
+		            
+		            var count_toolbar = toolbarCount-2;
+
+			        if (count_toolbar == 0) {
+			        	batchUpdatePanel.items.items[count_toolbar].items.items[0].items.items[13].hide();
+			        	batchUpdateToolbar.items.items[2].hide();
+			        } else {
+			        	batchUpdatePanel.items.items[count_toolbar].items.items[13].hide();
+			        }
+
+		            batchUpdatePanel.items.items[toolbarCount-1].items.items[12].hide();
+				}
+			},{
 				icon: imgURL + 'del_row.png',
 				tooltip: getText('Delete Row'),
 				handler: function () {
+
+
 					toolbarCount--;
+					// var count_toolbar = toolbarCount-2;
+
 					var toolbarParent = this.findParentByType(batchUpdateToolbarInstance, true);
 					batchUpdatePanel.remove(toolbarParent);
+
+			        if (toolbarCount == 1) {
+			        	batchUpdateToolbar.items.items[2].show();
+			        } else {
+			        	batchUpdatePanel.items.items[toolbarCount-1].items.items[13].show();
+			        }
 				}
 			}]
 		}, config);
@@ -2832,25 +3139,34 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 var batchUpdateToolbar = new Ext.Toolbar({
 	id: 'tl',
 	cls: 'batchtoolbar',
-	items: [new batchUpdateToolbarInstance(), '->',
-	{
-		text: getText('Add Row'),
-		tooltip: getText('Add a new row') ,
-		ref: 'addRowButton',
-		icon: imgURL + 'add_row.png',
-		handler: function () {
-			var newBatchUpdateToolbar = new batchUpdateToolbarInstance();
-			toolbarCount++;
-			batchUpdatePanel.add(newBatchUpdateToolbar);
-			batchUpdatePanel.doLayout();
-                        
-                        var count_toolbar = toolbarCount-1;
-                        var firstToolbar = batchUpdatePanel.items.items[count_toolbar].items.items[9];
-                        firstToolbar.hide();
-		}
-	}]
+	items: [new batchUpdateToolbarInstance(),'->',
+		{
+				text: getText('Add Row'),
+				tooltip: getText('Add a new row') ,
+				ref: 'addRowButton',
+				icon: imgURL + 'add_row.png',
+				handler: function () {
+					var newBatchUpdateToolbar = new batchUpdateToolbarInstance();
+					toolbarCount++;
+					batchUpdatePanel.add(newBatchUpdateToolbar);
+					batchUpdatePanel.doLayout();
+		            
+		            var count_toolbar = toolbarCount-2;
+
+			        if (count_toolbar == 0) {
+			        	batchUpdatePanel.items.items[count_toolbar].items.items[0].items.items[13].hide();
+			        	batchUpdateToolbar.items.items[2].hide();
+			        } else {
+			        	batchUpdatePanel.items.items[count_toolbar].items.items[13].hide();
+			        }
+		            
+		            batchUpdatePanel.items.items[toolbarCount-1].items.items[12].hide();
+				}
+		}]
 });
-batchUpdateToolbar.get(0).get(11).hide(); //hide delete row icon from first toolbar.
+batchUpdateToolbar.get(0).get(12).hide(); //hide warning row icon from first toolbar.
+batchUpdateToolbar.get(0).get(13).hide(); //hide Add row btn from first toolbar.
+batchUpdateToolbar.get(0).get(14).hide(); //hide delete row icon from first toolbar.
 
 
 var batchUpdatePanel = new Ext.Panel({
@@ -2897,6 +3213,23 @@ var batchUpdatePanel = new Ext.Panel({
 			}else{
 				store = productsStore;
 				cm = productsColumnModel;
+
+				var other_meta_flag = 0;
+
+				for(sb=0; sb<toolbarCount; sb++) {
+
+					if (sb == 0) {
+						colId = batchUpdatePanel.items.items[sb].items.items[0].items.items[0].value;
+					} else {
+						colId = batchUpdatePanel.items.items[sb].items.items[0].value;
+					}
+
+					if (colId == 'other_meta') {
+						other_meta_flag = 1;
+						break;
+					}
+				}
+
 			}
 			batchUpdateRecords(batchUpdatePanel,toolbarCount,cnt_array,store,jsonURL,batchUpdateWindow,radioValue,flag,pagingToolbar,SM_IS_WOO16,SM_IS_WOO21);
 		}}
@@ -3296,7 +3629,7 @@ var showCustomerDetails = function(record,rowIndex){
 			for(var i=2;i<=8;i++)
 			editorGrid.getTopToolbar().get(i).hide();
 			editorGrid.getTopToolbar().get('incVariation').hide();
-                        editorGrid.getTopToolbar().get('duplicateButton').hide();
+            editorGrid.getTopToolbar().get('duplicateButton').hide();
 
 			if(customersFields != 0)
 			fieldsStore.loadData(customersFields);

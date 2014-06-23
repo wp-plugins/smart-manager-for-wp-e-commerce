@@ -63,6 +63,9 @@ if ((WPSC_RUNNING === true && WOO_RUNNING === true) || WPSC_RUNNING === true) {
 $updater = rand(3.0,3.9);
 
 if (WPSC_RUNNING === true) {
+
+	global $wpdb;
+
 	if ( defined('IS_WPSC388') && IS_WPSC388 )	
 		$orders_details_url = $site_url . "/wp-admin/index.php?page=wpsc-purchase-logs&c=item_details&id=";
 	else
@@ -74,37 +77,49 @@ if (WPSC_RUNNING === true) {
 	
 	// getting orders fieldnames START
 	$query = "SELECT processed,track_id,notes FROM " . WPSC_TABLE_PURCHASE_LOGS;
-	$result = mysql_query ( $query );
+	$result = $wpdb->get_results($query, 'ARRAY_A');
+	$num_rows = $wpdb->num_rows;
+	// $result = mysqli_query ( $query );
 	
 	$ordersfield_result = '';
 	//@todo work on mysql_num_fields instead of data
-	if (mysql_num_rows ( $result ) >= 1) {
-		while ( $data = mysql_fetch_assoc ( $result ) )
-			$ordersfield_data [] = $data;
-		$ordersfield_result = $ordersfield_data [0];
+	// if (mysql_num_rows ( $result ) >= 1) {
+	if ($num_rows > 0) {
+		// while ( $data = mysql_fetch_assoc ( $result ) )
+		// 	$ordersfield_data [] = $data;
+		// $ordersfield_result = $ordersfield_data [0];
+		$ordersfield_result = $result [0];
 	}
+
+
 
 	$ordersfield_names = array ();
 	$cnt = 0;
 	foreach ( ( array ) $ordersfield_result as $ordersfield_name => $ordersfield_value ) {
 		$ordersfield_names ['items'] [$cnt] ['id'] = $cnt;
-		$ordersfield_names ['items'] [$cnt] ['name'] = ucfirst ( mysql_field_name ( $result, $cnt ) );
+		// $ordersfield_names ['items'] [$cnt] ['name'] = ucfirst ( mysql_field_name ( $result, $cnt ) );
+		$ordersfield_names ['items'] [$cnt] ['name'] = ucfirst ( $ordersfield_name );
 		if ($ordersfield_names ['items'] [$cnt] ['name'] == 'Processed')
 			$ordersfield_names ['items'] [$cnt] ['name'] = 'Orders Status';
 		if ($ordersfield_names ['items'] [$cnt] ['name'] == 'Track_id')
 			$ordersfield_names ['items'] [$cnt] ['name'] = 'Track Id';
 		
-		$ordersfield_names ['items'] [$cnt] ['type'] = mysql_field_type ( $result, $cnt );
-		if ($ordersfield_names ['items'] [$cnt] ['type'] == 'int' && $ordersfield_names ['items'] [$cnt] ['name'] == 'Orders Status')
+		// $ordersfield_names ['items'] [$cnt] ['type'] = mysql_field_type ( $result, $cnt );
+		// if ($ordersfield_names ['items'] [$cnt] ['type'] == 'int' && $ordersfield_names ['items'] [$cnt] ['name'] == 'Orders Status')
+		if ($ordersfield_names ['items'] [$cnt] ['name'] == 'Orders Status')
 			$ordersfield_names ['items'] [$cnt] ['type'] = 'bigint';
 		
-		if ($ordersfield_names ['items'] [$cnt] ['type'] == 'string' && $ordersfield_names ['items'] [$cnt] ['name'] == 'Track Id')
+		if ($ordersfield_names ['items'] [$cnt] ['name'] == 'Track Id' || $ordersfield_names ['items'] [$cnt] ['name'] == 'Notes')
 			$ordersfield_names ['items'] [$cnt] ['type'] = 'blob';
-		$ordersfield_names ['items'] [$cnt] ['value'] = mysql_field_name ( $result, $cnt ) . ', ' . mysql_field_table ( $result, $cnt );
+		// $ordersfield_names ['items'] [$cnt] ['value'] = mysql_field_name ( $result, $cnt ) . ', ' . mysql_field_table ( $result, $cnt );
+		$ordersfield_names ['items'] [$cnt] ['value'] = $ordersfield_name . ', '. $wpdb->prefix .'wpsc_purchase_logs';
 		$cnt ++;
 	}
 	
 	if (count ( $ordersfield_names ) >= 1) {
+
+		global $wpdb;
+
 		if (IS_WPSC38) {
 			$query = "SELECT id,name,unique_name
 			 		FROM " . WPSC_TABLE_CHECKOUT_FORMS . " 
@@ -114,16 +129,26 @@ if (WPSC_RUNNING === true) {
 			 		FROM " . WPSC_TABLE_CHECKOUT_FORMS . " 
 					WHERE unique_name IN ('shippingfirstname', 'shippinglastname', 'shippingaddress', 'shippingcity','shippingcountry', 'shippingpostcode')";
 		}
-		$res = mysql_query ( $query );
+		// $res = mysql_query ( $query );
+		
+		$results = $wpdb->get_results ($query, 'ARRAY_A');
+		$num_rows_chkout_frm = $wpdb->num_rows;
+
 		$cnt = count ( $ordersfield_names ['items'] );
-		while ( $data = mysql_fetch_assoc ( $res ) ) {
-			$ordersfield_names ['items'] [$cnt] ['id'] = $cnt;
-			$ordersfield_names ['items'] [$cnt] ['name'] = "Shipping" . ' ' . $data ['name'];
-			$ordersfield_names ['items'] [$cnt] ['type'] = 'blob';
-			$ordersfield_names ['items'] [$cnt] ['value'] = 'value' . ',' . WPSC_TABLE_SUBMITED_FORM_DATA . ',' . $data ['id'];
-			$ordersfield_names ['totalCount'] = $cnt ++;
+		
+		if ($num_rows_chkout_frm > 0) {
+			// while ( $data = mysql_fetch_assoc ( $res ) ) {
+			foreach ( $results as $data ) {
+				$ordersfield_names ['items'] [$cnt] ['id'] = $cnt;
+				$ordersfield_names ['items'] [$cnt] ['name'] = "Shipping" . ' ' . $data ['name'];
+				$ordersfield_names ['items'] [$cnt] ['type'] = 'blob';
+				$ordersfield_names ['items'] [$cnt] ['value'] = 'value' . ',' . WPSC_TABLE_SUBMITED_FORM_DATA . ',' . $data ['id'];
+				$ordersfield_names ['totalCount'] = $cnt ++;
+			}
+
+			$encodedOrdersFields = json_encode ( $ordersfield_names );	
 		}
-		$encodedOrdersFields = json_encode ( $ordersfield_names );
+		
 	} else
 		$encodedOrdersFields = 0;
 
@@ -156,40 +181,62 @@ if (WPSC_RUNNING === true) {
 $encodedOrderStatus = json_encode ( $order_status );
 //getting orders fieldnames END
 
-
+	global $wpdb;
 	//getting customers fieldnames START
 	$form_data_query = "SELECT id,name,unique_name FROM " . WPSC_TABLE_CHECKOUT_FORMS . " WHERE unique_name in ('billingfirstname', 'billinglastname', 'billingaddress', 'billingcity', 'billingstate', 'billingcountry', 'billingpostcode', 'billingphone', 'billingemail')";
-	$form_data_result = mysql_query ( $form_data_query );
-	while ( $data = mysql_fetch_assoc ( $form_data_result ) ) {
-		if (IS_WPSC37) {
-			if ($data ['unique_name'] != 'billingstate')
+	// $form_data_result = mysql_query ( $form_data_query );
+
+	$form_data_result = $wpdb->get_results ($form_data_query, 'ARRAY_A');
+	$form_data_num_rows = $wpdb->num_rows;
+
+	$form_data = array();
+	
+	if ($form_data_num_rows > 0) {
+		// while ( $data = mysql_fetch_assoc ( $form_data_result ) ) {	
+		foreach ( $form_data_result as $data ) {
+			if (IS_WPSC37) {
+				if ($data ['unique_name'] != 'billingstate')
+					$form_data [$data ['id']] = $data ['name'];
+			} elseif (IS_WPSC38)
 				$form_data [$data ['id']] = $data ['name'];
-		} elseif (IS_WPSC38)
-			$form_data [$data ['id']] = $data ['name'];
-	}
-	$cnt = 0;
-	foreach ( ( array ) $form_data as $form_data_key => $form_data_value ) {
-		$customerFields ['items'] [$cnt] ['id'] = $cnt;
-		if ($form_data_value == 'Country' || strstr ( $form_data_value, 'Country' )) {
-			$customerFields ['items'] [$cnt] ['type'] = 'bigint';
-		} else {
-			$customerFields ['items'] [$cnt] ['type'] = 'blob';
 		}
-		
-		$customerFields ['items'] [$cnt] ['name'] = __( $form_data_value, 'smart-manager' );
-		$customerFields ['items'] [$cnt] ['value'] = 'value' . ', ' . WPSC_TABLE_SUBMITED_FORM_DATA . ', ' . $form_data_key;
-		$customerFields ['totalCount'] = $cnt ++;
 	}
+	
+	$customerFields = array();
+
+	if (!empty($form_data)) {
+		$cnt = 0;
+		foreach ( ( array ) $form_data as $form_data_key => $form_data_value ) {
+			$customerFields ['items'] [$cnt] ['id'] = $cnt;
+			if ($form_data_value == 'Country' || strstr ( $form_data_value, 'Country' )) {
+				$customerFields ['items'] [$cnt] ['type'] = 'bigint';
+			} else {
+				$customerFields ['items'] [$cnt] ['type'] = 'blob';
+			}
+			
+			$customerFields ['items'] [$cnt] ['name'] = __( $form_data_value, 'smart-manager' );
+			$customerFields ['items'] [$cnt] ['value'] = 'value' . ', ' . WPSC_TABLE_SUBMITED_FORM_DATA . ', ' . $form_data_key;
+			$customerFields ['totalCount'] = $cnt ++;
+		}
 		if (count ( $customerFields ) >= 1)
 			$encodedCustomersFields = json_encode ( $customerFields );
 		else
-			$encodedCustomersFields = 0;
+			$encodedCustomersFields = 0;	
+	}
+
 	
 	$query = "SELECT * FROM `" . WPSC_TABLE_CURRENCY_LIST . "` ORDER BY `country` ASC";
-	$result = mysql_query ( $query );
+	// $result = mysql_query ( $query );
+
+	$result_currency = $wpdb->get_results ($query, 'ARRAY_A');
+	$num_rows_currency = $wpdb->num_rows;
+
 	$count = 0;
-	if (mysql_num_rows ( $result ) >= 1) {
-		while ( $data = mysql_fetch_assoc ( $result ) ) {
+	// if (mysql_num_rows ( $result ) >= 1) {
+	// 	while ( $data = mysql_fetch_assoc ( $result ) ) {
+
+	if ($num_rows_currency > 0) {
+		foreach ( $result_currency as $data ) {		
 			$countries ['items'] [$count] ['id'] = $count;
 			$countries ['items'] [$count] ['name'] = $data ['country'];
 			$countries ['items'] [$count] ['value'] = $data ['isocode'];
@@ -201,10 +248,17 @@ $encodedOrderStatus = json_encode ( $order_status );
 
 
 $query = "SELECT id,country_id, name, code FROM " . WPSC_TABLE_REGION_TAX;
-$result = mysql_query ( $query );
+// $result = mysql_query ( $query );
+
+$result_region_tax = $wpdb->get_results($query, 'ARRAY_A');
+$num_rows_region_tax = $wpdb->num_rows;
+
 $count = 0;
-if (mysql_num_rows ( $result ) >= 1) {
-	while ( $data = mysql_fetch_assoc ( $result ) ) {
+// if (mysql_num_rows ( $result ) >= 1) {
+// 	while ( $data = mysql_fetch_assoc ( $result ) ) {
+
+if ($num_rows_region_tax > 0) {
+	foreach ( $result_region_tax as $data ) {
 		if (isset( $old_country_id ) && $old_country_id != $data ['country_id'])
 			$count = 0;
 		$regions [$data ['country_id']] ['items'] [] = array ('id' => $count, 'name' => $data ['name'], 'value' => $data ['name'], 'region_id' => $data ['id'] );
@@ -629,34 +683,39 @@ if (WPSC_RUNNING === true) {
 		$attribute_list_query = "SELECT attribute_label, attribute_name, attribute_type FROM {$wpdb->prefix}woocommerce_attribute_taxonomies";
 }
 
-$result = mysql_query ( $query );
+// $result = mysql_query ( $query );
+$result = $wpdb->get_results ( $query, 'ARRAY_A' );
+$category_numrows = $wpdb->num_rows;
 
 $categories = array();
 
-while ( $data = mysql_fetch_assoc ( $result ) ) {
-
-	$count = (isset( $old_group_id ) && $old_group_id != $data ['group_id']) ? 0 : ++ $count;
-	
-	 if($count == 0){//setting the default categories for new product
-	 	$cat_id = $data ['category_id'];
-	 	$cat_name = $wpdb->_real_escape ( $data ['category_name']);
-	 }
-	
-	$categories ["category-" . $data ['group_id']] [$count] [0] = $wpdb->_real_escape ( $data ['category_id'] );
-	$categories ["category-" . $data ['group_id']] [$count] [1] = $wpdb->_real_escape ( $data ['category_name'] );
-	
-	$products_cols ["group" . $data ['group_id']] ['name'] =  __( 'Group', 'smart-manager') . ":" .  $wpdb->_real_escape ( $data ['group_name'] );
-	$products_cols ["group" . $data ['group_id']] ['actionType'] = "category_actions";
-	if (WPSC_RUNNING === true) {
-		$products_cols ["group" . $data ['group_id']] ['colName'] = (IS_WPSC37) ? "category_id" : "term_taxonomy_id";
-		$products_cols ["group" . $data ['group_id']] ['tableName'] = (IS_WPSC37) ? WPSC_TABLE_ITEM_CATEGORY_ASSOC : "{$wpdb->prefix}term_relationships";
-	} elseif (WOO_RUNNING === true){
-		$products_cols ["group" . $data ['group_id']] ['colName'] = "term_taxonomy_id";
-		$products_cols ["group" . $data ['group_id']] ['tableName'] = "{$wpdb->prefix}term_relationships";		
-	}
-	
-	$products_cols ["group" . $data ['group_id']] ['colFilter'] = $wpdb->_real_escape ( $data ['group_id'] );
-	$old_group_id = $data ['group_id']; //string the group_id as old id
+if ($category_numrows > 0) {
+	// while ( $data = mysql_fetch_assoc ( $result ) ) {
+	foreach ($result as $data) {
+		
+		$count = (isset( $old_group_id ) && $old_group_id != $data ['group_id']) ? 0 : ++ $count;
+		
+		 if($count == 0){//setting the default categories for new product
+		 	$cat_id = $data ['category_id'];
+		 	$cat_name = $wpdb->_real_escape ( $data ['category_name']);
+		 }
+		
+		$categories ["category-" . $data ['group_id']] [$count] [0] = $wpdb->_real_escape ( $data ['category_id'] );
+		$categories ["category-" . $data ['group_id']] [$count] [1] = $wpdb->_real_escape ( $data ['category_name'] );
+		
+		$products_cols ["group" . $data ['group_id']] ['name'] =  __( 'Group', 'smart-manager') . ":" .  $wpdb->_real_escape ( $data ['group_name'] );
+		$products_cols ["group" . $data ['group_id']] ['actionType'] = "category_actions";
+		if (WPSC_RUNNING === true) {
+			$products_cols ["group" . $data ['group_id']] ['colName'] = (IS_WPSC37) ? "category_id" : "term_taxonomy_id";
+			$products_cols ["group" . $data ['group_id']] ['tableName'] = (IS_WPSC37) ? WPSC_TABLE_ITEM_CATEGORY_ASSOC : "{$wpdb->prefix}term_relationships";
+		} elseif (WOO_RUNNING === true){
+			$products_cols ["group" . $data ['group_id']] ['colName'] = "term_taxonomy_id";
+			$products_cols ["group" . $data ['group_id']] ['tableName'] = "{$wpdb->prefix}term_relationships";
+		}
+		
+		$products_cols ["group" . $data ['group_id']] ['colFilter'] = $wpdb->_real_escape ( $data ['group_id'] );
+		$old_group_id = $data ['group_id']; //string the group_id as old id
+	}	
 }
 
 if (WPSC_RUNNING === true && IS_WPSC38) {
@@ -673,30 +732,33 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 						where taxonomy = 'wpsc-variation' ORDER BY group_id
 				        ";
 	
-	$result = mysql_query ( $query_categories );
-	// $result_categories = $wpdb->get_results ( $query_categories, 'ARRAY_A' );
+	// $result = mysql_query ( $query_categories );
+	$result_categories = $wpdb->get_results ( $query_categories, 'ARRAY_A' );
 	$wpec_category_rows = $wpdb->num_rows;
 
-	while ( $data = mysql_fetch_assoc ( $result ) ) {
+	if ($wpec_category_rows > 0) {
+		// while ( $data = mysql_fetch_assoc ( $result ) ) {
+		foreach ( $result_categories as $data ) {
 
-		$count = ($old_group_id != $data ['group_id']) ? 0 : ++ $count;
-		
-		 if($count == 0){//setting the default categories for new product
-		 	$cat_id = $data ['category_id'];
-		 	$cat_name = $wpdb->_real_escape ( $data ['category_name']);
-		 }
-		
-		$categories ["category-Variation" . $data ['group_id']] [$count] [0] = $wpdb->_real_escape ( $data ['category_id'] );
-		$categories ["category-Variation" . $data ['group_id']] [$count] [1] = $wpdb->_real_escape ( $data ['category_name'] );
-		
-		$products_cols ["groupVariation" . $data ['group_id']] ['name'] = __("Variation: ",$sm_domain) . $wpdb->_real_escape ( $data ['group_name'] ); 
-		$products_cols ["groupVariation" . $data ['group_id']] ['actionType'] = "category_actions";
-		$products_cols ["groupVariation" . $data ['group_id']] ['colName'] = (IS_WPSC37) ? "category_id" : "term_taxonomy_id";
-		$products_cols ["groupVariation" . $data ['group_id']] ['tableName'] = (IS_WPSC37) ? WPSC_TABLE_ITEM_CATEGORY_ASSOC : "{$wpdb->prefix}term_relationships";
-		$products_cols ["groupVariation" . $data ['group_id']] ['colFilter'] = "Variation" . $wpdb->_real_escape ( $data ['group_id'] );
-		$old_group_id = $data ['group_id']; //string the group_id as old id
+			$count = ($old_group_id != $data ['group_id']) ? 0 : ++ $count;
+			
+			 if($count == 0){//setting the default categories for new product
+			 	$cat_id = $data ['category_id'];
+			 	$cat_name = $wpdb->_real_escape ( $data ['category_name']);
+			 }
+			
+			$categories ["category-Variation" . $data ['group_id']] [$count] [0] = $wpdb->_real_escape ( $data ['category_id'] );
+			$categories ["category-Variation" . $data ['group_id']] [$count] [1] = $wpdb->_real_escape ( $data ['category_name'] );
+			
+			$products_cols ["groupVariation" . $data ['group_id']] ['name'] = __("Variation: ",$sm_domain) . $wpdb->_real_escape ( $data ['group_name'] ); 
+			$products_cols ["groupVariation" . $data ['group_id']] ['actionType'] = "category_actions";
+			$products_cols ["groupVariation" . $data ['group_id']] ['colName'] = (IS_WPSC37) ? "category_id" : "term_taxonomy_id";
+			$products_cols ["groupVariation" . $data ['group_id']] ['tableName'] = (IS_WPSC37) ? WPSC_TABLE_ITEM_CATEGORY_ASSOC : "{$wpdb->prefix}term_relationships";
+			$products_cols ["groupVariation" . $data ['group_id']] ['colFilter'] = "Variation" . $wpdb->_real_escape ( $data ['group_id'] );
+			$old_group_id = $data ['group_id']; //string the group_id as old id
+		}	
 	}
-
+	
 	//advanced search product cols for WPeC
 
 	$index = 0;
@@ -734,18 +796,24 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 
 			if ($products_col['name'] == 'Disregard Shipping' || $products_col['name'] == 'Stock: Quantity Limited'
 				|| $products_col['name'] == 'Stock: Inform When Out Of Stock') {
-				$wpec_products_search_cols [$index]['values'] = array(__('Yes',$sm_domain),
-																	  __('No',$sm_domain));
+				$wpec_products_search_cols [$index]['values'] = array();
+				$wpec_products_search_cols [$index]['values'][0] = array('key' => 'yes', 'value' =>  __('Yes',$sm_domain));
+				$wpec_products_search_cols [$index]['values'][1] = array('key' => 'no', 'value' =>  __('No',$sm_domain));
+
 			} else if ( $products_col['colName'] == "height_unit" ||
 					$products_col['colName'] == "width_unit" || $products_col['colName'] == "length_unit" || (( defined('IS_WPSC3814') && IS_WPSC3814 ) && $products_col['colName'] == "dimension_unit")) {
-				$wpec_products_search_cols [$index]['values'] = array(__('inches',$sm_domain),
-																	  __('cm',$sm_domain),
-																	  __('meter',$sm_domain));
+				$wpec_products_search_cols [$index]['values'] = array();
+				$wpec_products_search_cols [$index]['values'][0] = array('key' => 'in', 'value' =>  __('inches',$sm_domain));
+				$wpec_products_search_cols [$index]['values'][1] = array('key' => 'cm', 'value' =>  __('cm',$sm_domain));
+				$wpec_products_search_cols [$index]['values'][2] = array('key' => 'meter', 'value' =>  __('meter',$sm_domain));
+
 			} else if ($products_col['colName'] == "weight_unit") {
-				$wpec_products_search_cols [$index]['values'] = array(__('pounds',$sm_domain),
-																	  __('ounces',$sm_domain),
-																	  __('grams',$sm_domain),
-																	  __('kilograms',$sm_domain));
+				$wpec_products_search_cols [$index]['values'] = array();
+				$wpec_products_search_cols [$index]['values'][0] = array('key' => 'pound', 'value' =>  __('pounds',$sm_domain));
+				$wpec_products_search_cols [$index]['values'][1] = array('key' => 'ounce', 'value' =>  __('ounces',$sm_domain));
+				$wpec_products_search_cols [$index]['values'][2] = array('key' => 'gram', 'value' =>  __('grams',$sm_domain));
+				$wpec_products_search_cols [$index]['values'][3] = array('key' => 'kilogram', 'value' =>  __('kilograms',$sm_domain));
+				
 			}
 
 			$wpec_products_search_cols [$index]['category'] = "";
@@ -870,18 +938,23 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 			}
 
 			if ($products_col['name'] == 'Visibility') {
-				$products_search_cols [$index]['values'] = array(__('Catalog & Search',$sm_domain),
-																__('Catalog',$sm_domain),
-																__('Search',$sm_domain),
-																__('Hidden',$sm_domain));
+				$products_search_cols [$index]['values'] = array();
+				$products_search_cols [$index]['values'][0] = array('key' => 'visible', 'value' =>  __('Catalog & Search',$sm_domain));
+				$products_search_cols [$index]['values'][1] = array('key' => 'catalog', 'value' =>  __('Catalog',$sm_domain));
+				$products_search_cols [$index]['values'][2] = array('key' => 'search', 'value' =>  __('Search',$sm_domain));
+				$products_search_cols [$index]['values'][3] = array('key' => 'hidden', 'value' =>  __('Hidden',$sm_domain));
+
 			} else if ($products_col['name'] == 'Tax Status') {
-				$products_search_cols [$index]['values'] = array(__('Taxable',$sm_domain),
-																__('Shipping only',$sm_domain),
-																__('None',$sm_domain));
+				$products_search_cols [$index]['values'] = array();
+				$products_search_cols [$index]['values'][0] = array('key' => 'taxable', 'value' =>  __('Taxable',$sm_domain));
+				$products_search_cols [$index]['values'][1] = array('key' => 'shipping', 'value' =>  __('Shipping only',$sm_domain));
+				$products_search_cols [$index]['values'][2] = array('key' => 'none', 'value' =>  __('None',$sm_domain));
+
 			}  else if ($products_col['name'] == 'Publish') {
 				$products_search_cols [$index]['key'] = 'Post Status';
-				$products_search_cols [$index]['values'] = array(__('Publish',$sm_domain),
-																__('Draft',$sm_domain));
+				$products_search_cols [$index]['values'] = array();
+				$products_search_cols [$index]['values'][0] = array('key' => 'publish', 'value' => __('Publish',$sm_domain));
+				$products_search_cols [$index]['values'][1] = array('key' => 'draft', 'value' => __('Draft',$sm_domain));
 			}
 
 			$products_search_cols [$index]['category'] = "";
@@ -957,17 +1030,188 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 			$products_search_cols [$index]['col_name'] = 'product_cat';
 			$products_search_cols [$index]['values'] = $categories_list;
 		}
-
-	$products_search_cols= json_encode ($products_search_cols);
-
 }
+
+add_filter('sm_product_columns','sm_product_columns_filter',10,1);
+
 
 
 $encoded_categories = json_encode ( $categories );
-$products_cols = json_encode( $products_cols );
+// $products_cols = json_encode( $products_cols );
+$products_cols = json_encode( apply_filters('sm_product_columns',$products_cols) );
 if ( isset( $attribute ) ) {
 	$attribute = addslashes(json_encode( $attribute )); // addslashes was done as one client was facing issue with attributes
 }
+
+function sm_product_columns_filter($attr) {
+	
+	global $wpdb, $sm_domain;
+
+	$meta_key_ignored = array( '_visibility','_regular_price','_sale_price','_weight',
+								'_length','_width','_height','_sku','_product_attributes','_price',
+								'_tax_status','_thumbnail_id','_sale_price_dates_from',
+								'_sale_price_dates_to', '_edit_lock', '_max_price_variation_id',
+								'_max_regular_price_variation_id', '_max_sale_price_variation_id',
+								'_max_variation_price', '_max_variation_regular_price',
+								'_max_variation_sale_price', '_min_price_variation_id',
+								'_min_regular_price_variation_id', '_min_sale_price_variation_id',
+								'_min_variation_price', '_min_variation_regular_price',
+								'_min_variation_sale_price', '_product_image_gallery', '_wp_trash_meta_time', '_edit_last');
+
+	$postmeta_fields_ignored_cond = (!empty($meta_key_ignored)) ? "AND {$wpdb->prefix}postmeta.meta_key NOT IN ('".implode("','",$meta_key_ignored)."')" : '';
+
+	$productmetafieldsquery = "SELECT DISTINCT {$wpdb->prefix}postmeta.meta_key,
+									{$wpdb->prefix}postmeta.meta_value
+								FROM {$wpdb->prefix}postmeta 
+									JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.id = {$wpdb->prefix}postmeta.post_id)
+								WHERE post_type IN ('product','product_variation')
+									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE 'attribute_%'
+									AND {$wpdb->prefix}postmeta.meta_key LIKE '\_%' 
+										$postmeta_fields_ignored_cond
+								GROUP BY {$wpdb->prefix}postmeta.meta_key";
+	$productmetafieldsresults = $wpdb->get_results ($productmetafieldsquery , 'ARRAY_A');
+	$productmetafields_rows = $wpdb->num_rows;
+
+	if ($productmetafields_rows > 0) {
+
+		foreach ($productmetafieldsresults as &$productmetafieldsresult) {
+
+			$meta_key = $productmetafieldsresult['meta_key'];
+			$meta_value = $productmetafieldsresult['meta_value'];
+
+			// if (empty($meta_key) || (!empty($meta_value) && is_serialized($meta_value) === true))
+			if (empty($meta_key))
+				continue;
+
+			// $meta_key_index = (substr($meta_key,0,1) == "_") ? substr($meta_key,1,strlen($meta_key)) : $meta_key;
+			$meta_key_index = $meta_key;
+
+			$attr [$meta_key_index]['name'] = __(ucwords(str_replace('_', ' ', $meta_key)));
+			$attr [$meta_key_index]['colName'] = $meta_key;
+			$attr [$meta_key_index]['tableName']="{$wpdb->prefix}postmeta";
+			$attr [$meta_key_index]['updateColName']='meta_value';
+			$attr [$meta_key_index]['colType']='custom_column';
+
+			if (is_numeric($meta_value)) {
+				$attr [$meta_key_index]['actionType']='modIntPercentActions';
+				$attr [$meta_key_index]['dataType']='int';
+			} else {
+				$attr [$meta_key_index]['actionType']='modStrActions';
+				$attr [$meta_key_index]['dataType']='string';
+			}
+
+			if ((!empty($meta_value) && is_serialized($meta_value) === true)) {
+				$attr [$meta_key_index]['actionType']='setStrActions';
+				$attr [$meta_key_index]['colType']='custom_column_serialized';
+			}
+
+
+			//Code for yes/no columns
+			if ($meta_value == 'yes' || $meta_value == 'no' || $meta_key == '_sold_individually') {
+				$attr [$meta_key_index]['actionType']='YesNoActions';
+				$attr [$meta_key_index]['dataType']='select'; // as the values saved is 'yes' and 'no'
+				$attr [$meta_key_index]['values'] = array('yes' => __('Yes',$sm_domain),
+													'no' => __('No',$sm_domain));
+			}
+
+			//code for defined values column
+			if ($meta_key == '_stock_status') {
+
+				$attr [$meta_key_index]['actionType']='setStrActions';
+
+				$attr [$meta_key_index]['dataType']='select';
+
+				$attr [$meta_key_index]['values'] = array('instock' => __('In stock',$sm_domain),
+													'outofstock' => __('Out of stock',$sm_domain));
+
+			} else if ($meta_key == '_tax_class') {
+				
+				$attr [$meta_key_index]['actionType']='setStrActions';
+
+				$attr [$meta_key_index]['dataType']='select';
+
+				$attr [$meta_key_index]['values'] = array('' => __('Standard',$sm_domain),
+													'reduced-rate' => __('Reduced Rate',$sm_domain),
+													'zero-rate' => __('Zero Rate',$sm_domain));
+
+			} else if ($meta_key == '_backorders') {
+				
+				$attr [$meta_key_index]['actionType']='setStrActions';
+
+				$attr [$meta_key_index]['dataType']='select';
+
+				$attr [$meta_key_index]['values'] = array('no' => __('Do Not Allow',$sm_domain),
+													'notify' => __('Allow, but notify customer',$sm_domain),
+													'yes' => __('Allow',$sm_domain));
+
+			}
+			
+		}
+	}
+
+	//Adding field for other meta
+	$attr['other_meta']['name'] = __('Other Meta',$sm_domain);
+	$attr['other_meta']['colName'] = 'meta_key';
+	$attr['other_meta']['tableName']="{$wpdb->prefix}postmeta";
+	$attr['other_meta']['updateColName']='meta_value';
+	$attr['other_meta']['colType']='custom_column';
+	$attr['other_meta']['dataType']='string';
+	$attr['other_meta']['actionType']='setStrActions';
+
+	return $attr;
+}
+
+
+if (WOO_RUNNING === true) {
+	//Code for including the custom columns in advanced search
+
+	if ($fileExists == 1) {
+
+		$products_cols_decoded = json_decode($products_cols, true);
+
+		$index_search_cols = sizeof($products_search_cols);
+		foreach ( $products_cols_decoded as $key => $sm_product_column ) {
+			
+			//Condition to only consider the custom columns
+			if ( ! (!empty($sm_product_column['colType']) && ($sm_product_column['colType'] == 'custom_column' || $sm_product_column['colType'] == 'custom_column_serialized' )
+			 		&& $key != 'other_meta' ) ) {
+				continue;
+			}
+
+			//code for entering the custom columns in advanced search column array
+
+			$products_search_cols [$index_search_cols]['key'] = $sm_product_column['name'];
+			$products_search_cols [$index_search_cols]['type'] = ($sm_product_column['dataType'] == 'int') ? 'number' : 'string';
+			$products_search_cols [$index_search_cols]['category'] = "";
+			$products_search_cols [$index_search_cols]['placeholder'] = "";
+			$products_search_cols [$index_search_cols]['table_name'] = $sm_product_column['tableName'];
+			$products_search_cols [$index_search_cols]['col_name'] = $sm_product_column['colName'];
+
+			//Code to for the values array for the advanced search column
+			$advanced_search_column_values = array();
+			
+			if (!empty($sm_product_column['values'])) {
+				$column_values = $sm_product_column['values'];
+
+				$index = 0;
+				foreach ($column_values as $key => $value) {
+					$advanced_search_column_values [$index] = array();
+					$advanced_search_column_values [$index]['key'] = $key;
+					$advanced_search_column_values [$index]['value'] = $value;
+					$index++;
+				}
+
+				$products_search_cols [$index_search_cols]['values'] = $advanced_search_column_values;
+			}
+
+			$index_search_cols++;
+		}
+	}
+
+	$products_search_cols = json_encode ($products_search_cols);
+}
+
+
 // EOF Product category
 // BOF Products Fields
 
@@ -1098,6 +1342,8 @@ if (WPSC_RUNNING === true) {
 		lang.select_a_field		= '" . __('Select a field',$sm_domain) . "';
 		lang.only_numbers_are_allowed	= '" . __('Only numbers are allowed',$sm_domain) . "';
 		lang.enter_attribute_name	= '" . __('Enter Attribute Name',$sm_domain) . "';
+		lang.enter_meta_key	= '" . __('Enter Meta Key',$sm_domain) . "';
+		lang.enter_meta_value	= '" . __('Enter Meta Value',$sm_domain) . "';
 		lang.select_an_action		= '" . __('Select an action',$sm_domain) . "';
 		lang.select_a_value		= '" . __('Select a value',$sm_domain) . "';
 		lang.enter_the_value		= '" . __('Enter the value',$sm_domain) . "';
@@ -1107,6 +1353,7 @@ if (WPSC_RUNNING === true) {
 		lang.important_			= '" . __('Important:',$sm_domain) . "';
 		lang.for_more_than_one_values__use_pipe_____as_delimiter	= '" . __('For more than one values, use pipe (|) as delimiter',$sm_domain) . "';
 		lang.delete_row			= '" . __('Delete Row',$sm_domain) . "';
+		lang.caution_it_is_critical_to_put_valid_data_in_the_expected_format_otherwise_it_can_wreak_havoc			= '" . __('Caution: It is critical to put valid data in the expected format otherwise it can wreak havoc',$sm_domain) . "';
 		lang.upload_image		= '" . __('Upload Image',$sm_domain) . "';
 		lang.add_row			= '" . __('Add Row',$sm_domain) . "';
 		lang.add_a_new_row			= '" . __('Add a new row',$sm_domain) . "';
@@ -1361,16 +1608,50 @@ if (WPSC_RUNNING === true) {
 	
 	</script>";
 
+
+
+
+function add_social_links( $prefix = '' ) {
+
+    $social_link = '<style type="text/css">
+                        div > iframe {
+                            vertical-align: middle;
+                            padding: 5px 2px 0px 0px;
+                        }
+                        iframe[id^="twitter-widget"] {
+                        	max-height: 1.5em;
+                            max-width: 10.3em;
+                        }
+                        iframe#fb_like_' . $prefix . ' {
+                        	max-height: 1.5em;
+                            max-width: 6em;
+                        }
+                        span > iframe {
+                            vertical-align: middle;
+                        }
+                    </style>';
+    $social_link .= '<a href="https://twitter.com/storeapps" class="twitter-follow-button" data-show-count="true" data-dnt="true" data-show-screen-name="false">Follow</a>';
+    $social_link .= "<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>";
+    $social_link .= '<iframe id="fb_like_' . $prefix . '" src="http://www.facebook.com/plugins/like.php?href=https%3A%2F%2Fwww.facebook.com%2Fpages%2FStore-Apps%2F614674921896173&width=100&layout=button_count&action=like&show_faces=false&share=false&height=21"></iframe>';
+    $social_link .= '<script src="//platform.linkedin.com/in.js" type="text/javascript">lang: en_US</script><script type="IN/FollowCompany" data-id="3758881" data-counter="right"></script>';
+
+    return $social_link;
+
+} 
+
+
 // Code for handling SSL error for FB Link
-$ssl = (is_ssl()) ? "https" : "http";
-$fb_link = $ssl . "://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fwww.storeapps.org%2F&amp;layout=standard&amp;show_faces=true&amp;width=450&amp;action=like&amp;colorscheme=light&amp;height=80";
+// $ssl = (is_ssl()) ? "https" : "http";
+// $fb_link = $ssl . "://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fwww.storeapps.org%2F&amp;layout=standard&amp;show_faces=true&amp;width=450&amp;action=like&amp;colorscheme=light&amp;height=80";
                 
 ?>
 <!-- Smart Manager FB Like Button -->
 
 <div class="wrap"><br />
-<iframe
-	src= <?php echo $fb_link;?>
+<?php echo add_social_links(); ?>
+<!-- <iframe
+	src =  
 	scrolling="no" frameborder="0"
 	style="border: none; overflow: hidden; width: 450px; height: 80px;"
-	allowTransparency="true"></iframe></div>
+	allowTransparency="true"></iframe> -->
+</div>

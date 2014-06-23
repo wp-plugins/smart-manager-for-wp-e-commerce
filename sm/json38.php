@@ -614,6 +614,8 @@ function variation_query_params(){
                     $index = 0;
                     $cond_postmeta_post_ids = '';
                     $result_postmeta_search = '';
+                    $postmeta_advanced_search_from = '';
+                    $postmeta_advanced_search_where = '';
 
                     foreach ($cond_postmeta_array as $cond_postmeta) {
 
@@ -650,7 +652,7 @@ function variation_query_params(){
                                                                                         HAVING ".$cond_postmeta_col_name1." ". $cond_postmeta_operator1 ." ". $cond_postmeta_col_value1 .") AS temp";
                         } else {
 
-                            $postmeta_advanced_search_query = "SELECT DISTINCT {$wpdb->prefix}postmeta.post_id
+                            $postmeta_advanced_search_query = "SELECT DISTINCT {$wpdb->prefix}postmeta.post_id ". $postmeta_search_result_flag ." ,0
                                                                                 FROM {$wpdb->prefix}postmeta ". $postmeta_advanced_search_from ."
                                                                                 WHERE ".$cond_postmeta . " " .
                                                                                     $postmeta_advanced_search_where;
@@ -828,7 +830,7 @@ function variation_query_params(){
                     $record->category = "";
                 }
 
-                $product_type = (!empty($product_type[0])) ? $product_type[0] : '';
+                $product_type = (!is_wp_error($product_type)) ? (!empty($product_type[0]) ? $product_type[0] : '') : ''; // Code for WP_Error and empty check
                 $record->category = ( ( $record->post_parent > 0 && $product_type == 'simple' ) || ( $record->post_parent == 0 ) ) ? (!empty($record->category) ? $record->category : '') : '';   // To hide category name from Product's variations
 
                 $prod_meta_values = explode ( '###', $record->prod_othermeta_value );
@@ -1301,7 +1303,9 @@ elseif ($active_module == 'Orders') {
                 }
                 
                 $where_log_id = (!empty($max_id)) ? 'WHERE log_id IN ('. implode(",",$max_id).')' : '';
-                $orderby_log_id = (!empty($max_id)) ? 'ORDER BY FIND_IN_SET(log_id,'. implode(",",$max_id).')' : 'ORDER BY log_id';
+
+                $max_id_imploded = (!empty($max_id)) ? implode(",",$max_id) : '';
+                $orderby_log_id = (!empty($max_id)) ? "ORDER BY FIND_IN_SET(log_id,'$max_id_imploded')" : 'ORDER BY log_id';
 
                 $customer_details_query_select = "SELECT wtsfd.log_id AS log_id,
                                                             GROUP_CONCAT( wtcf.unique_name ORDER BY wtcf.id SEPARATOR '###' ) AS meta_keys,

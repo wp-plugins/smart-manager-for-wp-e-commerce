@@ -90,6 +90,7 @@
 				"add remove change:editing": function(m){
 					if(m.collection){
 						self.options.search(JSON.stringify(m.collection.getComplete(), function(k, v){
+
 							if(
 								!k || k==="0" || parseInt(k) ||
 								k === "key" || k === "operator" || k === "value" || k === "table_name" || k === "col_name" || k === "type"
@@ -104,6 +105,8 @@
 									} else {
 										return v;
 									}
+								} else if (selected_value_key.hasOwnProperty(v)) {
+									return selected_value_key[v];
 								} else {
 									return v;	
 								}
@@ -428,6 +431,7 @@
 
 	var source_operator = new Array();
 	var source_value = new Array();
+	var selected_value_key = new Array();
 
 	/* Parameter View */
 	VS.ParameterView = Backbone.View.extend({
@@ -543,6 +547,8 @@
 				}
 			};
 
+
+
 			this.value = {
 				dom: $("<input/>").attr({
 					autocomplete:	"off",
@@ -558,18 +564,23 @@
 				autocomplete: {
 					minLength : 0,
 					delay     : 0,
+					// source: topics,
 					source: source_value,
 					// source: function(req, res){
-						
+
 					// 	var key 	= self.model.get('key'),
 					// 	i = parameters.key.indexOf(key);
+
 					// 	if (typeof parameters.values != 'undefined' ) {
 					// 		res(parameters.values[i]);	
 					// 	}
 							
 					// },
 					select: function( e, ui ) {
+
 						this.value = ui.item.value;
+						selected_value_key[ui.item.value] = ui.item.key;
+						
 						$(this).blur();
 					}
 				}
