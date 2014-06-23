@@ -2326,6 +2326,9 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 				SM.searchTextField.reset(); 			//to reset the searchTextField
 			}
 
+			SM.searchTextField.show();
+            editorGrid.getTopToolbar().get('searchIconId').show();
+
 			hidePrintButton();
 			hideDeleteButton();
 			hideAddProductButton();
@@ -2334,7 +2337,7 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 			for(var i=2;i<=8;i++)
 			editorGrid.getTopToolbar().get(i).hide();
 			editorGrid.getTopToolbar().get('incVariation').hide();
-                        editorGrid.getTopToolbar().get('duplicateButton').hide();
+            editorGrid.getTopToolbar().get('duplicateButton').hide();
 
 			if(customersFields != 0)
 			fieldsStore.loadData(customersFields);
@@ -2683,6 +2686,8 @@ if(isWPSC38 == '1'){
 			ordersColumnModel.setEditable(12,true);
 			ordersColumnModel.setEditable(13,true);
 			
+			SM.searchTextField.show();
+            editorGrid.getTopToolbar().get('searchIconId').show();
 			
 			if(cellClicked == false){
 				SM.searchTextField.reset(); //to reset the searchTextField
