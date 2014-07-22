@@ -252,6 +252,8 @@
 			} else {
 				this.searchQuery.reset();
 			}
+
+			return;
 		},
 		highlightSearch: function(e){
 			if(!$(e.target).is("input, .search_parameter")) return;

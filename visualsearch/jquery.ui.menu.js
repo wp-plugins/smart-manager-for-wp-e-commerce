@@ -41,6 +41,7 @@ $.widget( "ui.menu", {
 		// flag used to prevent firing of the click handler
 		// as the event bubbles up through nested menus
 		this.mouseHandled = false;
+
 		this.element
 			.uniqueId()
 			.addClass( "ui-menu ui-widget ui-widget-content ui-corner-all" )

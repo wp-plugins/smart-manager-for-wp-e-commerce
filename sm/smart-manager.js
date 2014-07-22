@@ -86,6 +86,7 @@ Ext.onReady(function () {
         SM.orders_state = "";
         SM.dashboard_state = "";
         SM.variation_state = "";
+        SM.search_type = "";
         SM.editor_state = "";
 	
 	var actions            = new Array(); //an array for actions combobox in batchupdate window.
@@ -436,7 +437,7 @@ Ext.onReady(function () {
                 jQuery.ajax({
                     type : 'POST',
                     // url : jsonURL,
-                    url: ajaxurl + '?action=sm_include_file',
+                    url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
                     dataType:"text",
                     async: false,
                     data: {
@@ -447,6 +448,7 @@ Ext.onReady(function () {
                                 Products : Ext.encode(SM.products_state),
                                 Customers : Ext.encode(SM.customers_state),
                                 Orders : Ext.encode(SM.orders_state),
+                                search_type: jQuery("#search_switch").text().trim(),
                                 file:  jsonURL
                     },
                     success: function(data) {
@@ -465,7 +467,7 @@ Ext.onReady(function () {
           jQuery.ajax({
                 type : 'POST',
                 // url : jsonURL,
-                url: ajaxurl + '?action=sm_include_file',
+                url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
                 dataType:"text",
                 async: false,
                 data: {
@@ -481,12 +483,16 @@ Ext.onReady(function () {
                     SM.orders_state = Ext.decode(myJsonObj['Orders']);
                     SM.dashboard_state = myJsonObj['dashboardcombobox'];
                     SM.variation_state = myJsonObj['incVariation'];
+                    SM.search_type = myJsonObj['search_type'];
                                         
                     if(SM.dashboard_state === "" || SM.dashboard_state === null) {
                         SM.dashboard_state = 'Products';
                     }
                     if(SM.variation_state === "" || SM.variation_state === null) {
                         SM.variation_state = false;
+                    }
+                    if(SM.search_type === "" || SM.search_type === null) {
+                        SM.search_type = "Advanced Search";
                     }
                 }
             });
@@ -1170,7 +1176,7 @@ Ext.onReady(function () {
 		reader: productsJsonReader,
 		proxy: new Ext.data.HttpProxy({
 			// url: jsonURL
-			url: ajaxurl + '?action=sm_include_file'
+			url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 		}),
 		baseParams: {
 			cmd: 'getData',
@@ -1203,9 +1209,34 @@ Ext.onReady(function () {
 		SM.searchTextField.reset(); 			  //to reset the searchTextField
 		SM.searchTextField.hide(); 			  //to reset the searchTextField
 		
-		jQuery("#sm_advanced_search_content").show(); //showing the advanced search box
+		// jQuery("#sm_advanced_search_content").show(); //showing the advanced search box
 
-		editorGrid.getTopToolbar().get('searchIconId').hide();
+		// editorGrid.getTopToolbar().get('searchIconId').hide();
+
+		if (SM.search_type == 'Simple Search') {
+			
+			jQuery("#search_switch").html('Simple Search');
+			jQuery("#search_switch").attr('title','Switch to simple search');
+			
+			SM.searchTextField.hide(); 			  //to reset the searchTextField
+			jQuery("#sm_advanced_search_content").show(); //showing the advanced search box
+			editorGrid.getTopToolbar().get('searchIconId').hide();
+			SM.searchTextField.reset();
+
+
+
+		} else {
+
+			jQuery("#search_switch").html('Advanced Search');
+			jQuery("#search_switch").attr('title','Switch to advanced search');
+
+			SM.searchTextField.show(); 			  //to reset the searchTextField
+			jQuery("#sm_advanced_search_content").hide(); //showing the advanced search box
+			editorGrid.getTopToolbar().get('searchIconId').show();	
+			SM.searchTextField.reset();
+
+		}
+
 
 		jQuery(function($){
 			window.visualSearch = new VisualSearch({
@@ -1242,6 +1273,7 @@ Ext.onReady(function () {
 				});
 
 				// Code to get the search params in ajax request
+				productsStore.setBaseParam('searchText', ''); // deleting the simple search query
 				productsStore.setBaseParam('search_query[]', search_query);
 				productsStore.setBaseParam('search', 'advanced_search');
 				
@@ -1249,7 +1281,7 @@ Ext.onReady(function () {
 
 				$.ajax({
 	                    type : 'POST',
-	                    url : ajaxurl + '?action=sm_include_file',
+	                    url : (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 	                    dataType: "text",
 	                    async: false,
 	                    data: {
@@ -1288,7 +1320,48 @@ Ext.onReady(function () {
 						}
 				});
 			});
+		
+		//Code for search switch
+			$("#search_switch").show();
 
+			var search_switch_id = $("#search_switch").parent().parent().attr('id');
+			$("#"+search_switch_id).unbind( "click" );
+
+			$("#"+search_switch_id).on('click',function(){
+
+				if ($("#search_switch").text().trim() == 'Simple Search') {
+
+					jQuery('div[id^="sm_advanced_search_box_"] .VS-icon-cancel').trigger("click");
+
+					$("#search_switch").html('Advanced Search');
+					$("#search_switch").attr('title','Switch to advanced search');
+
+					SM.searchTextField.show(); 			  //to reset the searchTextField
+					jQuery("#sm_advanced_search_content").hide(); //showing the advanced search box
+					editorGrid.getTopToolbar().get('searchIconId').show();	
+					SM.searchTextField.reset();
+
+					jQuery('input[id^="sm_advanced_search_box_value_"]').each(function() {
+					    jQuery(this).val("");
+					});
+
+				} else {
+
+					jQuery('div[id^="sm_advanced_search_box_"] .VS-icon-cancel').trigger("click");
+
+					$("#search_switch").html('Simple Search');
+					$("#search_switch").attr('title','Switch to simple search');
+					
+					SM.searchTextField.hide(); 			  //to reset the searchTextField
+					jQuery("#sm_advanced_search_content").show(); //showing the advanced search box
+					editorGrid.getTopToolbar().get('searchIconId').hide();
+					SM.searchTextField.reset();
+
+					jQuery('input[id^="sm_advanced_search_box_value_"]').each(function() {
+					    jQuery(this).val("");
+					});
+				}
+			});
 
 		});
 
@@ -1328,7 +1401,7 @@ Ext.onReady(function () {
         if ( editorGrid.loadMask != undefined ) editorGrid.loadMask.show();
         var o = {
 		// url: jsonURL,
-		url: ajaxurl + '?action=sm_include_file',
+		url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 		method: 'post',
 		callback: function (options, success, response) {
                 editorGrid.loadMask.show();
@@ -1348,7 +1421,7 @@ Ext.onReady(function () {
 					if (records_cnt == 0){
 						myJsonObj.items = '';
 					}
-                                        store.loadData(myJsonObj);
+                    store.loadData(myJsonObj);
 					if(SM.incVariation == false){
 						columnModel.setHidden(SM.typeColIndex,true);
 					}else{
@@ -1444,6 +1517,8 @@ var pagingToolbar = new Ext.PagingToolbar({
 				    search_query.push(jQuery(this).val());
 				});
 
+				var fileurl = (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file';
+
 				Ext.DomHelper.append(Ext.getBody(), { 
                     tag: 'iframe', 
                     id:'downloadIframe', 
@@ -1453,7 +1528,7 @@ var pagingToolbar = new Ext.PagingToolbar({
                     css: 'display:none;visibility:hidden;height:0px;', 
                     // src: jsonURL+'?cmd=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
                     // src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
-                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWpsc&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
+                    src: fileurl + '&file='+jsonURL+'&func_nm=exportCsvWpsc&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
                 }); 
 			}
 		}
@@ -1497,7 +1572,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 		
 		var o = {
 			// url:jsonURL
-			url: ajaxurl + '?action=sm_include_file'
+			url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
 			,method:'post'
 			,callback: function(options, success, response)	{
 				var myJsonObj = Ext.decode(response.responseText);
@@ -1610,7 +1685,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 
                                 arr[i] = {
 					// url: jsonURL,
-					url: ajaxurl + '?action=sm_include_file',
+					url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 					method: 'post',
 					callback: function (options, success, response) {
 
@@ -1686,7 +1761,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                         //Initial AJAX request to get the number of AJAX request to be made based on the number of products selected for duplication
                         var o = {
                             // url: jsonURL,
-                            url: ajaxurl + '?action=sm_include_file',
+                            url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
                             method: 'post',
                             callback: function (options, success, response) {
                                 try {
@@ -1746,7 +1821,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                 batchUpdateWindow.loadMask.show();
 				var o = {
 					// url: jsonURL,
-					url: ajaxurl + '?action=sm_include_file',
+					url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 					method: 'post',
 					callback: function (options, success, response) {
 
@@ -2294,7 +2369,7 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 		reader: customersJsonReader,
 		proxy:new Ext.data.HttpProxy({
 			// url:jsonURL
-			url: ajaxurl + '?action=sm_include_file'
+			url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 		}),
 		baseParams:{
 			cmd: 'getData',
@@ -2317,6 +2392,8 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 			//initial steps when store: customers is loaded
 			SM.activeModule = 'Customers';
 			SM.dashboardComboBox.setValue(SM.activeModule);
+
+			jQuery("#search_switch"). hide();
 
 			jQuery("#sm_advanced_search_content").hide(); //Hiding the advanced search box
 			jQuery( "#sm_advanced_search_or").unbind( "click" );
@@ -2650,7 +2727,7 @@ if(isWPSC38 == '1'){
 		reader: ordersJsonReader,
 		proxy:new Ext.data.HttpProxy({
 			// url:jsonURL
-			url: ajaxurl + '?action=sm_include_file'
+			url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 		}),
 		baseParams:{
 			cmd: 'getData',
@@ -2675,6 +2752,8 @@ if(isWPSC38 == '1'){
 			SM.activeModule = 'Orders';
 			SM.dashboardComboBox.setValue(SM.activeModule);
 			
+			jQuery("#search_switch"). hide();
+	
 			jQuery("#sm_advanced_search_content").hide(); //hiding the advanced search box
 			jQuery( "#sm_advanced_search_or").unbind( "click" );
 
@@ -2816,7 +2895,7 @@ var searchLogic = function () {
 	mask.show();
 	var o = {
 		// url: jsonURL,
-		url: ajaxurl + '?action=sm_include_file',
+		url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 		method: 'post',
 		callback: function (options, success, response) {
 			
@@ -3648,13 +3727,18 @@ var showCustomerDetails = function(record,rowIndex){
 			SM.searchTextField,{ icon: imgURL + 'search.png', id:'searchIconId' },
 
 			//Advanced Search Box [only for Products]
-			'<div id="sm_advanced_search_content" style="background-color:#d0def0;margin-top: -5px;margin-left: -10px;float:left;">'+
+			// '<div id="sm_advanced_search_content" style="background-color:#d0def0;margin-top: -5px;margin-left: -10px;float:left;">'+
+			'<div id="sm_advanced_search_content" style="margin-top: -5px;margin-left: -10px;float:left;">'+
 			'<div style="width: 100%;"> <div id="sm_advanced_search_box" > <div id="sm_advanced_search_box_0" style="width:80%;margin-left:7px;margin-bottom:5px"> </div>'+
 			'<input type="text" id="sm_advanced_search_box_value_0" name="sm_advanced_search_box_value_0" hidden> </div>'+ 
 			'<input type="text" id="sm_advanced_search_query" hidden>'+
 			'<img src='+imgURL+'add_row.png id="sm_advanced_search_or" style="float: left;margin-top: -23px;margin-left: 83%;opacity: 0.75;cursor: pointer;" title="Add Another Condition">'+
 			'<button id="sm_advanced_search_submit" style="float: left;margin-top: -28px;margin-left: 88%;cursor: pointer;"><img src='+imgURL+'search.png style="vertical-align:middle"> Search </button>'+
 			'</div>',
+
+			{xtype: 'tbspacer', id:'afterDateMenuTbspacer', width: 10},
+
+			'<label title="Switch to simple search" id="search_switch" style="display:none;"> Simple Search </label>',
 
 //			{xtype: 'tbspacer',width: 10, id:'afterSearchId'}
 			'->',
@@ -3704,7 +3788,7 @@ var showCustomerDetails = function(record,rowIndex){
 		beforerender: function(grid) {
 			var object = {
 						// url:jsonURL
-						url: ajaxurl + '?action=sm_include_file'
+						url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
 						,method:'post'
 						,callback: function(options, success, response)	{
 							var myJsonObj = Ext.decode(response.responseText);
@@ -3835,7 +3919,7 @@ var showCustomerDetails = function(record,rowIndex){
 									close: function() {
 										var object = {
 											// url:jsonURL
-											url: ajaxurl + '?action=sm_include_file'
+											url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
 											,method:'post'
 											,callback: function(options, success, response)	{
 												var myJsonObj = Ext.decode(response.responseText);

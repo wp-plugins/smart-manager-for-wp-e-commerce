@@ -89,6 +89,7 @@ Ext.onReady(function () {
         SM.dashboard_state = "";
         SM.variation_state = "";
         SM.editor_state = "";
+        SM.search_type = "";
         SM.advanced_search_query = new Array();
         
         
@@ -468,7 +469,7 @@ Ext.onReady(function () {
                 jQuery.ajax({
                     type : 'POST',
                     // url : jsonURL,
-                    url: ajaxurl + '?action=sm_include_file',
+                    url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
                     dataType:"text",
                     async: false,
                     data: {
@@ -479,6 +480,7 @@ Ext.onReady(function () {
                                 Products : Ext.encode(SM.products_state),
                                 Customers : Ext.encode(SM.customers_state),
                                 Orders : Ext.encode(SM.orders_state),
+                                search_type: jQuery("#search_switch").text().trim(),
                                 file:  jsonURL
                     },
                     success: function(data) {
@@ -496,7 +498,7 @@ Ext.onReady(function () {
           jQuery.ajax({
                 type : 'POST',
                 // url : jsonURL,
-                url: ajaxurl + '?action=sm_include_file',
+                url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
                 dataType:"text",
                 async: false,
                 data: {
@@ -506,9 +508,6 @@ Ext.onReady(function () {
                 },
                 success: function(response) {
                 	
-                	
-                	
-
                     var myJsonObj    = Ext.decode(response);
                     
                     SM.products_state = Ext.decode(myJsonObj['Products']);
@@ -516,6 +515,7 @@ Ext.onReady(function () {
                     SM.orders_state = Ext.decode(myJsonObj['Orders']);
                     SM.dashboard_state = myJsonObj['dashboardcombobox'];
                     SM.variation_state = myJsonObj['incVariation'];
+                    SM.search_type = myJsonObj['search_type'];
 
 //                    SM.editor_state = Ext.decode(myJsonObj[SM.dashboard_state]);
 
@@ -525,9 +525,13 @@ Ext.onReady(function () {
                     if(SM.variation_state === "" || SM.variation_state === null) {
                         SM.variation_state = false;
                     }
+                    if(SM.search_type === "" || SM.search_type === null) {
+                        SM.search_type = "Advanced Search";
+                    }
                 }
             });
-        })
+
+        });
         
         //Function to set all the states on unload
         window.onbeforeunload = function (evt) {  
@@ -720,7 +724,7 @@ Ext.onReady(function () {
         if ( editorGrid.loadMask != undefined ) editorGrid.loadMask.show();
         var o = {
 		// url: jsonURL,
-		url: ajaxurl + '?action=sm_include_file',
+		url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 		method: 'post',
 		callback: function (options, success, response) {
                 editorGrid.loadMask.show();
@@ -1330,7 +1334,7 @@ var productsColumnModel = new Ext.ProductsColumnModel({
 		reader: productsJsonReader,
 		proxy: new Ext.data.HttpProxy({
 			// url: jsonURL
-			url: ajaxurl + '?action=sm_include_file'
+			url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 		}),
 		baseParams: {
 			cmd: 'getData',
@@ -1370,9 +1374,32 @@ var productsColumnModel = new Ext.ProductsColumnModel({
 		SM.searchTextField.reset(); 			  //to reset the searchTextField
 		SM.searchTextField.hide(); 			  //to reset the searchTextField
 		
-		jQuery("#sm_advanced_search_content").show(); //showing the advanced search box
 
-		editorGrid.getTopToolbar().get('searchIconId').hide();
+		if (SM.search_type == 'Simple Search') {
+			
+			jQuery("#search_switch").html('Simple Search');
+			jQuery("#search_switch").attr('title','Switch to simple search');
+			
+			SM.searchTextField.hide(); 			  //to reset the searchTextField
+			jQuery("#sm_advanced_search_content").show(); //showing the advanced search box
+			editorGrid.getTopToolbar().get('searchIconId').hide();
+			SM.searchTextField.reset();
+
+
+
+		} else {
+
+			jQuery("#search_switch").html('Advanced Search');
+			jQuery("#search_switch").attr('title','Switch to advanced search');
+
+			SM.searchTextField.show(); 			  //to reset the searchTextField
+			jQuery("#sm_advanced_search_content").hide(); //showing the advanced search box
+			editorGrid.getTopToolbar().get('searchIconId').show();	
+			SM.searchTextField.reset();
+
+		}
+
+		
 
 		jQuery(function($){
 			window.visualSearch = new VisualSearch({
@@ -1409,6 +1436,7 @@ var productsColumnModel = new Ext.ProductsColumnModel({
 				});
 
 				// Code to get the search params in ajax request
+				productsStore.setBaseParam('searchText', ''); // deleting the simple search query
 				productsStore.setBaseParam('search_query[]', search_query);
 				productsStore.setBaseParam('search', 'advanced_search');
 
@@ -1418,7 +1446,7 @@ var productsColumnModel = new Ext.ProductsColumnModel({
 
 				$.ajax({
 	                    type : 'POST',
-	                    url : ajaxurl + '?action=sm_include_file',
+	                    url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 	                    dataType: "text",
 	                    async: false,
 	                    data: {
@@ -1460,6 +1488,47 @@ var productsColumnModel = new Ext.ProductsColumnModel({
 				});
 			});
 
+			//Code for search switch
+			$("#search_switch").show();
+
+			var search_switch_id = $("#search_switch").parent().parent().attr('id');
+			$("#"+search_switch_id).unbind( "click" );
+
+			$("#"+search_switch_id).on('click',function(){
+
+				if ($("#search_switch").text().trim() == 'Simple Search') {
+
+					jQuery('div[id^="sm_advanced_search_box_"] .VS-icon-cancel').trigger("click");
+
+					$("#search_switch").html('Advanced Search');
+					$("#search_switch").attr('title','Switch to advanced search');
+
+					SM.searchTextField.show(); 			  //to reset the searchTextField
+					jQuery("#sm_advanced_search_content").hide(); //showing the advanced search box
+					editorGrid.getTopToolbar().get('searchIconId').show();	
+					SM.searchTextField.reset();
+
+					jQuery('input[id^="sm_advanced_search_box_value_"]').each(function() {
+					    jQuery(this).val("");
+					});
+
+				} else {
+
+					jQuery('div[id^="sm_advanced_search_box_"] .VS-icon-cancel').trigger("click");
+
+					$("#search_switch").html('Simple Search');
+					$("#search_switch").attr('title','Switch to simple search');
+					
+					SM.searchTextField.hide(); 			  //to reset the searchTextField
+					jQuery("#sm_advanced_search_content").show(); //showing the advanced search box
+					editorGrid.getTopToolbar().get('searchIconId').hide();
+					SM.searchTextField.reset();
+
+					jQuery('input[id^="sm_advanced_search_box_value_"]').each(function() {
+					    jQuery(this).val("");
+					});
+				}
+			});
 
 		});
 
@@ -1583,6 +1652,8 @@ var pagingToolbar = new Ext.PagingToolbar({
 				// 	// column_headers = products_columns;
 				// }
 
+				var fileurl = (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file';
+
                 Ext.DomHelper.append(Ext.getBody(), { 
                     tag: 'iframe', 
                     id:'downloadIframe', 
@@ -1592,7 +1663,7 @@ var pagingToolbar = new Ext.PagingToolbar({
                     css: 'display:none;visibility:hidden;height:0px;', 
                     // src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
                     // src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
-                    src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
+                    src: fileurl + '&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
                 }); 
 			}
 		}
@@ -1652,7 +1723,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 
 		var o = {
 			// url:jsonURL
-			url: ajaxurl + '?action=sm_include_file'
+			url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
 			,method:'post'
 			,callback: function(options, success, response)	{
 				var myJsonObj = Ext.decode(response.responseText);
@@ -1774,7 +1845,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 
                                 arr[i] = {
                                             // url: jsonURL,
-                                            url: ajaxurl + '?action=sm_include_file',
+                                            url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
                                             method: 'post',
                                             callback: function (options, success, response) {
 
@@ -1852,7 +1923,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                         //Initial AJAX request to get the number of AJAX request to be made based on the number of products selected for duplication
                         var o = {
                             // url: jsonURL,
-                            url: ajaxurl + '?action=sm_include_file',
+                            url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
                             method: 'post',
                             callback: function (options, success, response) {
                                 try {
@@ -1913,7 +1984,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                 batchUpdateWindow.loadMask.show();
 				var o = {
 					// url: jsonURL,
-					url: ajaxurl + '?action=sm_include_file',
+					url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 					method: 'post',
 					callback: function (options, success, response) {
 
@@ -2257,7 +2328,7 @@ var searchLogic = function () {
 	mask.show();
 	var o = {
 		// url: jsonURL,
-		url: ajaxurl + '?action=sm_include_file',
+		url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 		method: 'post',
 		callback: function (options, success, response) {
 			
@@ -2365,8 +2436,6 @@ var taxStatusStoreData = new Array();
 							[ 'shipping', getText('Shipping only') ],
 							[ 'none', getText('None') ]
 						 ];
-
-console.log("taxStatusStoreData",taxStatusStoreData);
 
 var visibilityStoreData = new Array();
     visibilityStoreData = [
@@ -2501,7 +2570,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 
 						objRegExp = /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/;;
 						regexError = getText('Only numbers are allowed');
-						
+
 						//Code for handling custom fields columns
 						var actionType = '';
 						if(SM.activeModule == 'Products'){
@@ -2521,7 +2590,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								comboCategoriesActionCmp.reset();
                                 lblImg.hide();
                                 setTextarea.hide();
-							} else if(colName == '_tax_status' || colName == '_visibility'){
+							} else if(colName == '_tax_status' || colName == '_visibility' || (field.colType == "custom_column" && field.hasOwnProperty('values'))) {
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.show();
@@ -2788,7 +2857,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								setTextarea.hide();	
 								var object = {
 												// url:jsonURL
-												url: ajaxurl + '?action=sm_include_file'
+												url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
 												,method:'post'
 												,callback: function(options, success, response)	{
 													var myJsonObj = Ext.decode(response.responseText);
@@ -2862,7 +2931,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						
 						var object = {
 							// url:jsonURL
-							url: ajaxurl + '?action=sm_include_file'
+							url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
 							,method:'post'
 							,callback: function(options, success, response)	{
 								var myJsonObj = Ext.decode(response.responseText);
@@ -2957,18 +3026,17 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var colName			   = toolbarParent.items.items[0].store.reader.jsonData.items[selectedFieldIndex].colName;
 						var actionType		   = toolbarParent.items.items[0].store.reader.jsonData.items[selectedFieldIndex].actionType;
 					
-						// storedata_array
-
 						if (SM.activeModule == 'Products') {
 							if ( selectedValue.substring( 0, 14 ) != 'groupAttribute' ){
 								if ( colName == '_tax_status' ) {
                                     categoryStore.loadData( taxStatusStoreData );
                                 } else if ( field_name == 'Visibility' ) {
                                     categoryStore.loadData( visibilityStoreData );
-                                } else if (storedata_array[colName] != 'undefined') {
+                                } else if (storedata_array[colName] != undefined) {
                                 	categoryStore.loadData( storedata_array[colName] );
                                 }else {
                                     var category = categories["category-"+SM['productsCols'][selectedValue].colFilter];
+
                                     if ( category instanceof Object ) {
                                         var categoryData = [];
                                         for ( var catId in category  ) {
@@ -3579,7 +3647,7 @@ var showCustomerDetails = function(record,rowIndex){
 		reader: customersJsonReader,
 		proxy:new Ext.data.HttpProxy({
 			// url:jsonURL
-			url: ajaxurl + '?action=sm_include_file'
+			url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 		}),
 		baseParams:{
 			cmd: 'getData',
@@ -3604,6 +3672,8 @@ var showCustomerDetails = function(record,rowIndex){
 			//initial steps when store: customers is loaded
 			SM.activeModule = 'Customers';
 			SM.dashboardComboBox.setValue(SM.activeModule);
+
+			jQuery("#search_switch"). hide();
 
 			jQuery("#sm_advanced_search_content").hide(); //Hiding the advanced search box
 			jQuery( "#sm_advanced_search_or").unbind( "click" );
@@ -3795,7 +3865,7 @@ var showCustomerDetails = function(record,rowIndex){
 		reader: couponsJsonReader,
 		proxy:new Ext.data.HttpProxy({
 			// url:jsonURL
-			url: ajaxurl + '?action=sm_include_file'
+			url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 		}),
 		baseParams:{
 			cmd: 'getData',
@@ -4133,7 +4203,7 @@ var showCustomerDetails = function(record,rowIndex){
 		reader: ordersJsonReader,
 		proxy:new Ext.data.HttpProxy({
 			// url:jsonURL
-			url: ajaxurl + '?action=sm_include_file'
+			url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file',
 		}),
 		baseParams:{
 			cmd: 'getData',
@@ -4159,6 +4229,8 @@ var showCustomerDetails = function(record,rowIndex){
 			//initial steps when store: orders is loaded
 			SM.activeModule = 'Orders';
 			SM.dashboardComboBox.setValue(SM.activeModule);
+
+			jQuery("#search_switch"). hide();
 
 			jQuery("#sm_advanced_search_content").hide(); //hiding the advanced search box
 			jQuery( "#sm_advanced_search_or").unbind( "click" );
@@ -4269,13 +4341,18 @@ var showCustomerDetails = function(record,rowIndex){
 			SM.searchTextField,{ icon: imgURL + 'search.png', id:'searchIconId' },
 
 			//Advanced Search Box [only for Products]
-			'<div id="sm_advanced_search_content" style="background-color:#d0def0;margin-top: -5px;margin-left: -10px;float:left;">'+
+			// '<div id="sm_advanced_search_content" style="background-color:#d0def0;margin-top: -5px;margin-left: -10px;float:left;">'+
+			'<div id="sm_advanced_search_content" style="margin-top: -5px;margin-left: -10px;float:left;">'+
 			'<div style="width: 100%;"> <div id="sm_advanced_search_box" > <div id="sm_advanced_search_box_0" style="width:80%;margin-left:7px;margin-bottom:5px"> </div>'+
 			'<input type="text" id="sm_advanced_search_box_value_0" name="sm_advanced_search_box_value_0" hidden> </div>'+ 
 			'<input type="text" id="sm_advanced_search_query" hidden>'+
 			'<img src='+imgURL+'add_row.png id="sm_advanced_search_or" style="float: left;margin-top: -23px;margin-left: 83%;opacity: 0.75;cursor: pointer;" title="Add Another Condition">'+
 			'<button id="sm_advanced_search_submit" style="float: left;margin-top: -28px;margin-left: 88%;cursor: pointer;"><img src='+imgURL+'search.png style="vertical-align:middle"> Search </button>'+
 			'</div>',
+
+			{xtype: 'tbspacer', id:'afterDateMenuTbspacer', width: 10},
+
+			'<label title="Switch to simple search" id="search_switch" style="display:none;"> Simple Search </label>',
 
 			'->',
 			{ 
@@ -4304,22 +4381,22 @@ var showCustomerDetails = function(record,rowIndex){
 							 	listeners: {
 							 		check : function(checkbox, bool) {
 							 			if ( SM.dashboard_state == 'Products' ) {
-						                        mask.show();
-						                        SM.incVariation  = bool;
-								 				productsStore.setBaseParam('incVariation', SM.incVariation);
+					                        mask.show();
+					                        SM.incVariation  = bool;
+							 				productsStore.setBaseParam('incVariation', SM.incVariation);
 
-								 				// Code for getting the advanced search query
-												var search_query = new Array();
-												jQuery('input[id^="sm_advanced_search_box_value_"]').each(function() {
-												    search_query.push(jQuery(this).val());
-												});
+							 				// Code for getting the advanced search query
+											var search_query = new Array();
+											jQuery('input[id^="sm_advanced_search_box_value_"]').each(function() {
+											    search_query.push(jQuery(this).val());
+											});
 
-												if (search_query != '') {
-													productsStore.setBaseParam('search_query[]', search_query);
-													productsStore.setBaseParam('search', 'advanced_search');
-												}
+											if (search_query != '') {
+												productsStore.setBaseParam('search_query[]', search_query);
+												productsStore.setBaseParam('search', 'advanced_search');
+											}
 
-								 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
+							 				getVariations(productsStore.baseParams,productsColumnModel,productsStore);
 							 			}
 							 		}
 							 	}
@@ -4334,7 +4411,7 @@ var showCustomerDetails = function(record,rowIndex){
 
                     	var object = {
 						// url:jsonURL
-						url: ajaxurl + '?action=sm_include_file'
+						url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
 						,method:'post'
 						,callback: function(options, success, response)	{
 
@@ -4501,7 +4578,7 @@ var showCustomerDetails = function(record,rowIndex){
 								close: function() {
 									var object = {
 										// url:jsonURL
-										url: ajaxurl + '?action=sm_include_file'
+										url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
 										,method:'post'
 										,callback: function(options, success, response)	{
 											var myJsonObj = Ext.decode(response.responseText);
