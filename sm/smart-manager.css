@@ -149,3 +149,10 @@
 .x-batchimage td {
   background-image: url("../images/logo-32x32.png");
 }
+
+#search_switch {
+    margin-left: 10px;
+    cursor: pointer;
+    color: #0074a2;
+    text-decoration: underline;
+}

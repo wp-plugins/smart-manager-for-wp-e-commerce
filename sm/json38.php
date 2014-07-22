@@ -258,7 +258,7 @@ function variation_query_params(){
         $search_condn = "";
 
         //Code to clear the advanced search temp table
-        if (empty($_POST['search_query']) || empty($_POST['search_query'][0])) {
+        if (empty($_POST['search_query']) || empty($_POST['search_query'][0]) || !empty($_POST['searchText']) ) {
             $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp");
             delete_option('sm_advanced_search_query');
         }
@@ -266,9 +266,13 @@ function variation_query_params(){
         $sm_advanced_search_results_persistent = 0; //flag to handle persistent search results
 
         //Advanced Search Code       
-        if (!empty($_POST['search_query']) && !empty($_POST['search_query'][0])) {
+        if ((!empty($_POST['search_query']) && !empty($_POST['search_query'][0])) || (!empty($_POST['searchText'])) ) {
 
-            $search_query_diff = (get_option('sm_advanced_search_query') != '') ? array_diff($_POST['search_query'],get_option('sm_advanced_search_query')) : $_POST['search_query'];
+            if (empty($_POST['searchText'])) {
+                $search_query_diff = (get_option('sm_advanced_search_query') != '') ? array_diff($_POST['search_query'],get_option('sm_advanced_search_query')) : $_POST['search_query'];
+            } else {
+                $search_query_diff = '';
+            }
             
             if (!empty($search_query_diff)) {
 
@@ -405,13 +409,13 @@ function variation_query_params(){
                                 $advanced_search_query[$i]['cond_terms_col_value'] .= $search_value;
 
                                 if ($search_operator == 'is') {
-                                    $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.name LIKE '" . $search_value . "'" . " )";
+                                    $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.slug LIKE '" . $search_value . "'" . " )";
                                     $advanced_search_query[$i]['cond_terms_operator'] .= 'LIKE';
                                 } else if ($search_operator == 'is not') {
-                                    $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.name NOT LIKE '" . $search_value . "'" . " )";
+                                    $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.slug NOT LIKE '" . $search_value . "'" . " )";
                                     $advanced_search_query[$i]['cond_terms_operator'] .= 'NOT LIKE';
                                 } else {
-                                    $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.name ". $search_operator ."'%" . $search_value . "%'" . " )";
+                                    $advanced_search_query[$i]['cond_terms'] .= " ( ". $wpdb->prefix ."term_taxonomy.taxonomy LIKE '". $search_col . "' AND ". $wpdb->prefix ."terms.slug ". $search_operator ."'%" . $search_value . "%'" . " )";
                                     $advanced_search_query[$i]['cond_terms_operator'] .= $search_operator;
                                 }
 
@@ -438,11 +442,26 @@ function variation_query_params(){
                     $i++;
                 }
             } else {
-                $sm_advanced_search_results_persistent = 1;
+                if (!empty($_POST['searchText'])) {
+                    $advanced_search_query[0]['cond_posts'] = $wpdb->prefix.'posts'.".id LIKE '" . $_POST['searchText'] . "'";
+                    $advanced_search_query[1]['cond_posts'] = $wpdb->prefix.'posts'.".post_title LIKE '%" . $_POST['searchText'] . "%'";
+                    $advanced_search_query[2]['cond_posts'] = $wpdb->prefix.'posts'.".post_status LIKE '%" . $_POST['searchText'] . "%'";
+                    $advanced_search_query[3]['cond_posts'] = $wpdb->prefix.'posts'.".post_content LIKE '%" . $_POST['searchText'] . "%'";
+                    $advanced_search_query[4]['cond_posts'] = $wpdb->prefix.'posts'.".post_excerpt LIKE '%" . $_POST['searchText'] . "%'";
+
+                    $advanced_search_query[0]['cond_postmeta'] = $wpdb->prefix.'postmeta'.".meta_value LIKE '%". $_POST['searchText'] . "%'";
+
+                    $advanced_search_query[0]['cond_terms'] = $wpdb->prefix ."term_taxonomy.taxonomy LIKE '%". $_POST['searchText'] . "%'";
+                    $advanced_search_query[1]['cond_terms'] = $wpdb->prefix ."terms.slug LIKE '%" . $_POST['searchText'] . "%'" ;
+                    $advanced_search_query[1]['cond_terms'] = $wpdb->prefix ."terms.name LIKE '%" . $_POST['searchText'] . "%'" ;
+
+                } else {
+                    $sm_advanced_search_results_persistent = 1;
+                }
             }
         }
 
-        if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
+    /*    if (isset ( $_POST ['searchText'] ) && $_POST ['searchText'] != '') {
 			$search_on = trim ( $_POST ['searchText'] );
 
 			$count_all_double_quote = substr_count( $search_on, '"' );
@@ -508,6 +527,8 @@ function variation_query_params(){
 		} else {
 			$search_condn = '';
 		}
+
+		*/
 
 		//code for the advanced Search condition handling
 
@@ -1365,7 +1386,7 @@ elseif ($active_module == 'Orders') {
                         
                         $user_add[$reg_user[$i]['ID']]      = $unserialized_detail[4];
                         $user_city[$reg_user[$i]['ID']]     = $unserialized_detail[5];
-                        $user_region[$reg_user[$i]['ID']]   = $unserialized_detail[6];
+                        $user_region[$reg_user[$i]['ID']]   = (!empty($unserialized_detail[6])) ? $unserialized_detail[6] : '';
                         $user_country[$reg_user[$i]['ID']]  = $unserialized_detail[7][0];
                         $user_pcode[$reg_user[$i]['ID']]    = $unserialized_detail[8];
                         $user_phone[$reg_user[$i]['ID']]    = $unserialized_detail[18];
@@ -1477,7 +1498,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
 
         global $current_user , $wpdb;
 
-        $state_nm = array("dashboardcombobox", "Products", "Customers", "Orders","incVariation");
+        $state_nm = array("dashboardcombobox", "Products", "Customers", "Orders","incVariation","search_type");
         
         for ($i=0;$i<sizeof($state_nm);$i++) {
             $stateid = "_sm_wpsc_".$current_user->user_email."_".$state_nm[$i];

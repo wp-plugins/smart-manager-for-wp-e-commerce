@@ -826,7 +826,7 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 		}
 	}
 		
-		$query_wpec_categories_advanced_search = "SELECT tt.term_taxonomy_id, t.name,tt.taxonomy,tt.parent,tt.term_id
+		$query_wpec_categories_advanced_search = "SELECT tt.term_taxonomy_id, t.name, t.slug, tt.taxonomy,tt.parent,tt.term_id
 							                FROM {$wpdb->prefix}terms as t 
 							                    JOIN {$wpdb->prefix}term_taxonomy as tt on (t.term_id = tt.term_id)
 							                WHERE tt.taxonomy LIKE 'wpsc_product_category'
@@ -839,6 +839,7 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 
 			$attribute_id = 0;
 			$index = sizeof($wpec_products_search_cols) - 1;
+			$categories_index = 0;
 			$categories_list = array();
 
 			foreach ($results_wpec_categories_advanced_search as $results_wpec_category_advanced_search) {
@@ -847,6 +848,7 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 
 					if ($results_wpec_category_advanced_search['term_id'] != $attribute_id && $results_wpec_category_advanced_search['parent'] == 0) {
 						$index++;
+						$attributes_index = 0;
 						$wpec_products_search_cols [$index]['key'] = 'Variations: ' . $results_wpec_category_advanced_search['name'];
 						$wpec_products_search_cols [$index]['type'] = 'string';
 						$wpec_products_search_cols [$index]['category'] = "";
@@ -858,11 +860,14 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 						$attribute_id = $results_wpec_category_advanced_search['term_id'];
 					} 
 					else {
-						$wpec_products_search_cols [$index]['values'][$results_wpec_category_advanced_search['term_taxonomy_id']] = $results_wpec_category_advanced_search['name'];
+						// $wpec_products_search_cols [$index]['values'][$attributes_index] = array('key' => $results_wpec_category_advanced_search['term_taxonomy_id'], 'value' => __($results_wpec_category_advanced_search['name'],$sm_domain));
+						$wpec_products_search_cols [$index]['values'][$attributes_index] = array('key' => $results_wpec_category_advanced_search['slug'], 'value' => __($results_wpec_category_advanced_search['name'],$sm_domain));
+						$attributes_index++;
 					}
 
 				} else {
-					$categories_list[] = $results_wpec_category_advanced_search['name'];	
+					$categories_list[$categories_index] = array('key' => $results_wpec_category_advanced_search['slug'], 'value' => __($results_wpec_category_advanced_search['name'],$sm_domain));
+					$categories_index++;
 				}
 			}
 		}    
@@ -978,7 +983,7 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 
 	// if (!empty($attribute)) {
 		
-		$query_attributes_advanced_search = "SELECT tt.term_taxonomy_id, t.name, wat.attribute_type,tt.taxonomy
+		$query_attributes_advanced_search = "SELECT tt.term_taxonomy_id, t.name, t.slug, wat.attribute_type, tt.taxonomy
 	                FROM {$wpdb->prefix}terms as t 
 	                    JOIN {$wpdb->prefix}term_taxonomy as tt on (t.term_id = tt.term_id) 
 	                    LEFT JOIN {$wpdb->prefix}woocommerce_attribute_taxonomies as wat on (concat('pa_',wat.attribute_name) = tt.taxonomy) 
@@ -991,14 +996,19 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 
 			$attribute_name = '';
 			$index = sizeof($products_search_cols) - 1;
+			$categories_index = 0;
 			$categories_list = array();
 
 			foreach ($results_attributes_advanced_search as $results_attribute_advanced_search) {
 
 				if ($results_attribute_advanced_search['taxonomy'] != 'product_cat') {
 
+
+
+
 					if ($results_attribute_advanced_search['taxonomy'] != $attribute_name) {
 						$index++;
+						$attributes_index = 0;
 						$products_search_cols [$index]['key'] = 'Attributes: ' . substr($results_attribute_advanced_search['taxonomy'],3);
 						$products_search_cols [$index]['type'] = 'string';
 						$products_search_cols [$index]['category'] = "";
@@ -1008,13 +1018,16 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 						$products_search_cols [$index]['values'] = array();
 					} 
 					// else {
-					$products_search_cols [$index]['values'][$results_attribute_advanced_search['term_taxonomy_id']] = $results_attribute_advanced_search['name'];
+					// $products_search_cols [$index]['values'][$attributes_index] = array('key' => $results_attribute_advanced_search['term_taxonomy_id'], 'value' => __($results_attribute_advanced_search['name'],$sm_domain));
+					$products_search_cols [$index]['values'][$attributes_index] = array('key' => $results_attribute_advanced_search['slug'], 'value' => __($results_attribute_advanced_search['name'],$sm_domain));
 					// }
+					$attributes_index++;
 
 					$attribute_name = $results_attribute_advanced_search['taxonomy'];
 
 				} else {
-					$categories_list[] = $results_attribute_advanced_search['name'];
+					$categories_list[$categories_index] = array('key' => $results_attribute_advanced_search['slug'], 'value' => __($results_attribute_advanced_search['name'],$sm_domain));
+					$categories_index++;
 				}	
 			}
 		}    
