@@ -24,7 +24,17 @@ include_once (ABSPATH . 'wp-admin/includes/screen.php'); // Fix to handle the WP
 require_once( WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-admin/includes/product-functions.php' );     // Fix for undefined function 'wpsc_product_has_children'
 include_once (WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-core/wpsc-functions.php');
 include_once (WP_PLUGIN_DIR . '/wp-e-commerce/wpsc-includes/purchaselogs.class.php');
-load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/languages/smart-manager-' . WPLANG . '.mo' );
+
+global $wp_version;
+
+if (version_compare ( $wp_version, '4.0', '>=' )) {
+    global $locale;
+    load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/' . dirname( dirname(plugin_basename( __FILE__ ))) . '/languages/smart-manager-' . $locale . '.mo' );
+} else {
+    load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/languages/smart-manager-' . WPLANG . '.mo' );
+}
+
+
 
 //checking the memory limit allocated
 $mem_limit = ini_get('memory_limit');
@@ -259,7 +269,7 @@ function variation_query_params(){
 
         //Code to clear the advanced search temp table
         if (empty($_POST['search_query']) || empty($_POST['search_query'][0]) || !empty($_POST['searchText']) ) {
-            $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp");
+            $wpdb->query("DELETE FROM {$wpdb->base_prefix}sm_advanced_search_temp");
             delete_option('sm_advanced_search_query');
         }
 
@@ -276,7 +286,7 @@ function variation_query_params(){
             
             if (!empty($search_query_diff)) {
 
-                $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp"); // query to reset advanced search temp table
+                $wpdb->query("DELETE FROM {$wpdb->base_prefix}sm_advanced_search_temp"); // query to reset advanced search temp table
 
                 $advanced_search_query = array();
                 $i = 0;
@@ -449,11 +459,11 @@ function variation_query_params(){
                     $advanced_search_query[3]['cond_posts'] = $wpdb->prefix.'posts'.".post_content LIKE '%" . $_POST['searchText'] . "%'";
                     $advanced_search_query[4]['cond_posts'] = $wpdb->prefix.'posts'.".post_excerpt LIKE '%" . $_POST['searchText'] . "%'";
 
-                    $advanced_search_query[0]['cond_postmeta'] = $wpdb->prefix.'postmeta'.".meta_value LIKE '%". $_POST['searchText'] . "%'";
+                    $advanced_search_query[5]['cond_postmeta'] = $wpdb->prefix.'postmeta'.".meta_value LIKE '%". $_POST['searchText'] . "%'";
 
-                    $advanced_search_query[0]['cond_terms'] = $wpdb->prefix ."term_taxonomy.taxonomy LIKE '%". $_POST['searchText'] . "%'";
-                    $advanced_search_query[1]['cond_terms'] = $wpdb->prefix ."terms.slug LIKE '%" . $_POST['searchText'] . "%'" ;
-                    $advanced_search_query[1]['cond_terms'] = $wpdb->prefix ."terms.name LIKE '%" . $_POST['searchText'] . "%'" ;
+                    $advanced_search_query[6]['cond_terms'] = $wpdb->prefix ."term_taxonomy.taxonomy LIKE '%". $_POST['searchText'] . "%'";
+                    $advanced_search_query[7]['cond_terms'] = $wpdb->prefix ."terms.slug LIKE '%" . $_POST['searchText'] . "%'" ;
+                    $advanced_search_query[8]['cond_terms'] = $wpdb->prefix ."terms.name LIKE '%" . $_POST['searchText'] . "%'" ;
 
                 } else {
                     $sm_advanced_search_results_persistent = 1;
@@ -580,20 +590,20 @@ function variation_query_params(){
 
 
                             //Query to find if there are any previous conditions
-                            $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp 
+                            $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->base_prefix}sm_advanced_search_temp 
                                                                         SET flag = 0
                                                                         WHERE flag = ". $index_search_string);
 
                             //Code to handle condition if the ids of previous cond are present in temp table
                             if (($index == 0 && $count_temp_previous_cond > 0) || (!empty($result_terms_search))) {
-                                $terms_advanced_search_from .= " JOIN {$wpdb->prefix}sm_advanced_search_temp
-                                                                    ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
+                                $terms_advanced_search_from .= " JOIN {$wpdb->base_prefix}sm_advanced_search_temp
+                                                                    ON ({$wpdb->base_prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
 
-                                $terms_advanced_search_where .= "AND {$wpdb->prefix}sm_advanced_search_temp.flag = 0";
+                                $terms_advanced_search_where .= "AND {$wpdb->base_prefix}sm_advanced_search_temp.flag = 0";
                             }
 
 
-                            $query_terms_search = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                            $query_terms_search = "REPLACE INTO {$wpdb->base_prefix}sm_advanced_search_temp
                                                             (".$terms_advanced_search_select . " " .
                                                                 $terms_advanced_search_from . " " .
                                                                 $terms_advanced_search_where . " " .")";
@@ -601,12 +611,12 @@ function variation_query_params(){
                             $result_terms_search = $wpdb->query ( $query_terms_search );
 
                             //query when no attr cond has been applied
-                            $query_terms_search_cat_child = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                            $query_terms_search_cat_child = "REPLACE INTO {$wpdb->base_prefix}sm_advanced_search_temp
                                                                 ( SELECT {$wpdb->prefix}posts.id ". $terms_search_result_flag ." ,1
                                                                     FROM {$wpdb->prefix}posts 
-                                                                    JOIN {$wpdb->prefix}sm_advanced_search_temp
-                                                                        ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.post_parent)
-                                                                    WHERE {$wpdb->prefix}sm_advanced_search_temp.cat_flag = 1 )";
+                                                                    JOIN {$wpdb->base_prefix}sm_advanced_search_temp
+                                                                        ON ({$wpdb->base_prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.post_parent)
+                                                                    WHERE {$wpdb->base_prefix}sm_advanced_search_temp.cat_flag = 1 )";
 
                             $result_terms_search_cat_child = $wpdb->query ( $query_terms_search_cat_child );
 
@@ -616,10 +626,10 @@ function variation_query_params(){
                     }
 
                     //Query to reset the cat_flag
-                    $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp SET cat_flag = 0");
+                    $wpdb->query("UPDATE {$wpdb->base_prefix}sm_advanced_search_temp SET cat_flag = 0");
 
                     //Code to delete the unwanted post_ids
-                    $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp WHERE flag = 0");
+                    $wpdb->query("DELETE FROM {$wpdb->base_prefix}sm_advanced_search_temp WHERE flag = 0");
 
                 }
 
@@ -647,16 +657,16 @@ function variation_query_params(){
                         $postmeta_search_result_flag = ( $index == (sizeof($cond_postmeta_array) - 1) ) ? ', '.$index_search_string : ', 0';
 
                         //Query to find if there are any previous conditions
-                        $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp 
+                        $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->base_prefix}sm_advanced_search_temp 
                                                                     SET flag = 0
                                                                     WHERE flag = ". $index_search_string);
 
                         //Code to handle condition if the ids of previous cond are present in temp table
                         if (($index == 0 && $count_temp_previous_cond > 0) || (!empty($result_postmeta_search))) {
-                            $postmeta_advanced_search_from = " JOIN {$wpdb->prefix}sm_advanced_search_temp
-                                                                ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}postmeta.posts_id)";
+                            $postmeta_advanced_search_from = " JOIN {$wpdb->base_prefix}sm_advanced_search_temp
+                                                                ON ({$wpdb->base_prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}postmeta.posts_id)";
 
-                            $postmeta_advanced_search_where = " AND {$wpdb->prefix}sm_advanced_search_temp.flag = 0";
+                            $postmeta_advanced_search_where = " AND {$wpdb->base_prefix}sm_advanced_search_temp.flag = 0";
                         }
 
                         if ($cond_postmeta_col_name1 == 'weight' || $cond_postmeta_col_name1 == 'height' || $cond_postmeta_col_name1 == 'width'
@@ -679,7 +689,7 @@ function variation_query_params(){
                                                                                     $postmeta_advanced_search_where;
                         }
 
-                        $query_postmeta_search = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                        $query_postmeta_search = "REPLACE INTO {$wpdb->base_prefix}sm_advanced_search_temp
                                                         (". $postmeta_advanced_search_query .")";
                         $result_postmeta_search = $wpdb->query ( $query_postmeta_search );
 
@@ -687,7 +697,7 @@ function variation_query_params(){
                     }
 
                     //Query to delete the unwanted post_ids
-                    $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp WHERE flag = 0");
+                    $wpdb->query("DELETE FROM {$wpdb->base_prefix}sm_advanced_search_temp WHERE flag = 0");
                     
                 }
 
@@ -708,23 +718,24 @@ function variation_query_params(){
                         $posts_search_result_flag = ( $index == (sizeof($cond_posts_array) - 1) ) ? ', '.$index_search_string : ', 0';
 
                         //Query to find if there are any previous conditions
-                        $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp 
+                        $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->base_prefix}sm_advanced_search_temp 
                                                                     SET flag = 0
                                                                     WHERE flag = ". $index_search_string);
 
 
                         //Code to handle condition if the ids of previous cond are present in temp table
                         if (($index == 0 && $count_temp_previous_cond > 0) || (!empty($result_posts_search))) {
-                            $posts_advanced_search_from = " JOIN {$wpdb->prefix}sm_advanced_search_temp
-                                                                ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
+                            $posts_advanced_search_from = " JOIN {$wpdb->base_prefix}sm_advanced_search_temp
+                                                                ON ({$wpdb->base_prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
 
-                            $posts_advanced_search_where = " AND {$wpdb->prefix}sm_advanced_search_temp.flag = 0";
+                            $posts_advanced_search_where = " AND {$wpdb->base_prefix}sm_advanced_search_temp.flag = 0";
                         }
 
-                        $query_posts_search = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                        $query_posts_search = "REPLACE INTO {$wpdb->base_prefix}sm_advanced_search_temp
                                                         (SELECT DISTINCT {$wpdb->prefix}posts.id ". $posts_search_result_flag ." ,0
                                                         FROM {$wpdb->prefix}posts ". $posts_advanced_search_from ."
-                                                        WHERE ".$cond_posts . " " .
+                                                        WHERE ".$cond_posts . 
+                                                            "AND {$wpdb->prefix}posts.post_type = 'wpsc-product'" .
                                                             $posts_advanced_search_where .")";
                         $result_posts_search = $wpdb->query ( $query_posts_search );
 
@@ -732,7 +743,7 @@ function variation_query_params(){
                     }
 
                     //Query to delete the unwanted post_ids
-                    $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp WHERE flag = 0");
+                    $wpdb->query("DELETE FROM {$wpdb->base_prefix}sm_advanced_search_temp WHERE flag = 0");
 
                 }
                 $index_search_string++;
@@ -744,9 +755,9 @@ function variation_query_params(){
         $advanced_search_where = '';
         if (!empty($advanced_search_query) || $sm_advanced_search_results_persistent == 1) {
 
-            $advanced_search_from = " JOIN {$wpdb->prefix}sm_advanced_search_temp
-                                        ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
-            $advanced_search_where = " AND {$wpdb->prefix}sm_advanced_search_temp.flag > 0";
+            $advanced_search_from = " JOIN {$wpdb->base_prefix}sm_advanced_search_temp
+                                        ON ({$wpdb->base_prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
+            $advanced_search_where = " AND {$wpdb->base_prefix}sm_advanced_search_temp.flag > 0";
         }
 
         $from = "FROM {$wpdb->prefix}posts";
@@ -939,35 +950,73 @@ elseif ($active_module == 'Orders') {
 			$where = " WHERE wtpl.date BETWEEN '$from_date' AND '$to_date'";
 		}
                 
+
+                //Code to get the variation names
+                $term_taxonomy_id_query = "SELECT term_relationships.object_id AS object_id,
+                                        GROUP_CONCAT( DISTINCT terms.name ORDER BY terms.term_id SEPARATOR ',' ) AS variations
+                                        FROM {$wpdb->prefix}term_relationships AS term_relationships
+                                            LEFT JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy ON ( term_taxonomy.term_taxonomy_id = term_relationships.term_taxonomy_id )
+                                            LEFT JOIN {$wpdb->prefix}terms AS terms ON ( terms.term_id = term_taxonomy.term_id )
+                                        WHERE term_taxonomy.taxonomy = 'wpsc-variation'
+                                        GROUP BY object_id";
+
+                $term_taxonomy_id_results = $wpdb->get_results( $term_taxonomy_id_query, 'ARRAY_A' );
+                $term_taxonomy_id_rows = $wpdb->num_rows;
+
+                $term_names = array();
+                if ($term_taxonomy_id_rows > 0) {
+
+                    foreach ($term_taxonomy_id_results as $term_taxonomy_id_result) {
+                        $term_names[$term_taxonomy_id_result['object_id']] = $term_taxonomy_id_result['variations'];
+                    }
+                }
+
+
+
+                                        // LEFT JOIN {$wpdb->prefix}term_relationships AS term_relationships ON ( term_relationships.object_id = wtcc.prodid )
+                                        //         LEFT JOIN 
+                                        //         (
+
+                                        //         ) AS terms ON ( terms.object_id = wtcc.prodid )
+
+                // CAST( CONCAT( if( products.post_parent > 0, SUBSTRING_INDEX( products.post_title, '(', 1 ), products.post_title ), if( products.post_parent > 0, CONCAT( if( terms.variations IS NULL, '', '(' ), 
+                //                                 terms.variations, 
+                //                                 if( terms.variations IS NULL, '', ')' ) ), '' ),
+                //                                 if( postmeta.meta_value != '',' [', ' '),
+                //                                 postmeta.meta_value,
+                //                                 if( postmeta.meta_value != '',']', ' ' ) )
+                //                              AS CHAR(1000000) ) AS product_details,
+
                 $product_details = "SELECT wtcc.prodid AS product_id,
-                                            CAST( CONCAT( if( products.post_parent > 0, SUBSTRING_INDEX( products.post_title, '(', 1 ), products.post_title ), if( products.post_parent > 0, CONCAT( if( terms.variations IS NULL, '', '(' ), 
-                                                terms.variations, 
-                                                if( terms.variations IS NULL, '', ')' ) ), '' ),
-                                                if( postmeta.meta_value != '',' [', ' '),
-                                                postmeta.meta_value,
-                                                if( postmeta.meta_value != '',']', ' ' ) )
-                                             AS CHAR(1000000) ) AS product_details,
+                                            postmeta.meta_value as sku,
+                                            products.post_title as title,
+                                            products.post_parent as post_parent,
                                             wtcc.name AS additional_product_name
                                             FROM " . WPSC_TABLE_CART_CONTENTS . " AS wtcc
                                                 LEFT JOIN {$wpdb->prefix}posts AS products ON ( products.ID = wtcc.prodid )
                                                 LEFT JOIN {$wpdb->prefix}postmeta AS postmeta ON ( postmeta.post_id = wtcc.prodid AND postmeta.meta_key = '_wpsc_sku' )
-                                                LEFT JOIN {$wpdb->prefix}term_relationships AS term_relationships ON ( term_relationships.object_id = wtcc.prodid )
-                                                LEFT JOIN 
-                                                (SELECT term_relationships.object_id AS object_id,
-                                                    GROUP_CONCAT( DISTINCT terms.name ORDER BY terms.term_id SEPARATOR ',' ) AS variations
-                                                    FROM {$wpdb->prefix}term_relationships AS term_relationships
-                                                        LEFT JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy ON ( term_taxonomy.term_taxonomy_id = term_relationships.term_taxonomy_id )
-                                                        LEFT JOIN {$wpdb->prefix}terms AS terms ON ( terms.term_id = term_taxonomy.term_id )
-                                                    WHERE term_taxonomy.taxonomy = 'wpsc-variation'
-                                                    GROUP BY object_id
-                                                ) AS terms ON ( terms.object_id = wtcc.prodid )
-
-                                            GROUP BY product_id
-                                    ";
+                                            GROUP BY product_id";
                 $results = $wpdb->get_results( $product_details, 'ARRAY_A' );
-				
+
                 $product_details_results = array();
                 foreach ( $results as $result ) {
+                        
+                    $product_details = '';
+
+                    if ($result['post_parent'] > 0) {
+
+                        $product_details = substr($result['title'], 0, strpos($result['title'], '('));
+                        if (!empty($term_names[$result['product_id']])) {
+                            $product_details .= '(' . $term_names[$result['product_id']] . ')';
+                        }    
+                    } else {
+                        $product_details = $result['title'];
+                    }
+
+                    if (!empty($result['sku'])) {
+                        $product_details .= ' [' . $result['sku'] .']';
+                    }
+                    
                     $product_details_results[$result['product_id']] = ( !empty( $result['product_details'] ) ) ? $result['product_details'] : $result['additional_product_name'];
                 }
                 

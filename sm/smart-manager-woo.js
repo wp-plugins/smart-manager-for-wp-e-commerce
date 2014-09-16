@@ -76,21 +76,21 @@ Ext.onReady(function () {
 	// Global object SM....declared in manager-console.php
 	SM.searchTextField   = '';
 	SM.dashboardComboBox = '';
-        SM.duplicateButton   = '';
+    SM.duplicateButton   = '';
 	SM.colModelTimeoutId = '';		
 	SM.activeModule      = 'Products'; //default module selected.
 	SM.activeRecord      = '';
 	SM.curDataIndex      = '';
 	SM.incVariation      = false;
 	SM.typeColIndex 	 = '';
-        SM.products_state = "";
-        SM.customers_state = "";
-        SM.orders_state = "";
-        SM.dashboard_state = "";
-        SM.variation_state = "";
-        SM.editor_state = "";
-        SM.search_type = "";
-        SM.advanced_search_query = new Array();
+    SM.products_state = "";
+    SM.customers_state = "";
+    SM.orders_state = "";
+    SM.dashboard_state = "";
+    SM.variation_state = "";
+    SM.editor_state = "";
+    SM.search_type = "";
+    SM.advanced_search_query = new Array();
         
         
 	
@@ -454,7 +454,7 @@ Ext.onReady(function () {
         function state_update() {
             
             if (state_apply === true && SM.activeModule != "Coupons") {
-                
+
                 var editor_current_state = editorGrid.getState();
                 if (SM.dashboard_state == "Products") {
                     SM.products_state = editor_current_state;
@@ -856,7 +856,7 @@ Ext.override(Ext.grid.HeaderDragZone, {
 //custom columns for Products Dashboard
 
 var products_columns = new Array();
-var products_render_fields = new Array();
+var products_render_fields = new Array();   
 
 products_columns = [editorGridSelectionModel,
 				{
@@ -882,6 +882,15 @@ products_columns = [editorGridSelectionModel,
 						return (record.data.thumbnail != 'false' ? '<img width=16px height=16px src="' + record.data.thumbnail + '"/>' : '');
 					}
 				},
+                {
+                    header: SM.productsCols.id.colName,
+                    id: 'id_products',
+                    hidden: false,
+                    sortable: true,
+                    dataIndex: SM.productsCols.id.colName,
+                    tooltip: getText('Product Id'),
+                    width: 70
+                },
 				{
 					header: SM.productsCols.name.name,
 					id: 'name_products',
@@ -1219,7 +1228,10 @@ jQuery(function($) {
 
         	if (fileExists == 1) {
 		    	var product_column_render = new Object();
-	        	product_column_render.name = value.value;
+
+                var name = value.value;
+                product_column_render.name = name.replace(/[^a-zA-z0-9_]/g,'');
+	        	// product_column_render.name = value.value;
 	        	product_column_render.type = value.dataType;
 	        	product_column_render.table = value.tableName;
 	        	products_render_fields [render_index] = product_column_render;
@@ -1345,6 +1357,7 @@ var productsColumnModel = new Ext.ProductsColumnModel({
 			incVariation: SM.incVariation,
             SM_IS_WOO16: SM_IS_WOO16,
             SM_IS_WOO21: SM_IS_WOO21,
+            SM_IS_WOO22: SM_IS_WOO22,
             file:  jsonURL
 		},
 		dirty: false,
@@ -1374,7 +1387,6 @@ var productsColumnModel = new Ext.ProductsColumnModel({
 		SM.searchTextField.reset(); 			  //to reset the searchTextField
 		SM.searchTextField.hide(); 			  //to reset the searchTextField
 		
-
 		if (SM.search_type == 'Simple Search') {
 			
 			jQuery("#search_switch").html('Simple Search');
@@ -1459,6 +1471,7 @@ var productsColumnModel = new Ext.ProductsColumnModel({
 							incVariation: SM.incVariation,
 				            SM_IS_WOO16: SM_IS_WOO16,
 				            SM_IS_WOO21: SM_IS_WOO21,
+				            SM_IS_WOO22: SM_IS_WOO22,
 				            file:  jsonURL,
 				            search_query: search_query,
 				            search: 'advanced_search'
@@ -1478,7 +1491,6 @@ var productsColumnModel = new Ext.ProductsColumnModel({
 				                } else {
 									customersStore.loadData(myJsonObj);
 				                }
-								
 								mask.hide();
 
 							} catch (e) {
@@ -1591,7 +1603,13 @@ var pagingToolbar = new Ext.PagingToolbar({
 				if(SM.activeModule == 'Products') {
 					var pageTotalRecord = editorGrid.getStore().getCount();		
 					var selectedRecords=editorGridSelectionModel.getCount();
-					if( selectedRecords >= pageTotalRecord){		
+					if( selectedRecords >= pageTotalRecord){
+						if (SM.advanced_search_query != '' || SM.searchTextField.getValue() != '') {
+							jQuery("label[for='sm_batch_entire_store_option']").text('All items in search result (including Variations)');
+						} else {
+							jQuery("label[for='sm_batch_entire_store_option']").text('All items in store (including Variations)');
+						}
+
 						batchRadioToolbar.setVisible(true);
 					} else {	
 						batchRadioToolbar.setVisible(false);						
@@ -1663,7 +1681,7 @@ var pagingToolbar = new Ext.PagingToolbar({
                     css: 'display:none;visibility:hidden;height:0px;', 
                     // src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
                     // src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
-                    src: fileurl + '&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
+                    src: fileurl + '&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+'&SM_IS_WOO21='+SM_IS_WOO21+'&SM_IS_WOO22='+SM_IS_WOO22+'',
                 }); 
 			}
 		}
@@ -1717,6 +1735,12 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 			if ( SM.activeModule == 'Coupons' ) {
 				edited_ids.push(r.id);
 			}
+
+			for (var item in r.data) {
+				if (typeof r.data[item] == "string") {
+					r.data[item] = r.data[item].replace(/(?:\r\n|\r|\n)/g, '<br />');
+				}
+			}
 			
 			edited.push(r.data);
 		});
@@ -1757,6 +1781,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 				edited_ids:Ext.encode(edited_ids),
                 SM_IS_WOO16: SM_IS_WOO16,
                 SM_IS_WOO21: SM_IS_WOO21,
+                SM_IS_WOO22: SM_IS_WOO22,
                 file:  jsonURL
 			}};
 			Ext.Ajax.request(o);
@@ -1902,6 +1927,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                                     active_module: SM.activeModule,
                                                     incvariation: SM.incVariation,
                                                     SM_IS_WOO21: SM_IS_WOO21,
+                                                    SM_IS_WOO22: SM_IS_WOO22,
                                                     file:  jsonURL
                                             }
                                     };
@@ -2208,7 +2234,7 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
                                 
 				cellClicked = false;
 				
-                                batchupdate_reset(); // to reset the batch update window on store change 
+				batchupdate_reset(); // to reset the batch update window on store change 
 
 				if(batchUpdateWindow.isVisible())
 				batchUpdateWindow.hide();
@@ -2283,7 +2309,7 @@ SM.searchTextField = new Ext.form.TextField({
 			//set a store depending on the active Module
 			store = productsStore;
 			var modifiedRecords = store.getModifiedRecords();
-			
+
 			// make server request after some time - let people finish typing their keyword
 			clearTimeout(search_timeout_id);
 			search_timeout_id = setTimeout(function () {
@@ -2351,7 +2377,7 @@ var searchLogic = function () {
                 } else {
 					customersStore.loadData(myJsonObj);
                 }
-					
+				
 			} catch (e) {
 				return;
 			}
@@ -2370,6 +2396,7 @@ var searchLogic = function () {
 			viewCols: Ext.encode(productsViewCols),
 			SM_IS_WOO16: SM_IS_WOO16,
 			SM_IS_WOO21: SM_IS_WOO21,
+			SM_IS_WOO22: SM_IS_WOO22,
 			file:  jsonURL
 		}
 	};
@@ -2471,8 +2498,6 @@ var countriesStoreCombo = new Ext.form.ComboBox({
 		editable: false
 });
 
-
-
 var orderStatusStoreData = new Array();
     orderStatusStoreData = [
                             ['pending', getText('Pending')],
@@ -2483,7 +2508,6 @@ var orderStatusStoreData = new Array();
                             ['refunded', getText('Refunded')],
                             ['cancelled', getText('Cancelled')]
                           ];
-
 
 var orderStatusStore = new Ext.data.ArrayStore({
 			id: 0,
@@ -2499,6 +2523,11 @@ var orderStatusStore = new Ext.data.ArrayStore({
 			]
 	});
 	
+// for woo2.2	
+if (SM_IS_WOO22 == 'true') {
+	orderStatusStoreData[0][1] = getText('Pending payment'); 
+	orderStatusStore.data.items[0].data.name = getText('Pending payment');
+}
 	
 	var orderStatusCombo = new Ext.form.ComboBox({
 		typeAhead: true,
@@ -2624,9 +2653,10 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
                                 setTextarea.hide();
 							} else if(field_name == 'Order Status'){
 								actions_index = field_type;
+
 								setTextfield.hide();
 								textField2Cmp.hide();
-                                                                comboCountriesCmp.hide();
+                                comboCountriesCmp.hide();
 								comboCategoriesActionCmp.show();
 								comboCategoriesActionCmp.reset();
 								lblImg.hide();
@@ -2721,8 +2751,8 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 							setTextfield.regexText = '';	
 						}else if(SM.activeModule == 'Products'){
                                                         
-                                                        var field_val = getText('Select a field') + '...';
-                                                        if ( this.value.substring( 0, 14 ) != 'groupAttribute' && this.value != field_val){
+                            var field_val = getText('Select a field') + '...';
+                            if ( this.value.substring( 0, 14 ) != 'groupAttribute' && this.value != field_val){
 								actionStore.loadData(actions[SM['productsCols'][this.value].actionType]);
 							}
 							// @todo apply regex accordign to the req
@@ -3265,13 +3295,15 @@ var batchUpdatePanel = new Ext.Panel({
 		disabled: false,
 		listeners: { click: function () {
 			var clickRadio = Ext.getCmp('updateItemsOrStore').getValue();
-			var radioValue = clickRadio.inputValue;					
+			var radioValue = clickRadio.inputValue;
+			var products_search_flag = false; // flag for all items in search result batch update
+
 			if(batchRadioToolbar.isVisible()){
 				flag = 1;
 			} else {
 				flag = 0;
 			}
-					
+
 			if(SM.activeModule == 'Orders'){
 				store = ordersStore;
 				cm = ordersColumnModel;
@@ -3298,8 +3330,12 @@ var batchUpdatePanel = new Ext.Panel({
 					}
 				}
 
+				if (SM.advanced_search_query != '' || SM.searchTextField.getValue() != '') {
+					products_search_flag = true;
+				}
+
 			}
-			batchUpdateRecords(batchUpdatePanel,toolbarCount,cnt_array,store,jsonURL,batchUpdateWindow,radioValue,flag,pagingToolbar,SM_IS_WOO16,SM_IS_WOO21);
+			batchUpdateRecords(batchUpdatePanel,toolbarCount,cnt_array,store,jsonURL,batchUpdateWindow,radioValue,flag,pagingToolbar,products_search_flag,SM_IS_WOO16,SM_IS_WOO21,SM_IS_WOO22);
 		}}
 	}]
 });
@@ -3319,8 +3355,8 @@ var batchRadioToolbar = new Ext.Toolbar({
 			height: 20,
 		    items: [
 		    	
-		        {boxLabel: 'Selected items', name: 'rb-batch', inputValue: 1, checked: true},
-		        {boxLabel: 'All items in store (including Variations)', name: 'rb-batch', inputValue: 2}
+		        {boxLabel: 'Selected items', name: 'rb-batch', id:'sm_batch_selected_items_option' ,inputValue: 1, checked: true, width: 100},
+		        {boxLabel: 'All items in store (including Variations)', name: 'rb-batch', id:'sm_batch_entire_store_option', inputValue: 2, width: 350}
 		    ]
 		})        
 	]
@@ -3656,6 +3692,7 @@ var showCustomerDetails = function(record,rowIndex){
 			limit: limit,
             SM_IS_WOO16: SM_IS_WOO16,
             SM_IS_WOO21: SM_IS_WOO21,
+            SM_IS_WOO22: SM_IS_WOO22,
             file:  jsonURL
 		},
 		dirty:false,
@@ -3875,6 +3912,7 @@ var showCustomerDetails = function(record,rowIndex){
 			couponFields: Ext.encode(couponFields),
 			SM_IS_WOO16: SM_IS_WOO16,
 			SM_IS_WOO21: SM_IS_WOO21,
+			SM_IS_WOO22: SM_IS_WOO22,
 			file:  jsonURL
 		},
 		dirty:false,
@@ -3893,6 +3931,8 @@ var showCustomerDetails = function(record,rowIndex){
 
         SM.activeModule = couponFields.coupon_dashbd.title;
 		SM.dashboardComboBox.setValue(SM.activeModule);
+
+		jQuery("#search_switch"). hide();
         
 		jQuery("#sm_advanced_search_content").hide(); //Hiding the advanced search box
 		jQuery( "#sm_advanced_search_or").unbind( "click" );
@@ -4212,6 +4252,7 @@ var showCustomerDetails = function(record,rowIndex){
 			limit: limit,
             SM_IS_WOO16: SM_IS_WOO16,
             SM_IS_WOO21: SM_IS_WOO21,
+            SM_IS_WOO22: SM_IS_WOO22,
             file:  jsonURL
 		},
 		dirty:false,

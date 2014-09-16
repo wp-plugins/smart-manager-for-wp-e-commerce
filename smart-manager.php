@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.9.1
+Version: 3.9.2
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013, 2014 Store Apps All rights reserved.
@@ -123,7 +123,6 @@ include_once (ABSPATH . WPINC . '/functions.php');
 			define('WOO_ACTIVATED', true);
 		}
 
-
 		// Including Scripts for using the wordpress new media manager
         if (version_compare ( $wp_version, '3.5', '>=' )) {
             define ( 'IS_WP35', true);
@@ -134,6 +133,11 @@ include_once (ABSPATH . WPINC . '/functions.php');
                 // wp_enqueue_script( 'media-upload' );
             }
             
+        }
+
+        //Flag for handling changes since WP 4.0+
+        if (version_compare ( $wp_version, '4.0', '>=' )) {
+        	define ( 'IS_WP40', true);
         }
 
         if ( !wp_script_is( 'jquery' ) ) {
@@ -174,18 +178,26 @@ include_once (ABSPATH . WPINC . '/functions.php');
 			
 			//todo change 2.1-beta-2 to 2.1  before release
 
-						if (version_compare ( WOOCOMMERCE_VERSION, '2.1.0', '<' )) {
+						if (version_compare ( WOOCOMMERCE_VERSION, '2.2.0', '<' )) {
 
-							if (version_compare ( WOOCOMMERCE_VERSION, '2.0', '<' )) {
-	                            define ( 'SM_IS_WOO16', "true" );
+							if (version_compare ( WOOCOMMERCE_VERSION, '2.1.0', '<' )) {
+
+								if (version_compare ( WOOCOMMERCE_VERSION, '2.0', '<' )) {
+		                            define ( 'SM_IS_WOO16', "true" );
+		                        } else {
+		                        	define ( 'SM_IS_WOO16', "false" );	
+		                        }
+	                            define ( 'SM_IS_WOO21', "false" );
 	                        } else {
-	                        	define ( 'SM_IS_WOO16', "false" );	
+	                        	define ( 'SM_IS_WOO16', "false" );
+	                            define ( 'SM_IS_WOO21', "true" );
 	                        }
+	                        define ( 'SM_IS_WOO22', "false" );
+						} else {
+							define ( 'SM_IS_WOO16', "false" );
                             define ( 'SM_IS_WOO21', "false" );
-                        } else {
-                        	define ( 'SM_IS_WOO16', "false" );
-                            define ( 'SM_IS_WOO21', "true" );
-                        }
+							define ( 'SM_IS_WOO22', "true" );
+						}
                         
 //			define ( 'IS_WOO20', version_compare ( WOOCOMMERCE_VERSION, '2.0', '>=' ) );
                         
@@ -371,6 +383,7 @@ include_once (ABSPATH . WPINC . '/functions.php');
 
 		$query = "SELECT option_value FROM {$wpdb->prefix}options WHERE option_name = 'sm_" . $roles [0] . "_dashboard'";
 		$results = $wpdb->get_results( $query );
+
 	        if (! empty( $results [0]->option_value ) || $current_user->roles [0] == 'administrator' //modified cond for client fix
 	        	|| (!empty($current_user_caps) && $current_user_caps == 'administrator')) {
 			add_filter( 'wpsc_additional_pages', 'smart_wpsc_add_modules_admin_pages', 10, 2 );

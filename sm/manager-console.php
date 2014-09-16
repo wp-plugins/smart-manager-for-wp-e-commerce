@@ -67,9 +67,11 @@ if (WPSC_RUNNING === true) {
 	global $wpdb;
 
 	if ( defined('IS_WPSC388') && IS_WPSC388 )	
-		$orders_details_url = $site_url . "/wp-admin/index.php?page=wpsc-purchase-logs&c=item_details&id=";
+		// $orders_details_url = $site_url . "/wp-admin/index.php?page=wpsc-purchase-logs&c=item_details&id=";
+		$orders_details_url = ADMIN_URL . "/index.php?page=wpsc-purchase-logs&c=item_details&id=";
 	else
-		$orders_details_url = $site_url . "/wp-admin/index.php?page=wpsc-sales-logs&purchaselog_id=";
+		// $orders_details_url = $site_url . "/wp-admin/index.php?page=wpsc-sales-logs&purchaselog_id=";
+		$orders_details_url = ADMIN_URL . "/index.php?page=wpsc-sales-logs&purchaselog_id=";
 
 	$weight_unit ['items']  = array (array ('id' => 0, 'name' => __('Pounds', $sm_domain), 'value' => 'pound' ), array ('id' => 1, 'name' => __('Ounces', $sm_domain), 'value' => 'ounce' ), array ('id' => 2, 'name' => __('Grams', $sm_domain), 'value' => 'gram' ), array ('id' => 3, 'name' => __('Kilograms', $sm_domain), 'value' => 'kilogram' ) );
 	$weight_unit ['totalCount'] = count ( $weight_unit ['items'] );
@@ -460,7 +462,7 @@ if (WPSC_RUNNING === true) {
 									  array ( 'meta_key' => 'usage_limit' ));
 	}
 
-	$select_box = (SM_IS_WOO21 == "true") ?  wc_get_coupon_types() : $woocommerce->get_coupon_discount_types();
+	$select_box = (SM_IS_WOO21 == "true" || SM_IS_WOO22 == "true") ?  wc_get_coupon_types() : $woocommerce->get_coupon_discount_types();
 
 	$select_box_keys = array_keys($select_box);
 
@@ -544,7 +546,13 @@ if (WPSC_RUNNING === true) {
 	$ordersfield_names ['items'] [$cnt] ['id'] = $cnt;
 	$ordersfield_names ['items'] [$cnt] ['name'] = 'Order Status';
 	$ordersfield_names ['items'] [$cnt] ['type'] = 'bigint';
-	$ordersfield_names ['items'] [$cnt] ['value'] = " ,{$wpdb->prefix}term_relationships";
+
+	if (SM_IS_WOO22 == "true") {
+		$ordersfield_names ['items'] [$cnt] ['value'] = " ,{$wpdb->prefix}posts";
+		$ordersfield_names ['items'] [$cnt] ['colName']= 'post_status';
+	} else {
+		$ordersfield_names ['items'] [$cnt] ['value'] = " ,{$wpdb->prefix}term_relationships";
+	}
 
 	$encodedOrdersFields = json_encode ( $ordersfield_names );
 	
@@ -1053,6 +1061,7 @@ $encoded_categories = json_encode ( $categories );
 // $products_cols = json_encode( $products_cols );
 $products_cols = json_encode( apply_filters('sm_product_columns',$products_cols) );
 if ( isset( $attribute ) ) {
+
 	$attribute = addslashes(json_encode( $attribute )); // addslashes was done as one client was facing issue with attributes
 }
 
@@ -1069,17 +1078,18 @@ function sm_product_columns_filter($attr) {
 								'_max_variation_sale_price', '_min_price_variation_id',
 								'_min_regular_price_variation_id', '_min_sale_price_variation_id',
 								'_min_variation_price', '_min_variation_regular_price',
-								'_min_variation_sale_price', '_product_image_gallery', '_wp_trash_meta_time', '_edit_last');
+								'_min_variation_sale_price', '_product_image_gallery', '_wp_trash_meta_time', '_edit_last','_edit_lock');
 
 	$postmeta_fields_ignored_cond = (!empty($meta_key_ignored)) ? "AND {$wpdb->prefix}postmeta.meta_key NOT IN ('".implode("','",$meta_key_ignored)."')" : '';
+
+	// AND {$wpdb->prefix}postmeta.meta_key LIKE '\_%'
 
 	$productmetafieldsquery = "SELECT DISTINCT {$wpdb->prefix}postmeta.meta_key,
 									{$wpdb->prefix}postmeta.meta_value
 								FROM {$wpdb->prefix}postmeta 
 									JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.id = {$wpdb->prefix}postmeta.post_id)
 								WHERE post_type IN ('product','product_variation')
-									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE 'attribute_%'
-									AND {$wpdb->prefix}postmeta.meta_key LIKE '\_%' 
+									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE 'attribute_%' 
 										$postmeta_fields_ignored_cond
 								GROUP BY {$wpdb->prefix}postmeta.meta_key";
 	$productmetafieldsresults = $wpdb->get_results ($productmetafieldsquery , 'ARRAY_A');
@@ -1242,7 +1252,9 @@ if (WOO_RUNNING === true) {
         var isWPSC3814            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC3814 : '') . "';
         var SM_IS_WOO16            =  '" . ((WOO_RUNNING === true) ? SM_IS_WOO16 : '') . "';
         var SM_IS_WOO21            =  '" . ((WOO_RUNNING === true) ? SM_IS_WOO21 : '') . "';
+        var SM_IS_WOO22            =  '" . ((WOO_RUNNING === true) ? SM_IS_WOO22 : '') . "';
         var IS_WP35             =  '" . ((version_compare ( $wp_version, '3.5', '>=' )) ? IS_WP35 : '') . "';
+        var IS_WP40             =  '" . ((version_compare ( $wp_version, '4.0', '>=' )) ? IS_WP40 : '') . "';
         var time_zone           = '" . $timezone . "';
 	
 	var ordersFields        =  " . $encodedOrdersFields . ";
@@ -1313,6 +1325,7 @@ if (WPSC_RUNNING === true) {
 		lang.delete_the_selected_items = '" . __('Delete the selected items',$sm_domain) . "'; 
 		lang.type	         	= '" . __('Type',$sm_domain) . "';
 		lang.product_images	   	= '" . __('Product Images',$sm_domain) . "';
+		lang.product_id		    = '" . __('Product Id',$sm_domain) . "'
 		lang.product_name	    = '" . __('Product Name',$sm_domain) . "'
 		lang.price	         	= '" . __('Price',$sm_domain) . "';
 		lang.sale_price			= '" . __('Sale Price',$sm_domain) . "';
@@ -1464,6 +1477,7 @@ if (WPSC_RUNNING === true) {
 		lang.completed			            = '" . __('Completed',$sm_domain) . "';
 		lang.refunded			            = '" . __('Refunded',$sm_domain) . "';
 		lang.cancelled			            = '" . __('Cancelled',$sm_domain) . "';
+		lang.pending_payment			    = '" . __('Pending payment',$sm_domain) . "';
                     
         lang.product_visibility			= '" . __('Product Visibility',$sm_domain) . "';
         lang.visibility     			= '" . __('Visibility',$sm_domain) . "';
