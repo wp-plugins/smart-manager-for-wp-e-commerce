@@ -74,20 +74,21 @@ Ext.onReady(function () {
 	// Global object SM....declared in manager-console.php
 	SM.searchTextField   = '';
 	SM.dashboardComboBox = '';
-        SM.duplicateButton   = '';
+	SM.duplicateButton   = '';
 	SM.colModelTimeoutId = '';		
 	SM.activeModule      = 'Products'; //default module selected.
 	SM.activeRecord      = '';
 	SM.curDataIndex      = '';
 	SM.incVariation      = false;
 	SM.typeColIndex 	 = '';
-        SM.products_state = "";
-        SM.customers_state = "";
-        SM.orders_state = "";
-        SM.dashboard_state = "";
-        SM.variation_state = "";
-        SM.search_type = "";
-        SM.editor_state = "";
+    SM.products_state = "";
+    SM.customers_state = "";
+    SM.orders_state = "";
+    SM.dashboard_state = "";
+    SM.variation_state = "";
+    SM.search_type = "";
+    SM.editor_state = "";
+    SM.advanced_search_query = new Array();
 	
 	var actions            = new Array(); //an array for actions combobox in batchupdate window.
 	
@@ -1277,6 +1278,8 @@ Ext.onReady(function () {
 				productsStore.setBaseParam('search_query[]', search_query);
 				productsStore.setBaseParam('search', 'advanced_search');
 				
+				SM.advanced_search_query = search_query;
+
 				mask.show();
 
 				$.ajax({
@@ -1466,7 +1469,14 @@ var pagingToolbar = new Ext.PagingToolbar({
 				if(SM.activeModule == 'Products') {
 					var pageTotalRecord = editorGrid.getStore().getCount();		
 					var selectedRecords=editorGridSelectionModel.getCount();
-					if( selectedRecords >= pageTotalRecord && SM.searchTextField.getValue() == '' ){
+					if( selectedRecords >= pageTotalRecord ){
+
+						if (SM.advanced_search_query != '' || SM.searchTextField.getValue() != '') {
+							jQuery("label[for='sm_batch_entire_store_option']").text('All items in search result (including Variations)');
+						} else {
+							jQuery("label[for='sm_batch_entire_store_option']").text('All items in store (including Variations)');
+						}
+
 						batchRadioToolbar.setVisible(true);
 					} else {	
 						batchRadioToolbar.setVisible(false);						
@@ -3510,7 +3520,8 @@ var batchUpdatePanel = new Ext.Panel({
 		disabled: false,
 		listeners: { click: function () {
 			var clickRadio = Ext.getCmp('updateItemsOrStore').getValue();
-			var radioValue = clickRadio.inputValue;					
+			var radioValue = clickRadio.inputValue;	
+			var products_search_flag = false; // flag for all items in search result batch update				
 			if(batchRadioToolbar.isVisible()){
 				flag = 	1;
 			} else {
@@ -3526,8 +3537,13 @@ var batchUpdatePanel = new Ext.Panel({
 			}else{
 				store = productsStore;
 				cm = productsColumnModel;
+
+				if (SM.advanced_search_query != '' || SM.searchTextField.getValue() != '') {
+					products_search_flag = true;
+				}
+
 			}
-			batchUpdateRecords(batchUpdatePanel,toolbarCount,cnt_array,store,jsonURL,batchUpdateWindow,radioValue,flag,pagingToolbar);
+			batchUpdateRecords(batchUpdatePanel,toolbarCount,cnt_array,store,jsonURL,batchUpdateWindow,radioValue,flag,pagingToolbar,products_search_flag);
 		}}
 	}]
 });
@@ -3549,7 +3565,7 @@ var batchRadioToolbar = new Ext.Toolbar({
 		    items: [
 		    	
 		        {boxLabel: 'Selected items', name: 'rb-batch', inputValue: 1, checked: true},
-		        {boxLabel: 'All items in store (including Variations)', name: 'rb-batch', inputValue: 2}
+		        {boxLabel: 'All items in store (including Variations)', name: 'rb-batch', id:'sm_batch_entire_store_option', inputValue: 2}
 		    ]
 		})        
 	]

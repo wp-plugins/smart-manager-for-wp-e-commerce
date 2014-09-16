@@ -20,7 +20,7 @@ if ( ! defined('ABSPATH') ) {
 }
 
 // WOO 2.1 compatibility
-if (!empty($_POST['SM_IS_WOO21']) && $_POST['SM_IS_WOO21'] == "true") {
+if ((!empty($_POST['SM_IS_WOO21']) && $_POST['SM_IS_WOO21'] == "true") || (!empty($_POST['SM_IS_WOO22']) && $_POST['SM_IS_WOO22'] == "true") ) {
     include_once (WP_PLUGIN_DIR . '/woocommerce/includes/admin/class-wc-admin-duplicate-product.php'); // for handling the duplicate product functionality
     include_once (WP_PLUGIN_DIR . '/woocommerce/includes/class-wc-product-variable.php'); // for handling variable parent price
     include_once (WP_PLUGIN_DIR . '/woocommerce/includes/abstracts/abstract-wc-product.php'); // for updating stock status
@@ -28,7 +28,14 @@ if (!empty($_POST['SM_IS_WOO21']) && $_POST['SM_IS_WOO21'] == "true") {
     include_once (WP_PLUGIN_DIR . '/woocommerce/admin/includes/duplicate_product.php');
 }
 
-load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/languages/smart-manager-' . WPLANG . '.mo' );
+global $wp_version;
+
+if (version_compare ( $wp_version, '4.0', '>=' )) {
+    global $locale;
+    load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/languages/smart-manager-' . $locale . '.mo' );
+} else {
+    load_textdomain( 'smart-manager', WP_PLUGIN_DIR . '/' . dirname(dirname(plugin_basename( __FILE__ ))) . '/languages/smart-manager-' . WPLANG . '.mo' );
+}
 
 $mem_limit = ini_get('memory_limit');
 if(intval(substr($mem_limit,0,strlen($mem_limit)-1)) < 64 ){
@@ -251,7 +258,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         }
 
 
-        if (!empty($_POST['SM_IS_WOO21']) && $_POST['SM_IS_WOO21'] == "true") {
+        if ((!empty($_POST['SM_IS_WOO21']) && $_POST['SM_IS_WOO21'] == "true") || (!empty($_POST['SM_IS_WOO22']) && $_POST['SM_IS_WOO22'] == "true")) {
 
             $query_taxonomy_id_variable = "SELECT term_taxonomy.term_taxonomy_id
                                             FROM {$wpdb->prefix}term_taxonomy AS term_taxonomy 
@@ -310,7 +317,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         
         //Code to clear the advanced search temp table
         if (empty($_POST['search_query']) || empty($_POST['search_query'][0]) || !empty($_POST['searchText']) ) {
-            $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp");
+            $wpdb->query("DELETE FROM {$wpdb->base_prefix}sm_advanced_search_temp");
             delete_option('sm_advanced_search_query');
         }        
 
@@ -327,7 +334,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
             if (!empty($search_query_diff)) {
 
-                $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp"); // query to reset advanced search temp table
+                $wpdb->query("DELETE FROM {$wpdb->base_prefix}sm_advanced_search_temp"); // query to reset advanced search temp table
 
                 $advanced_search_query = array();
                 $i = 0;
@@ -480,11 +487,11 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     $advanced_search_query[3]['cond_posts'] = $wpdb->prefix.'posts'.".post_content LIKE '%" . $_POST['searchText'] . "%'";
                     $advanced_search_query[4]['cond_posts'] = $wpdb->prefix.'posts'.".post_excerpt LIKE '%" . $_POST['searchText'] . "%'";
 
-                    $advanced_search_query[0]['cond_postmeta'] = $wpdb->prefix.'postmeta'.".meta_value LIKE '%". $_POST['searchText'] . "%'";
+                    $advanced_search_query[5]['cond_postmeta'] = $wpdb->prefix.'postmeta'.".meta_value LIKE '%". $_POST['searchText'] . "%'";
 
-                    $advanced_search_query[0]['cond_terms'] = $wpdb->prefix ."term_taxonomy.taxonomy LIKE '%". $_POST['searchText'] . "%'";
-                    $advanced_search_query[1]['cond_terms'] = $wpdb->prefix ."terms.slug LIKE '%" . $_POST['searchText'] . "%'" ;
-                    $advanced_search_query[1]['cond_terms'] = $wpdb->prefix ."terms.name LIKE '%" . $_POST['searchText'] . "%'" ;
+                    $advanced_search_query[6]['cond_terms'] = $wpdb->prefix ."term_taxonomy.taxonomy LIKE '%". $_POST['searchText'] . "%'";
+                    $advanced_search_query[7]['cond_terms'] = $wpdb->prefix ."terms.slug LIKE '%" . $_POST['searchText'] . "%'" ;
+                    $advanced_search_query[8]['cond_terms'] = $wpdb->prefix ."terms.name LIKE '%" . $_POST['searchText'] . "%'" ;
 
                 } else {
                     $sm_advanced_search_results_persistent = 1;
@@ -672,6 +679,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
                     $terms_advanced_search_from = '';
                     $terms_advanced_search_where = '';
+                    $result_terms_search = '';
 
                     foreach ($cond_terms_array as $cond_terms) {
 
@@ -720,22 +728,22 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
 
                             //Query to find if there are any previous conditions
-                            $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp 
+                            $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->base_prefix}sm_advanced_search_temp 
                                                                         SET flag = 0
                                                                         WHERE flag = ". $index_search_string);
 
                             //Code to handle condition if the ids of previous cond are present in temp table
                             if (($index == 0 && $count_temp_previous_cond > 0) || (!empty($result_terms_search))) {
-                                $terms_advanced_search_from .= " JOIN {$wpdb->prefix}sm_advanced_search_temp
-                                                                    ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
+                                $terms_advanced_search_from .= " JOIN {$wpdb->base_prefix}sm_advanced_search_temp
+                                                                    ON ({$wpdb->base_prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
 
-                                $terms_advanced_search_where .= "AND {$wpdb->prefix}sm_advanced_search_temp.flag = 0";
+                                $terms_advanced_search_where .= "AND {$wpdb->base_prefix}sm_advanced_search_temp.flag = 0";
                             }
 
                             $result_terms_search = array();
 
                             if (!empty($terms_advanced_search_select ) && !empty($terms_advanced_search_from ) && !empty($terms_advanced_search_where )) {
-                                $query_terms_search = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                                $query_terms_search = "REPLACE INTO {$wpdb->base_prefix}sm_advanced_search_temp
                                                             (".$terms_advanced_search_select . " " .
                                                                 $terms_advanced_search_from . " " .
                                                                 $terms_advanced_search_where . " " .")";
@@ -748,22 +756,22 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
                                 //query when attr cond has been applied
                                 if ( $terms_att_search_flag == 1 ){
-                                    $query_terms_search_cat_child = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                                    $query_terms_search_cat_child = "REPLACE INTO {$wpdb->base_prefix}sm_advanced_search_temp
                                                                     ( SELECT {$wpdb->prefix}posts.id ". $terms_search_result_flag ." ,1
                                                                         FROM {$wpdb->prefix}posts
-                                                                        JOIN {$wpdb->prefix}sm_advanced_search_temp AS temp1
+                                                                        JOIN {$wpdb->base_prefix}sm_advanced_search_temp AS temp1
                                                                             ON (temp1.product_id = {$wpdb->prefix}posts.id)
-                                                                        JOIN {$wpdb->prefix}sm_advanced_search_temp AS temp2
+                                                                        JOIN {$wpdb->base_prefix}sm_advanced_search_temp AS temp2
                                                                             ON (temp2.product_id = {$wpdb->prefix}posts.post_parent)
                                                                         WHERE temp2.cat_flag = 1 )";    
                                 } else {
                                     //query when no attr cond has been applied
-                                    $query_terms_search_cat_child = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                                    $query_terms_search_cat_child = "REPLACE INTO {$wpdb->base_prefix}sm_advanced_search_temp
                                                                         ( SELECT {$wpdb->prefix}posts.id ". $terms_search_result_flag ." ,1
                                                                             FROM {$wpdb->prefix}posts 
-                                                                            JOIN {$wpdb->prefix}sm_advanced_search_temp
-                                                                                ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.post_parent)
-                                                                            WHERE {$wpdb->prefix}sm_advanced_search_temp.cat_flag = 1 )";
+                                                                            JOIN {$wpdb->base_prefix}sm_advanced_search_temp
+                                                                                ON ({$wpdb->base_prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.post_parent)
+                                                                            WHERE {$wpdb->base_prefix}sm_advanced_search_temp.cat_flag = 1 )";
                                 }
                                 
                                 $result_terms_search_cat_child = $wpdb->query ( $query_terms_search_cat_child );
@@ -774,10 +782,10 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     }
 
                     //Query to reset the cat_flag
-                    $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp SET cat_flag = 0");
+                    $wpdb->query("UPDATE {$wpdb->base_prefix}sm_advanced_search_temp SET cat_flag = 0");
 
                     //Code to delete the unwanted post_ids
-                    $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp WHERE flag = 0");
+                    $wpdb->query("DELETE FROM {$wpdb->base_prefix}sm_advanced_search_temp WHERE flag = 0");
                 }
 
                 //Cond for postmeta
@@ -807,19 +815,19 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         $postmeta_search_result_flag = ( $index == (sizeof($cond_postmeta_array) - 1) ) ? ', '.$index_search_string : ', 0';
 
                         //Query to find if there are any previous conditions
-                        $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp 
+                        $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->base_prefix}sm_advanced_search_temp 
                                                                     SET flag = 0
                                                                     WHERE flag = ". $index_search_string);
 
                         //Code to handle condition if the ids of previous cond are present in temp table
                         if (($index == 0 && $count_temp_previous_cond > 0) || (!empty($result_postmeta_search))) {
-                            $postmeta_advanced_search_from = " JOIN {$wpdb->prefix}sm_advanced_search_temp
-                                                                ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}postmeta.posts_id)";
+                            $postmeta_advanced_search_from = " JOIN {$wpdb->base_prefix}sm_advanced_search_temp
+                                                                ON ({$wpdb->base_prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}postmeta.posts_id)";
 
-                            $postmeta_advanced_search_where = " AND {$wpdb->prefix}sm_advanced_search_temp.flag = 0";
+                            $postmeta_advanced_search_where = " AND {$wpdb->base_prefix}sm_advanced_search_temp.flag = 0";
                         }
 
-                        $query_postmeta_search = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                        $query_postmeta_search = "REPLACE INTO {$wpdb->base_prefix}sm_advanced_search_temp
                                                         (SELECT DISTINCT {$wpdb->prefix}postmeta.post_id ". $postmeta_search_result_flag ." ,0
                                                         FROM {$wpdb->prefix}postmeta ". $postmeta_advanced_search_from ."
                                                         WHERE ".$cond_postmeta . " " .
@@ -832,7 +840,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     }
 
                     //Query to delete the unwanted post_ids
-                    $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp WHERE flag = 0");
+                    $wpdb->query("DELETE FROM {$wpdb->base_prefix}sm_advanced_search_temp WHERE flag = 0");
                 }
 
                 //Cond for posts
@@ -853,20 +861,20 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         $posts_search_result_cat_flag = ( $index == (sizeof($cond_posts_array) - 1) ) ? ", 999" : ', 0';
 
                         //Query to find if there are any previous conditions
-                        $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->prefix}sm_advanced_search_temp 
+                        $count_temp_previous_cond = $wpdb->query("UPDATE {$wpdb->base_prefix}sm_advanced_search_temp 
                                                                     SET flag = 0
                                                                     WHERE flag = ". $index_search_string);
 
 
                         //Code to handle condition if the ids of previous cond are present in temp table
                         if (($index == 0 && $count_temp_previous_cond > 0) || (!empty($result_posts_search))) {
-                            $posts_advanced_search_from = " JOIN {$wpdb->prefix}sm_advanced_search_temp
-                                                                ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
+                            $posts_advanced_search_from = " JOIN {$wpdb->base_prefix}sm_advanced_search_temp
+                                                                ON ({$wpdb->base_prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
 
-                            $posts_advanced_search_where = " AND {$wpdb->prefix}sm_advanced_search_temp.flag = 0";
+                            $posts_advanced_search_where = " AND {$wpdb->base_prefix}sm_advanced_search_temp.flag = 0";
                         }
 
-                        $query_posts_search = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                        $query_posts_search = "REPLACE INTO {$wpdb->base_prefix}sm_advanced_search_temp
                                                         (SELECT DISTINCT {$wpdb->prefix}posts.id ". $posts_search_result_flag ." ". $posts_search_result_cat_flag ."
                                                         FROM {$wpdb->prefix}posts ". $posts_advanced_search_from ."
                                                         WHERE ".$cond_posts . " " .
@@ -876,17 +884,17 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     }
 
                     //Query to get the variations of the parent product in result set
-                    $query_posts_search = "REPLACE INTO {$wpdb->prefix}sm_advanced_search_temp
+                    $query_posts_search = "REPLACE INTO {$wpdb->base_prefix}sm_advanced_search_temp
                                                     (SELECT DISTINCT {$wpdb->prefix}posts.id ,". $index_search_string .", 0
                                                     FROM {$wpdb->prefix}posts 
-                                                        JOIN {$wpdb->prefix}sm_advanced_search_temp 
-                                                            ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.post_parent)
-                                                    WHERE {$wpdb->prefix}sm_advanced_search_temp.cat_flag = 999
-                                                        AND {$wpdb->prefix}sm_advanced_search_temp.flag = ".$index_search_string.")";
+                                                        JOIN {$wpdb->base_prefix}sm_advanced_search_temp 
+                                                            ON ({$wpdb->base_prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.post_parent)
+                                                    WHERE {$wpdb->base_prefix}sm_advanced_search_temp.cat_flag = 999
+                                                        AND {$wpdb->base_prefix}sm_advanced_search_temp.flag = ".$index_search_string.")";
                     $result_posts_search = $wpdb->query ( $query_posts_search );
 
                     //Query to delete the unwanted post_ids
-                    $wpdb->query("DELETE FROM {$wpdb->prefix}sm_advanced_search_temp WHERE flag = 0");
+                    $wpdb->query("DELETE FROM {$wpdb->base_prefix}sm_advanced_search_temp WHERE flag = 0");
 
                 }
                 $index_search_string++;
@@ -899,9 +907,9 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
         if (!empty($advanced_search_query) || $sm_advanced_search_results_persistent == 1) {
 
-            $advanced_search_from = " JOIN {$wpdb->prefix}sm_advanced_search_temp
-                                        ON ({$wpdb->prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
-            $advanced_search_where = " AND {$wpdb->prefix}sm_advanced_search_temp.flag > 0";
+            $advanced_search_from = " JOIN {$wpdb->base_prefix}sm_advanced_search_temp
+                                        ON ({$wpdb->base_prefix}sm_advanced_search_temp.product_id = {$wpdb->prefix}posts.id)";
+            $advanced_search_where = " AND {$wpdb->base_prefix}sm_advanced_search_temp.flag > 0";
         }
 
         $from = "FROM {$wpdb->prefix}posts";
@@ -1124,7 +1132,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     if ($product_type == 'variable') {
 
                         // WOO 2.1 compatibility
-                        if ($_POST['SM_IS_WOO21'] == "true") {
+                        if ($_POST['SM_IS_WOO21'] == "true" || $_POST['SM_IS_WOO22'] == "true") {
 
                             $records[$i]['_regular_price'] = ( isset($variation_reg_price[$records[$i]['id']]) ) ? get_post_meta( $variation_reg_price[$records[$i]['id']], '_regular_price', true ) : 0;
                             $records[$i]['_sale_price'] = ( !empty($records[$i]['_min_variation_price']) && !empty($variation_reg_price[$records[$i]['id']]) && get_post_meta( $variation_reg_price[$records[$i]['id']], '_sale_price', true )) ? $records[$i]['_min_variation_price'] : '';
@@ -1158,7 +1166,17 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 		//BOF Customer's module
 				$search_condn = customers_query ( $_POST ['searchText'] );
 
-                 $query_terms = "SELECT id FROM {$wpdb->prefix}posts AS posts
+                $terms_post_cond = '';
+                $terms_post_cond_join = '';
+
+                // WOO 2.2 compatibility
+                if ($_POST['SM_IS_WOO22'] == "true") {
+
+                    $terms_post_cond_join = 'JOIN '.$wpdb->prefix.'posts AS posts ON (posts.ID = postmeta.post_id)';
+                    $terms_post_cond = "AND posts.post_status IN ('wc-completed','wc-processing','wc-on-hold','wc-pending')";
+
+                } else {
+                    $query_terms = "SELECT id FROM {$wpdb->prefix}posts AS posts
                             JOIN {$wpdb->prefix}term_relationships AS term_relationships 
                                                         ON term_relationships.object_id = posts.ID 
                                         JOIN {$wpdb->prefix}term_taxonomy AS term_taxonomy 
@@ -1168,17 +1186,20 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         WHERE terms.name IN ('completed','processing','on-hold','pending')
                             AND posts.post_status IN ('publish')";
               
-                $terms_post = implode(",",$wpdb->get_col($query_terms));
+                    $terms_post = implode(",",$wpdb->get_col($query_terms));
+                    $terms_post_cond = "AND postmeta.post_id IN ($terms_post)";
+                }
+
+                //Query for getting the max of post id for all the Guest Customers          
                 
-                
-            //Query for getting the max of post id for all the Guest Customers          
-                
-                $query_post_guest = "SELECT post_ID FROM {$wpdb->prefix}postmeta
-                                WHERE meta_key ='_customer_user' AND meta_value=0
-                                    AND post_id IN ($terms_post)";
+                $query_post_guest = "SELECT postmeta.post_ID FROM {$wpdb->prefix}postmeta AS postmeta
+                                $terms_post_cond_join
+                                WHERE postmeta.meta_key ='_customer_user' AND postmeta.meta_value=0
+                                    $terms_post_cond";
                 $post_id_guest = $wpdb->get_col($query_post_guest); 
                 $num_guest 	 =  $wpdb->num_rows;
-            
+        
+
                 $result_max_id = '';
               if($num_guest > 0) {
                 $query_max_id="SELECT GROUP_CONCAT(distinct postmeta1.post_ID 
@@ -1203,14 +1224,14 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
               }
             
             //Query for getting the max of post id for all the Registered Customers
-            $query_post_user = "SELECT post_ID FROM {$wpdb->prefix}postmeta
-                                WHERE meta_key ='_customer_user' AND meta_value>0
-                                AND post_id IN ($terms_post)
-                                AND meta_value IN (SELECT id FROM $wpdb->users)";
+            $query_post_user = "SELECT postmeta.post_ID FROM {$wpdb->prefix}postmeta AS postmeta
+                                $terms_post_cond_join
+                                WHERE postmeta.meta_key ='_customer_user' AND postmeta.meta_value>0
+                                AND postmeta.meta_value IN (SELECT id FROM $wpdb->users)
+                                $terms_post_cond";
             $post_id_user = $wpdb->get_col($query_post_user);                        
             $num_user 	 =  $wpdb->num_rows;            
 
-            
             if($num_user > 0) {
             $query_max_user="SELECT GROUP_CONCAT(distinct postmeta1.post_ID 
                                     ORDER BY posts.post_date DESC SEPARATOR ',' ) AS all_id,
@@ -1293,8 +1314,14 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                                                         '_billing_country','_billing_postcode', '_billing_phone','_customer_user'))";
 
 
+            // WOO 2.2 compatibility
+            $post_status_cond = "AND posts.post_status IN ('publish')";
+            if ($_POST['SM_IS_WOO22'] == "true") {
+                $post_status_cond = '';
+            }
+
 			$where = " WHERE posts.post_type LIKE 'shop_order' 
-					   AND posts.post_status IN ('publish')
+					   $post_status_cond
 					   $postid_cond";
 			
 			$group_by    = " GROUP BY posts.ID";
@@ -1437,21 +1464,34 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                     sm_woo_get_packing_slip( $log_ids, $log_ids_arr );
                 }
 
-                //Code to get all the term_names along with the term_taxonomy_id in an array
-                $query_terms = "SELECT terms.name,term_taxonomy.term_taxonomy_id 
-                                FROM {$wpdb->prefix}term_taxonomy AS term_taxonomy
-                                    JOIN {$wpdb->prefix}terms AS terms ON terms.term_id = term_taxonomy.term_id
-                                WHERE taxonomy LIKE 'shop_order_status'";
-              
-                $terms = $wpdb->get_results ( $query_terms,'ARRAY_A');
-                
+                if ($_POST['SM_IS_WOO22'] == "true") {
 
-                for ($i=0;$i<sizeof($terms);$i++) {
-                    $terms_name[$terms[$i]['term_taxonomy_id']] = $terms[$i]['name'];
-                    $terms_id[$i] = $terms[$i]['term_taxonomy_id'];
+                    $orders_select_col = ",posts.post_status as order_status";
+                    $orders_join_cond = "";
+                    $orders_where_cond = "";
+
+                } else {
+                    //Code to get all the term_names along with the term_taxonomy_id in an array
+                    $query_terms = "SELECT terms.name,term_taxonomy.term_taxonomy_id 
+                                    FROM {$wpdb->prefix}term_taxonomy AS term_taxonomy
+                                        JOIN {$wpdb->prefix}terms AS terms ON terms.term_id = term_taxonomy.term_id
+                                    WHERE taxonomy LIKE 'shop_order_status'";
+                  
+                    $terms = $wpdb->get_results ( $query_terms,'ARRAY_A');
+                    
+
+                    for ($i=0;$i<sizeof($terms);$i++) {
+                        $terms_name[$terms[$i]['term_taxonomy_id']] = $terms[$i]['name'];
+                        $terms_id[$i] = $terms[$i]['term_taxonomy_id'];
+                    }
+                    
+                    $terms_post = implode(",",$terms_id);
+                    $orders_select_col = ",term_relationships.term_taxonomy_id AS term_taxonomy_id";
+                    $orders_join_cond = "JOIN {$wpdb->prefix}term_relationships AS term_relationships 
+                                            ON (term_relationships.object_id = posts.ID )";
+                    $orders_where_cond = "AND posts.post_status IN ('publish','draft','auto-draft')
+                                            AND term_relationships.term_taxonomy_id IN ($terms_post)";
                 }
-                
-                $terms_post = implode(",",$terms_id);
             
         //Code for Sequential Orders compatibility    
         if (is_plugin_active ( 'woocommerce-sequential-order-numbers-pro/woocommerce-sequential-order-numbers.php' )) {
@@ -1468,12 +1508,11 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 								SEPARATOR '###' ) AS meta_value,
 								GROUP_CONCAT(distinct postmeta.meta_key
 								ORDER BY postmeta.meta_id 
-								SEPARATOR '###' ) AS meta_key,
-								term_relationships.term_taxonomy_id AS term_taxonomy_id
+								SEPARATOR '###' ) AS meta_key
+								$orders_select_col
 							
 							FROM {$wpdb->prefix}posts AS posts 
-									JOIN {$wpdb->prefix}term_relationships AS term_relationships 
-											ON term_relationships.object_id = posts.ID 
+									$orders_join_cond
 									RIGHT JOIN {$wpdb->prefix}postmeta AS postmeta 
 											ON (posts.ID = postmeta.post_id AND postmeta.meta_key IN 
 																				('_billing_first_name' , '_billing_last_name' , '_billing_email',
@@ -1487,8 +1526,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 			$limit_query = " ORDER BY posts.ID DESC $limit_string ;";
 			
 			$where = " WHERE posts.post_type LIKE 'shop_order' 
-					AND posts.post_status IN ('publish','draft','auto-draft')
-                                        AND term_relationships.term_taxonomy_id IN ($terms_post)";
+				        $orders_where_cond";
 			
 			if (isset ( $_POST ['fromDate'] )) {
                                 
@@ -1781,6 +1819,11 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 								  OR date like '%$search_on%'
 								 OR meta_value like '%$search_on%'";
 			}
+
+            if ($_POST['SM_IS_WOO22'] == "true" ) {
+                $search_condn .= " OR order_status LIKE '%$search_on%'";
+            }
+
 			
 			}
 
@@ -1792,13 +1835,13 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 			$orders_count_result = $wpdb->get_results ( 'SELECT FOUND_ROWS() as count;','ARRAY_A');
 			$num_records = $orders_count_result[0]['count'];
 					
-                        //Query to get the email id from the wp_users table for the Registered Customers
-                        $query_users  = "SELECT users.ID,users.user_email,usermeta.meta_value
-                                         FROM {$wpdb->prefix}users AS users, {$wpdb->prefix}usermeta AS usermeta
-                                         WHERE usermeta.user_id = users.id 
-                                            AND usermeta.meta_key = 'billing_phone'
-                                         GROUP BY users.ID";
-                        $result_users =  $wpdb->get_results ( $query_users, 'ARRAY_A' );
+            //Query to get the email id from the wp_users table for the Registered Customers
+            $query_users  = "SELECT users.ID,users.user_email,usermeta.meta_value
+                             FROM {$wpdb->prefix}users AS users, {$wpdb->prefix}usermeta AS usermeta
+                             WHERE usermeta.user_id = users.id 
+                                AND usermeta.meta_key = 'billing_phone'
+                             GROUP BY users.ID";
+            $result_users =  $wpdb->get_results ( $query_users, 'ARRAY_A' );
                         
                         if ($num_records == 0) {
             				$encoded ['totalCount'] = '';
@@ -2054,8 +2097,12 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                                 }
 
 
-                                                //Code to get the Order_Status using the $terms_name array
-                                                $data ['order_status'] = $terms_name[$data ['term_taxonomy_id']];
+                        //Code to get the Order_Status using the $terms_name array
+                        if ($_POST['SM_IS_WOO22'] == "true" ) {
+                            $data ['order_status'] = ('wc-' === substr( $data ['order_status'], 0, 3 )) ? substr( $data ['order_status'], 3 ) : $data ['order_status'];
+                        } else {
+                            $data ['order_status'] = $terms_name[$data ['term_taxonomy_id']];
+                        }
                                                 
 						$name_emailid [0] = "<font class=blue>". $postmeta['_billing_first_name']."</font>";
 						$name_emailid [1] = "<font class=blue>". $postmeta['_billing_last_name']."</font>";
@@ -2464,7 +2511,7 @@ function variable_product_price_sync($id) {
 
     if ( $parent['min_variation_price'] !== '' ) {
 
-        if ($_POST['SM_IS_WOO21'] == "true") {
+        if ($_POST['SM_IS_WOO21'] == "true" || $_POST['SM_IS_WOO22'] == "true") {
             wc_delete_product_transients( $id );
         } else {
             $woocommerce->clear_product_transients( $id );
@@ -2534,7 +2581,7 @@ function woo_insert_update_data($post) {
     if( is_foreachable( $new_product ) ) {
 
         $woo_prod_obj = '';
-        if ($_POST['SM_IS_WOO21'] == "true") {
+        if ($_POST['SM_IS_WOO21'] == "true" || $_POST['SM_IS_WOO22'] == "true") {
             $woo_prod_obj = new WC_Product_Variable();
         }
 
@@ -2690,7 +2737,7 @@ function woo_insert_update_data($post) {
                                             update_post_meta($wpdb->_real_escape($post_id), $wpdb->_real_escape($object), $wpdb->_real_escape($postarr[$object]) );    
 
                                             if ( $object == '_stock' ) {
-                                                if ($_POST['SM_IS_WOO21'] == "true") {
+                                                if ($_POST['SM_IS_WOO21'] == "true" || $_POST['SM_IS_WOO22'] == "true") {
                                                     $woo_prod_obj_stock_status = new WC_Product($post_id);
                                                     $woo_prod_obj_stock_status->set_stock($wpdb->_real_escape($postarr[$object]));
                                                 }
@@ -2702,7 +2749,7 @@ function woo_insert_update_data($post) {
 
                             //Code For updating the parent price of the product
                             if ($parent_id > 0) {
-                                if ($_POST['SM_IS_WOO21'] == "true") {
+                                if ($_POST['SM_IS_WOO21'] == "true" || $_POST['SM_IS_WOO22'] == "true") {
                                     $woo_prod_obj->sync($parent_id);
                                 } else {
                                     variable_price_sync($parent_id);
@@ -2714,17 +2761,19 @@ function woo_insert_update_data($post) {
                 foreach ( $obj as $key => $value ) {
                     if ( in_array( $key, $editable_fields ) ) {
                         if ( $key == 'order_status' ) {
-                            $term_taxonomy_id = get_term_taxonomy_id ( $value );
-                            $query = "UPDATE {$wpdb->prefix}term_relationships SET term_taxonomy_id = " . $wpdb->_real_escape($term_taxonomy_id) . " WHERE object_id = " . $wpdb->_real_escape($obj->id) . ";";
 
-                            if ( $value == 'processing' || $value == 'completed' ) {
+
+                            // $term_taxonomy_id = get_term_taxonomy_id ( $value );
+                            // $query = "UPDATE {$wpdb->prefix}term_relationships SET term_taxonomy_id = " . $wpdb->_real_escape($term_taxonomy_id) . " WHERE object_id = " . $wpdb->_real_escape($obj->id) . ";";
+
+                            // if ( $value == 'processing' || $value == 'completed' ) {
                                     $order = new WC_Order( $obj->id );
                                     $order->update_status( $value );
-                            }
+                            // }
                         } else {
                                 $query = "UPDATE {$wpdb->prefix}postmeta SET meta_value = '".$wpdb->_real_escape($value)."' WHERE post_id = " . $wpdb->_real_escape($obj->id) . " AND meta_key = '" . $wpdb->_real_escape($key) . "';";
+                                $wpdb->query($query);
                         }
-                        $wpdb->query($query);
                     }   
                 }
             }
@@ -2809,7 +2858,7 @@ function woo_insert_update_data($post) {
     }
         
     //Clearing the transients to handle the proper functioning of the widgets
-    if ($_POST['SM_IS_WOO21'] == "true") {
+    if ($_POST['SM_IS_WOO21'] == "true" || $_POST['SM_IS_WOO22'] == "true") {
         wc_delete_product_transients();
     } else{
         $woocommerce->clear_product_transients();
@@ -3037,7 +3086,7 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
         $data_count = $_POST ['fdupcnt'] - $_POST ['dupcnt'];
 
         $woo_dup_obj = '';
-        if ($_POST['SM_IS_WOO21'] == "true") {
+        if ($_POST['SM_IS_WOO21'] == "true" || $_POST['SM_IS_WOO22'] == "true") {
             $woo_dup_obj = new WC_Admin_Duplicate_Product();
         }
 
