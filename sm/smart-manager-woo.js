@@ -229,6 +229,24 @@ Ext.onReady(function () {
 	}
 	
 
+	var numeric_renderer = function(decimal_precision) {
+		if (decimal_precision == '') {
+			decimal_precision = 2;
+		}
+
+		var decimal_format='0,0';
+
+		for(var i=0;i<decimal_precision;i++) {
+			if (i == 0) {
+				decimal_format += '.';				
+			}
+
+			decimal_format += '0';
+		}
+
+		return Ext.util.Format.numberRenderer(decimal_format);
+	}
+
 	//number format in which the amounts in the grid will be displayed.
 
 	// var amountRenderer = Ext.util.Format.numberRenderer('0,0.00'),
@@ -910,7 +928,7 @@ products_columns = [editorGridSelectionModel,
 					sortable: true,
 					dataIndex: SM.productsCols.price.colName,
 					tooltip: getText('Price'),
-					renderer: amountRenderer,
+					renderer: numeric_renderer(sm_amount_decimal_precision),
 		            width: 70,
 					editor: new fm.NumberField({
 						allowBlank: true,
@@ -925,7 +943,7 @@ products_columns = [editorGridSelectionModel,
 					align: 'right',
 		            width: 70,
 					dataIndex: SM.productsCols.salePrice.colName,
-					renderer: amountRenderer,
+					renderer: numeric_renderer(sm_amount_decimal_precision),
 					tooltip: getText('Sale Price'),
 					editor: new fm.NumberField({
 						allowBlank: true,
@@ -1013,8 +1031,7 @@ products_columns = [editorGridSelectionModel,
 					align: 'right',
 					dataIndex: SM.productsCols.weight.colName,
 					tooltip: getText('Weight'),
-					// renderer: amountRenderer,
-					renderer: dimensionsRenderer,
+					renderer: numeric_renderer(sm_dimensions_decimal_precision),
 					editor: new fm.NumberField({
 						allowBlank: true,
 						allowNegative: false,
@@ -1066,8 +1083,7 @@ products_columns = [editorGridSelectionModel,
 					align: 'right',
 					dataIndex: SM.productsCols.height.colName,
 					tooltip: getText('Height'),		
-					// renderer: amountRenderer,
-					renderer: dimensionsRenderer,
+					renderer: numeric_renderer(sm_dimensions_decimal_precision),
 					editor: new fm.NumberField({
 						allowBlank: true,
 						allowNegative: false,
@@ -1083,8 +1099,7 @@ products_columns = [editorGridSelectionModel,
 					align: 'right',
 					dataIndex: SM.productsCols.width.colName,
 					tooltip: getText('Width'),
-					// renderer: amountRenderer,
-					renderer: dimensionsRenderer,
+					renderer: numeric_renderer(sm_dimensions_decimal_precision),
 					editor: new fm.NumberField({
 						allowBlank: true,
 						allowNegative: false,
@@ -1100,8 +1115,7 @@ products_columns = [editorGridSelectionModel,
 					align: 'right',
 					dataIndex: SM.productsCols.lengthCol.colName,
 					tooltip: getText('Length'),		
-					// renderer: amountRenderer,
-					renderer: dimensionsRenderer,
+					renderer: numeric_renderer(sm_dimensions_decimal_precision),
 					editor: new fm.NumberField({
 						allowBlank: true,
 						allowNegative: false,
@@ -1159,11 +1173,16 @@ jQuery(function($) {
 	column_index = products_columns.length;
 	render_index = products_render_fields.length;
 
+	//Array for handling 
+	var columns_render_string = new Array('total_sales'); 
+
 	$.each(SM.productsCols, function(index, value) {
 
 	    if (value.hasOwnProperty('colType') && value.colType == 'custom_column' && value.name != 'Other Meta') {
 
-	    	var product_column = new Object();
+	    	var product_column = new Object(),
+	    		decimal_precision = (value.hasOwnProperty('decimal_precision')) ? value.decimal_precision : 0;
+
         	product_column.header = value.name;
         	product_column.dataIndex = value.value;
         	product_column.width = 50;
@@ -1171,9 +1190,11 @@ jQuery(function($) {
         	product_column.hidden = true;
         	product_column.type = 'custom'; // field to detect custom fields
 
+
         	if (value.dataType == "bool") {
         		product_column.editor = yesNoCombo_inline;
         	} else if (value.dataType == "date") {
+        		product_column.renderer = formatDate;
         		product_column.editor = new fm.DateField({
 					format: 'm/d/y',
 					editable: false,
@@ -1209,13 +1230,20 @@ jQuery(function($) {
 											displayField: 'name'
 										});
         	} else if (value.dataType == "int") {
-				product_column.editor = new fm.NumberField({
+        		product_column.align 	=  'right';
+
+        		if (decimal_precision > 0) {
+        			product_column.renderer = numeric_renderer(decimal_precision);	
+        		}
+        		
+				product_column.editor 	= new fm.NumberField({
 											allowBlank: true,
 											allowNegative: false,
 							                width: 50,
-							                decimalPrecision:sm_dimensions_decimal_precision
+							                decimalPrecision:decimal_precision
 										});
-        	}else {
+
+        	} else {
         		product_column.editor= new fm.TextField({ allowBlank: true, allowNegative: true});	
         	}
 
@@ -1232,13 +1260,14 @@ jQuery(function($) {
                 var name = value.value;
                 product_column_render.name = name.replace(/[^a-zA-z0-9_]/g,'');
 	        	// product_column_render.name = value.value;
-	        	product_column_render.type = value.dataType;
+	        	product_column_render.type = (decimal_precision > 0 || jQuery.inArray(value.colName, columns_render_string) > -1 ) ? 'string' : value.dataType;
 	        	product_column_render.table = value.tableName;
 	        	products_render_fields [render_index] = product_column_render;
 
 	        	render_index++;
         	}
 	    }
+
 	});
 });
 
@@ -3987,7 +4016,7 @@ var showCustomerDetails = function(record,rowIndex){
 			dataIndex: '_order_total',
 			tooltip: getText('Amount'),
 			align: 'right',
-			renderer: amountRenderer,
+			renderer: numeric_renderer(2),
 			width: 100
 		},{
 			header: getText('Details'),
@@ -4597,28 +4626,33 @@ var showCustomerDetails = function(record,rowIndex){
 								productsColumnModel.setEditable(columnIndex,false);
 							}
 					} else if ( columnIndex == editImageColumnIndex ) {
-						var productsImageWindow = new Ext.Window({
-							collapsible:true,
-							shadow : true,
-							shadowOffset: 10,
-							title: getText('Manage your Product Images'),
-							width: 700,
-							height: 400,
-							minimizable: false,
-							maximizable: true,
-							maximized: false,
-							resizeable: true,
-							animateTarget: 'image',
-							listeners: {
-								maximize: function () {
-									this.setPosition( 0, 30 );
-								},
-								show: function () {
-									this.setPosition( 250, 30 );
-								},
-								close: function() {
-									var object = {
-										// url:jsonURL
+
+							if (IS_WP35) {
+                                var file_frame;
+                                
+                                // If the media frame already exists, reopen it.
+                                if ( file_frame ) {
+                                  file_frame.open();
+                                  return;
+                                }
+                                
+                                // Create the media frame.
+                                file_frame = wp.media.frames.file_frame = wp.media({
+                                  title: jQuery( this ).data( 'uploader_title' ),
+                                  button: {
+                                    text: jQuery( this ).data( 'uploader_button_text' )
+                                  },
+                                  multiple: false  // Set to true to allow multiple files to be selected
+                                });
+                                
+                                // When an image is selected, run a callback.
+                                file_frame.on( 'select', function() {
+                                  // We set multiple to false so only get one image from the uploader
+                                    attachment = file_frame.state().get('selection').first().toJSON();
+                                  
+                                    e.image_id = attachment['id'];
+                                    
+                                   var object = {
 										url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
 										,method:'post'
 										,callback: function(options, success, response)	{
@@ -4630,17 +4664,62 @@ var showCustomerDetails = function(record,rowIndex){
 										,params:
 										{
 											cmd:'editImage',
+											thumbnail_id: attachment['id'],
 											id: record.id,
 											incVariation: SM.incVariation,
 											file:  jsonURL
 										}
 									};
 									Ext.Ajax.request(object);
-								}
-							},
-							html: '<iframe src="'+ site_url + '/wp-admin/media-upload.php?post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;"><p> ' + getText('Your browser does not support iframes.') + '</p></iframe>'
-						});
-						productsImageWindow.show('image');
+                                });
+                                
+                                file_frame.open();
+                        	} else {
+                        		var productsImageWindow = new Ext.Window({
+									collapsible:true,
+									shadow : true,
+									shadowOffset: 10,
+									title: getText('Manage your Product Images'),
+									width: 700,
+									height: 400,
+									minimizable: false,
+									maximizable: true,
+									maximized: false,
+									resizeable: true,
+									animateTarget: 'image',
+									listeners: {
+										maximize: function () {
+											this.setPosition( 0, 30 );
+										},
+										show: function () {
+											this.setPosition( 250, 30 );
+										},
+										close: function() {
+											var object = {
+												// url:jsonURL
+												url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
+												,method:'post'
+												,callback: function(options, success, response)	{
+													var myJsonObj = Ext.decode(response.responseText);
+													record.set("thumbnail", myJsonObj);
+													record.commit();
+												}
+												,scope:this
+												,params:
+												{
+													cmd:'editImage',
+													id: record.id,
+													incVariation: SM.incVariation,
+													file:  jsonURL
+												}
+											};
+											Ext.Ajax.request(object);
+										}
+									},
+									html: '<iframe src="'+ site_url + '/wp-admin/media-upload.php?post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;"><p> ' + getText('Your browser does not support iframes.') + '</p></iframe>'
+								});
+								productsImageWindow.show('image');
+                        	}
 					}
 				}
 				else if(SM.activeModule == 'Customers'){

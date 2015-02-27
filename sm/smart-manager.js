@@ -3911,52 +3911,101 @@ var showCustomerDetails = function(record,rowIndex){
 								productsColumnModel.setEditable(columnIndex,false);
 							}
 					} else if ( columnIndex == editImageColumnIndex ) {
+
 						if ( isWPSC37 != 1 ) {
-							var productsImageWindow = new Ext.Window({
-								collapsible:true,
-								shadow : true,
-								shadowOffset: 10,
-								title: getText('Manage your Product Images'),
-								width: 700,
-								height: 400,						
-								minimizable: false,
-								maximizable: true,
-								maximized: false,
-								resizeable: true,
-								animateTarget: 'image',
-								listeners: {
-									
-									maximize: function () {
-										this.setPosition( 0, 30 );
+							if (IS_WP35) {
+                                var file_frame;
+                                
+                                // If the media frame already exists, reopen it.
+                                if ( file_frame ) {
+                                  file_frame.open();
+                                  return;
+                                }
+                                
+                                // Create the media frame.
+                                file_frame = wp.media.frames.file_frame = wp.media({
+                                  title: jQuery( this ).data( 'uploader_title' ),
+                                  button: {
+                                    text: jQuery( this ).data( 'uploader_button_text' )
+                                  },
+                                  multiple: false  // Set to true to allow multiple files to be selected
+                                });
+                                
+                                // When an image is selected, run a callback.
+                                file_frame.on( 'select', function() {
+                                  // We set multiple to false so only get one image from the uploader
+                                    attachment = file_frame.state().get('selection').first().toJSON();
+                                  
+                                    e.image_id = attachment['id'];
+                                    
+                                   var object = {
+										url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
+										,method:'post'
+										,callback: function(options, success, response)	{
+											var myJsonObj = Ext.decode(response.responseText);
+											record.set("thumbnail", myJsonObj);
+											record.commit();
+										}
+										,scope:this
+										,params:
+										{
+											cmd:'editImage',
+											thumbnail_id: attachment['id'],
+											id: record.id,
+											incVariation: SM.incVariation,
+											file:  jsonURL
+										}
+									};
+									Ext.Ajax.request(object);
+                                });
+                                
+                                file_frame.open();
+                        	} else {
+                        		var productsImageWindow = new Ext.Window({
+									collapsible:true,
+									shadow : true,
+									shadowOffset: 10,
+									title: getText('Manage your Product Images'),
+									width: 700,
+									height: 400,
+									minimizable: false,
+									maximizable: true,
+									maximized: false,
+									resizeable: true,
+									animateTarget: 'image',
+									listeners: {
+										maximize: function () {
+											this.setPosition( 0, 30 );
+										},
+										show: function () {
+											this.setPosition( 250, 30 );
+										},
+										close: function() {
+											var object = {
+												// url:jsonURL
+												url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
+												,method:'post'
+												,callback: function(options, success, response)	{
+													var myJsonObj = Ext.decode(response.responseText);
+													record.set("thumbnail", myJsonObj);
+													record.commit();
+												}
+												,scope:this
+												,params:
+												{
+													cmd:'editImage',
+													id: record.id,
+													incVariation: SM.incVariation,
+													file:  jsonURL
+												}
+											};
+											Ext.Ajax.request(object);
+										}
 									},
-									show: function () {
-										this.setPosition( 250, 30 );
-									},
-									close: function() {
-										var object = {
-											// url:jsonURL
-											url: (ajaxurl.indexOf('?') !== -1) ? ajaxurl + '&action=sm_include_file' : ajaxurl + '?action=sm_include_file'
-											,method:'post'
-											,callback: function(options, success, response)	{
-												var myJsonObj = Ext.decode(response.responseText);
-												record.set("thumbnail", myJsonObj);
-												record.commit();
-											}
-											,scope:this
-											,params:
-											{
-												cmd:'editImage',
-												id: record.id,
-												incVariation: SM.incVariation,
-												file:  jsonURL
-											}
-										};
-										Ext.Ajax.request(object);
-									}
-								},
-								html: '<iframe src="'+ site_url + '/wp-admin/media-upload.php?parent_page=wpsc-edit-products&post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;">< p>' + getText('Your browser does not support iframes.') +'</p></iframe>'
-							});
-							productsImageWindow.show('image');
+									html: '<iframe src="'+ site_url + '/wp-admin/media-upload.php?post_id=' + record.id +'&type=image&tab=library&" style="width:100%;height:100%;border:none;"><p> ' + getText('Your browser does not support iframes.') + '</p></iframe>'
+								});
+								productsImageWindow.show('image');
+                        	}
 						}
 					}
 				}

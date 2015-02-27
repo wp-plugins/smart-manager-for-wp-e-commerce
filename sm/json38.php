@@ -2421,6 +2421,10 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
 	$wpsc_default_image = WP_PLUGIN_URL . '/wp-e-commerce/wpsc-theme/wpsc-images/noimage.png';
 
+    if (!empty($_POST['thumbnail_id'])) {
+        update_post_meta($_POST ['id'], '_thumbnail_id' , $_POST['thumbnail_id']);
+    }
+
 //	$post_thumbnail_id = get_post_thumbnail_id( $_POST ['id'] );
 //	$image = isset( $post_thumbnail_id ) ? wp_get_attachment_image_src( $post_thumbnail_id, 'admin-product-thumbnails' ) : '';
 //	$thumbnail = ( $image[0] != '' ) ? $image[0] : '';
