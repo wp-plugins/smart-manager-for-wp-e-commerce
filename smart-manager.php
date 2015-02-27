@@ -2,11 +2,11 @@
 /*
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
-Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.9.2
+Description: <strong>Pro Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
+Version: 3.9.3
 Author: Store Apps
 Author URI: http://www.storeapps.org/
-Copyright (c) 2010, 2011, 2012, 2013, 2014 Store Apps All rights reserved.
+Copyright (c) 2010, 2011, 2012, 2013, 2014, 2015 Store Apps All rights reserved.
 */
 
 //Hooks
@@ -45,6 +45,8 @@ function smart_deactivate() {
 
 	$wpdb->query( "DROP TABLE {$wpdb->prefix}sm_advanced_search_temp" );
 }
+
+
 
 function smart_get_latest_version() {
 	$sm_plugin_info = get_site_transient( 'update_plugins' );
@@ -272,12 +274,12 @@ include_once (ABSPATH . WPINC . '/functions.php');
 	                                                    DROP KEY `sm_idx_purchase_logs_userid`,
 	                                                    DROP KEY `sm_idx_purchase_logs_date`";
 			
+	        // ADD KEY `sm_idx_submited_form_data_value` ( `value` )
+
 			$index_queries ['add'] [] = "ALTER TABLE {$wpdb->prefix}wpsc_submited_form_data 
-	                                                    ADD KEY `sm_idx_submited_form_data_log_id` ( `log_id` ),
-	                                                    ADD KEY `sm_idx_submited_form_data_value` ( `value` )";
+	                                                    ADD KEY `sm_idx_submited_form_data_log_id` ( `log_id` )";
 			$index_queries ['remove'] [] = "ALTER TABLE {$wpdb->prefix}wpsc_submited_form_data 
-	                                                    DROP KEY `sm_idx_submited_form_data_log_id`,
-	                                                    DROP KEY `sm_idx_submited_form_data_value`";
+	                                                    DROP KEY `sm_idx_submited_form_data_log_id`";
 		
 		}
 		

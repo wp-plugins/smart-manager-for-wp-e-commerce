@@ -1058,11 +1058,23 @@ add_filter('sm_product_columns','sm_product_columns_filter',10,1);
 
 
 $encoded_categories = json_encode ( $categories );
-// $products_cols = json_encode( $products_cols );
+
+$products_cols_wpsc = json_encode( $products_cols );
+
 $products_cols = json_encode( apply_filters('sm_product_columns',$products_cols) );
+
+
 if ( isset( $attribute ) ) {
 
 	$attribute = addslashes(json_encode( $attribute )); // addslashes was done as one client was facing issue with attributes
+}
+
+function sm_get_numberofdecimals($value) {
+    if ((int)$value == $value) {
+        return 0;
+    }
+
+    return strlen($value) - strrpos($value, '.') - 1;
 }
 
 function sm_product_columns_filter($attr) {
@@ -1081,26 +1093,50 @@ function sm_product_columns_filter($attr) {
 								'_min_variation_sale_price', '_product_image_gallery', '_wp_trash_meta_time', '_edit_last','_edit_lock');
 
 	$postmeta_fields_ignored_cond = (!empty($meta_key_ignored)) ? "AND {$wpdb->prefix}postmeta.meta_key NOT IN ('".implode("','",$meta_key_ignored)."')" : '';
+	$postmeta_fields_meta_value_cond = "AND {$wpdb->prefix}postmeta.meta_value != ''";
 
 	// AND {$wpdb->prefix}postmeta.meta_key LIKE '\_%'
 
-	$productmetafieldsquery = "SELECT DISTINCT {$wpdb->prefix}postmeta.meta_key,
+	$product_meta_fields_query = "SELECT DISTINCT {$wpdb->prefix}postmeta.meta_key,
 									{$wpdb->prefix}postmeta.meta_value
 								FROM {$wpdb->prefix}postmeta 
 									JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.id = {$wpdb->prefix}postmeta.post_id)
 								WHERE post_type IN ('product','product_variation')
-									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE 'attribute_%' 
+									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE 'attribute_%'
+									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE '[%'
+									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE ':%'
+									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE '.%'
+									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE '\%'
 										$postmeta_fields_ignored_cond
+										$postmeta_fields_meta_value_cond
 								GROUP BY {$wpdb->prefix}postmeta.meta_key";
-	$productmetafieldsresults = $wpdb->get_results ($productmetafieldsquery , 'ARRAY_A');
-	$productmetafields_rows = $wpdb->num_rows;
 
-	if ($productmetafields_rows > 0) {
+	$product_meta_fields_filtered_results = $wpdb->get_results ($product_meta_fields_query , 'ARRAY_A');
+	$product_meta_fields_filtered_rows = $wpdb->num_rows;
 
-		foreach ($productmetafieldsresults as &$productmetafieldsresult) {
+	$product_custom_fields_filtered = array();
 
-			$meta_key = $productmetafieldsresult['meta_key'];
-			$meta_value = $productmetafieldsresult['meta_value'];
+	if($product_meta_fields_filtered_rows > 0) {
+
+		foreach ( $product_meta_fields_filtered_results as $product_meta_fields_filtered_result ) {
+			if ( empty($product_meta_fields_filtered_result['meta_key']) )
+				continue;
+
+			$product_custom_fields_filtered [$product_meta_fields_filtered_result['meta_key']] = $product_meta_fields_filtered_result['meta_value'];
+		}		
+	}
+
+	$postmeta_fields_meta_value_cond = '';
+
+	$product_meta_fields_all_results = $wpdb->get_results ($product_meta_fields_query , 'ARRAY_A');
+	$product_meta_fields_all_rows = $wpdb->num_rows;
+
+	if ($product_meta_fields_all_rows > 0) {
+
+		foreach ($product_meta_fields_all_results as &$product_meta_fields_all_result) {
+
+			$meta_key = $product_meta_fields_all_result['meta_key'];
+			$meta_value = (!empty($product_custom_fields_filtered[$meta_key])) ? $product_custom_fields_filtered[$meta_key] : $product_meta_fields_all_result['meta_value'];
 
 			// if (empty($meta_key) || (!empty($meta_value) && is_serialized($meta_value) === true))
 			if (empty($meta_key))
@@ -1116,8 +1152,11 @@ function sm_product_columns_filter($attr) {
 			$attr [$meta_key_index]['colType']='custom_column';
 
 			if (is_numeric($meta_value)) {
+
 				$attr [$meta_key_index]['actionType']='modIntPercentActions';
 				$attr [$meta_key_index]['dataType']='int';
+				$attr [$meta_key_index]['decimal_precision'] = sm_get_numberofdecimals($meta_value);
+
 			} else {
 				$attr [$meta_key_index]['actionType']='modStrActions';
 				$attr [$meta_key_index]['dataType']='string';
@@ -1180,7 +1219,7 @@ function sm_product_columns_filter($attr) {
 	$attr['other_meta']['colType']='custom_column';
 	$attr['other_meta']['dataType']='string';
 	$attr['other_meta']['actionType']='setStrActions';
-
+	
 	return $attr;
 }
 
@@ -1509,9 +1548,16 @@ if (WPSC_RUNNING === true) {
 	/*BOF setting the product fields acc. to the WPSC version*/
 	var productsViewCols    = new Array(); /*data indexes of the columns in products view*/
 	
-	var SM = new Object;
-	   	SM.productsCols = ".$products_cols.";
-	
+	var SM = new Object;";
+
+	if (WPSC_RUNNING === true) {
+		echo "SM.productsCols = ".$products_cols_wpsc;
+	} elseif (WOO_RUNNING === true) {
+		echo "SM.productsCols = ".$products_cols;
+	}
+
+	   	
+	echo "
 	if (wpscRunning == 1) {
 		if(isWPSC37 != ''){
 			SM.productsCols.id.colName                 = 'id';
@@ -1585,7 +1631,6 @@ if (WPSC_RUNNING === true) {
 	prodFieldsStoreData.items = new Array();
 	var dontShow 			  = new Array('height', 'width', 'lengthCol');
 	
-
 	Ext.iterate(SM.productsCols , function(key,value) { // adding values in the value field
 		SM['productsCols'][key]['value'] = key; ";
 	
