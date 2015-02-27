@@ -1,10 +1,10 @@
 === Smart Manager for e-Commerce - WooCommerce and WPeC extension ===
-Contributors: storeapps, niravmehta, ratnakar.dubey, rupali, Tarun.Parswani, sunny.thangaraj
+Contributors: storeapps, niravmehta, ratnakar.dubey, Tarun.Parswani
 Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager, extension, premium, free, download
 Requires at least: 2.0.2
-Tested up to: 4.0
-Stable tag: 3.9.2
+Tested up to: 4.1.1
+Stable tag: 3.9.3
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -116,6 +116,13 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.9.3 =
+* New: Updated WordPress Media Library for inline editing of featured images
+* Update: Compatibility with latest versions of WordPress, WPeC & WooCommerce (v2.3 or greater)
+* Update: Improvements in rendering product custom fields from WordPress postmeta table according to datatype (WooCommerce)
+* Fix: 'Total Sales' column showing '0' for variations (WooCommerce)
+* Fix: Some minor fixes
 
 = 3.9.2 =
 * New: Batch Update entire search result
@@ -541,6 +548,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.9.3 =
+Improvements in rendering product custom fields for WooCommerce, compatibility with latest versions of WordPress, WooCommerce & WPeC and important fixes. Recommended upgrade.
 
 = 3.9.2 =
 New feature of Batch Updating entire search result at single click, compatibility with latest version of WooCommerce (v2.2 or greater) and some important fixes. Recommended upgrade.
