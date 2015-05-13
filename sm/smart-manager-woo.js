@@ -49,6 +49,8 @@ var	categories         = new Array(), //an array for category combobox in batchu
 
 Ext.onReady(function () {
 
+	Date.prototype.format = Date.prototype.dateFormat;
+
 	var now 		      = new Date();
 	var lastMonDate       = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate() + 1);
 	var search_timeout_id = 0; 			//timeout for sending request while searching.
@@ -1258,8 +1260,8 @@ jQuery(function($) {
 		    	var product_column_render = new Object();
 
                 var name = value.value;
-                product_column_render.name = name.replace(/[^a-zA-z0-9_]/g,'');
-	        	// product_column_render.name = value.value;
+                // product_column_render.name = name.replace(/[^a-zA-z0-9_]/g,''); // commented for meta_keys containing sp. chars [like #,~..]
+	        	product_column_render.name = value.value;
 	        	product_column_render.type = (decimal_precision > 0 || jQuery.inArray(value.colName, columns_render_string) > -1 ) ? 'string' : value.dataType;
 	        	product_column_render.table = value.tableName;
 	        	products_render_fields [render_index] = product_column_render;
@@ -2869,6 +2871,15 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 						var comboactionvalue   = comboactionCmp.value;
                         var combofieldvalue    = comboFieldCmp.value;
 
+
+                        var attributeArray = Ext.decode(attribute);
+                        var selected_attr_type = '';
+
+                        for (var attr in attributeArray) {
+                        	if (attributeArray[attr][2] != selectedActionvalue) continue;
+                        	selected_attr_type = attributeArray[attr][3];
+                        }
+
                         var colName = comboFieldCmp.store.reader.jsonData.items[selectedFieldIndex].colName;
 
                         if(SM.activeModule == 'Products' && field_name != 'Image') {
@@ -2879,7 +2890,6 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
                         		textField1Cmp.show();
                         		setTextarea.hide();	
                         	}
-                            
                         }
                         
                         if (comboactionvalue == 'YES' || comboactionvalue == 'NO' || comboactionvalue == 'SET_TO_SALES_PRICE' || comboactionvalue == 'SET_TO_REGULAR_PRICE' || (comboactionvalue == 'SET_TO' && (combofieldvalue == 'visibility' || combofieldvalue == 'taxStatus' || storedata_array[colName] != undefined))) {
@@ -2887,12 +2897,19 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
                         }
                                                 
 						if ( selectedValue.substring( 0, 14 ) == 'groupAttribute' ){
-							if( selectedActionvalue == 'custom'){
+							if( selectedActionvalue == 'custom' || selected_attr_type == 'text' ){
 								comboCategoriesActionCmp.hide();
 								comboCategoriesActionCmp.reset();
-								textField1Cmp.emptyText = getText('Enter Attribute Name') + '...';
-								textField1Cmp.regex = null;
-								textField1Cmp.show();
+
+								if ( selectedActionvalue == 'custom' ) {
+									textField1Cmp.emptyText = getText('Enter Attribute Name') + '...';
+									textField1Cmp.regex = null;
+									textField1Cmp.show();
+									textField1Cmp.reset();
+								} else {
+									textField1Cmp.hide();
+								}
+								
 								textField2Cmp.emptyText = getText('Enter values') + '...';
 
 								Ext.QuickTips.register({
@@ -2902,11 +2919,9 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								});
 								
 								textField2Cmp.show();
-								textField1Cmp.reset();
 								textField2Cmp.reset();
 								setTextarea.hide();	
 							} else {
-
 								comboCategoriesActionCmp.hide();
 								comboCategoriesActionCmp.reset();
 								textField2Cmp.emptyText = getText('Enter Attribute Name') + '...';
