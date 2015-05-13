@@ -1083,7 +1083,7 @@ function sm_product_columns_filter($attr) {
 
 	$meta_key_ignored = array( '_visibility','_regular_price','_sale_price','_weight',
 								'_length','_width','_height','_sku','_product_attributes','_price',
-								'_tax_status','_thumbnail_id','_sale_price_dates_from',
+								'_tax_status','_thumbnail_id','thumbnail','_sale_price_dates_from',
 								'_sale_price_dates_to', '_edit_lock', '_max_price_variation_id',
 								'_max_regular_price_variation_id', '_max_sale_price_variation_id',
 								'_max_variation_price', '_max_variation_regular_price',
@@ -1284,7 +1284,6 @@ if (WOO_RUNNING === true) {
 	//getting customers fieldnames END
 
 	echo "<script type='text/javascript'>
-
 	
 	var isWPSC37            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC37 : '') . "';
         var isWPSC38            =  '" . ((WPSC_RUNNING === true) ? IS_WPSC38 : '') . "';

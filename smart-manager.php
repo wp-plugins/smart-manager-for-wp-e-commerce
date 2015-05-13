@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.9.3
+Version: 3.9.4
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013, 2014, 2015 Store Apps All rights reserved.
@@ -32,6 +32,10 @@ function smart_activate() {
 
 	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 	dbDelta( $sm_advanced_search_temp );
+
+	// Redirect to SM 
+    delete_option( '_sm_activation_redirect' );      
+    add_option( '_sm_activation_redirect', 'pending' );
 }
 
 /**
@@ -227,13 +231,78 @@ include_once (ABSPATH . WPINC . '/functions.php');
 //			add_action ( 'after_plugin_row_' . plugin_basename ( __FILE__ ), 'show_registration_upgrade');
 //			add_action ( 'in_plugin_update_message-' . plugin_basename ( __FILE__ ), 'smart_update_notice' );
 //			add_action ( 'all_admin_notices', 'smart_update_overwrite' );
+		} else {
+			// Code to handle SM IN App Promo
+			if ( is_admin() ) {
+				add_action( 'admin_notices', 'sm_add_promo_notices');	
+			}
 		}
 
 		//wp-ajax action
 		if (is_admin() ) {
             add_action ( 'wp_ajax_sm_include_file', 'sm_include_file' ); 
+
+            if ( false !== get_option( '_sm_activation_redirect' ) ) {
+            	// Delete the redirect transient
+		    	delete_option( '_sm_activation_redirect' );
+
+		    	if ( WPSC_WOO_ACTIVATED === true || WOO_ACTIVATED === true ) {
+		    		wp_redirect( admin_url( 'edit.php?post_type=product&page=smart-manager-woo' ) );
+		    	} else if ( WPSC_ACTIVATED === true ) {
+		    		wp_redirect( admin_url( 'edit.php?post_type=wpsc-product&page=smart-manager-wpsc' ) );
+		    	}
+		    	
+            }
         }
 
+	}
+
+	// Function to handle SM IN App Promo
+	function sm_add_promo_notices() {
+
+		$sm_promo_msg = '';
+
+		$timezone_format = _x('Y-m-d H:i:s', 'timezone date format');
+		$current_wp_date = date_i18n($timezone_format);
+
+		$sm_lite_activation_date = get_option('sm_lite_activation_date');
+
+		if ( $sm_lite_activation_date === false ) {
+			
+			$sm_lite_activation_date = $current_wp_date;
+			add_option('sm_lite_activation_date',$sm_lite_activation_date);
+		}
+
+		$date_diff = date_diff( date_create($sm_lite_activation_date),date_create($current_wp_date) );
+
+		if ( $date_diff->days == 0 ) {
+			$sm_promo_msg = '<b>'. __('Big Savings!!!', 'smart-manager') .' </b> <a href="http://www.storeapps.org/?buy-now=742&qty=1&coupon=5551ec5f9f8fa&page=721&with-cart=0&utm_source=SM&utm_medium=Lite&utm_campaign=SM25%OFF", target="_storeapps">'. '<b> ' . __('25% OFF ', 'smart-manager') . ' </b>' . __('on Smart Manager Pro!', 'smart-manager') .'</a> ';
+		} else if ( $date_diff->days == 1 ) {
+			$sm_promo_msg = '<b>'. __('Missed yesterday!!!', 'smart-manager') .' </b> <a href="http://www.storeapps.org/?buy-now=742&qty=1&coupon=5551ec5fa00c9&page=721&with-cart=0&utm_source=SM&utm_medium=Lite&utm_campaign=SM15%OFF", target="_storeapps">'. '<b> ' . __('15% OFF ', 'smart-manager') . ' </b>' . __('on Smart Manager Pro', 'smart-manager') .'</a> '. __('only for you!', 'smart-manager');
+		} else if ( $date_diff->days == 2 ) {
+			$sm_promo_msg = '<b>'. __('Last chance!!!', 'smart-manager') .' </b> <a href="http://www.storeapps.org/?buy-now=742&qty=1&coupon=5551ec5fa0899&page=721&with-cart=0&utm_source=SM&utm_medium=Lite&utm_campaign=SM10%OFF", target="_storeapps">'.  '<b> ' . __('10% OFF ', 'smart-manager') . ' </b>' . __('on Smart Manager Pro!', 'smart-manager') .'</a> ';
+		} else if ( $date_diff->days > 2 ) {
+			update_option('sm_in_app_promo',0);
+		}
+
+		if ( !empty($sm_promo_msg) ) {
+			update_option('sm_in_app_promo',1); // flag for defining that the promo is on
+			$sm_promo_msg .= '<br /> <a href="http://www.storeapps.org/product/smart-manager" target=_storeapps> '. __( 'Learn more about Pro version', 'smart-manager' ) . '</a> ' . __( 'or take a', 'smart-manager' ) . ' <a href="http://demo.storeapps.org/?demo=sm-woo" target=_livedemo> ' . __( 'Live Demo', 'smart-manager' ) . ' </a>';
+			echo '<div id="sm_promo_msg" class="updated fade"> 
+					<table> 
+						<tbody> 
+							<tr>
+								<td> 
+									<span class="dashicons dashicons-awards" style="font-size:3em;color:#b32727;margin-left: -0.2em;margin-right: 0.4em;margin-bottom: 0.45em;"></span> 
+								</td> 
+								<td style="padding:0.5em">'
+									. $sm_promo_msg .
+								'</td> 
+							</tr> 
+						</tbody> 
+					</table> 
+				</div>';
+		}
 	}
 
 
@@ -556,7 +625,7 @@ include_once (ABSPATH . WPINC . '/functions.php');
 	</div>
 
 	<?php
-			if (SMPRO === false) {
+			if ( SMPRO === false && (get_option('sm_in_app_promo') == 0) ) {
 				?>
 	<div id="message" class="updated fade">
 	<!-- <span style="float:right; margin-top: -1px; margin-right: -15px">
@@ -564,7 +633,7 @@ include_once (ABSPATH . WPINC . '/functions.php');
 	</span> -->
 	<p><?php
 			// printf( ('<b>' . __( 'Important:', 'smart-manager' ) . '</b> ' . __( 'Upgrading to Pro gives you powerful features like \'<i>Batch Update</i>\' , \'<i>Export CSV</i>\' , \'<i>Duplicate Products</i>\' &amp; many more...', 'smart-manager' ) . " " . '<br /><a href="%1s" target=_storeapps>' . " " .__( 'Learn more about Pro version here', 'smart-manager' ) . '</a> ' . __( 'or take a', 'smart-manager' ) . " " . '<a href="%2s" target=_livedemo>' . " " . __( 'Live Demo here', 'smart-manager' ) . '</a>'), 'http://www.storeapps.org/product/smart-manager', 'http://demo.storeapps.org/?p=1' );
-			printf( ('<b>' . __( 'Important:', 'smart-manager' ) . '</b> ' . __( 'Upgrade to Pro to get features like \'<i>Batch Update</i>\' , \'<i>Export CSV</i>\' , \'<i>Duplicate Products</i>\' &amp; many more...', 'smart-manager' ) . " " . '<br /><a href="%1s" target=_storeapps>' . " " .__( 'Learn more about Pro version here', 'smart-manager' ) . '</a> ' . __( 'or take a', 'smart-manager' ) . " " . '<a href="%2s" target=_livedemo>' . " " . __( 'Live Demo here', 'smart-manager' ) . '</a>'), 'http://www.storeapps.org/product/smart-manager', 'http://demo.storeapps.org/?p=1' );
+			printf( ('<b>' . __( 'Important:', 'smart-manager' ) . '</b> ' . __( 'Upgrade to Pro to get features like \'<i>Batch Update</i>\' , \'<i>Export CSV</i>\' , \'<i>Duplicate Products</i>\' &amp; many more...', 'smart-manager' ) . " " . '<br /><a href="%1s" target=_storeapps>' . " " .__( 'Learn more about Pro version', 'smart-manager' ) . '</a> ' . __( 'or take a', 'smart-manager' ) . " " . '<a href="%2s" target=_livedemo>' . " " . __( 'Live Demo', 'smart-manager' ) . '</a>'), 'http://www.storeapps.org/product/smart-manager', 'http://demo.storeapps.org/?demo=sm-woo' );
 			?>
 	</p>
 		
