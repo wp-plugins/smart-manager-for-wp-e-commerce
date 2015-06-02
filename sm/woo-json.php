@@ -172,20 +172,33 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         $results_trash = $wpdb->get_col( $query_trash );
         $rows_trash = $wpdb->num_rows;
         
-        $query_deleted = "SELECT distinct products.post_parent 
-                            FROM {$wpdb->prefix}posts as products 
-                            WHERE NOT EXISTS (SELECT * FROM {$wpdb->prefix}posts WHERE ID = products.post_parent) 
-                              AND products.post_parent > 0 
-                              AND products.post_type = 'product_variation'";
-        $results_deleted = $wpdb->get_col( $query_deleted );
-        $rows_deleted = $wpdb->num_rows;
-        
-        for ($i=sizeof($results_trash),$j=0;$j<sizeof($results_deleted);$i++,$j++ ) {
-            $results_trash[$i] = $results_deleted[$j];
+
+        //Code to get the taxonomy id for 'simple' product_type
+        $query_taxonomy_id = "SELECT taxonomy.term_taxonomy_id as term_taxonomy_id
+                                    FROM {$wpdb->prefix}terms as terms
+                                        JOIN {$wpdb->prefix}term_taxonomy as taxonomy ON (taxonomy.term_id = terms.term_id)
+                                    WHERE taxonomy.taxonomy = 'product_type'
+                                        AND terms.slug = 'variable'";
+        $variable_taxonomy_id = $wpdb->get_var( $query_taxonomy_id );
+
+        if ( !empty($variable_taxonomy_id) ) {
+            $query_post_parent_not_variable = "SELECT distinct products.post_parent 
+                                        FROM {$wpdb->prefix}posts as products 
+                                        WHERE NOT EXISTS (SELECT * 
+                                                            FROM {$wpdb->prefix}term_relationships 
+                                                            WHERE object_id = products.post_parent
+                                                                AND term_taxonomy_id = ".$variable_taxonomy_id.") 
+                                          AND products.post_parent > 0 
+                                          AND products.post_type = 'product_variation'";
+            $results_post_parent_not_variable = $wpdb->get_col( $query_post_parent_not_variable );
+            $rows_post_parent_not_variable = $wpdb->num_rows;   
+
+            for ($i=sizeof($results_trash),$j=0;$j<sizeof($results_post_parent_not_variable);$i++,$j++ ) {
+                $results_trash[$i] = $results_post_parent_not_variable[$j];
+            }
         }
         
-        
-        if ($rows_trash > 0 || $rows_deleted > 0) {
+        if ($rows_trash > 0 || $rows_post_parent_not_variable > 0) {
             $trash_id = " AND {$wpdb->prefix}posts.post_parent NOT IN (" .implode(",",$results_trash). ")";
         }
         else {
@@ -242,7 +255,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         //Query to get the Category Ids
 
         $query_categories = "SELECT {$wpdb->prefix}posts.id as id,
-                                GROUP_CONCAT(distinct {$wpdb->prefix}term_relationships.term_taxonomy_id order by {$wpdb->prefix}term_relationships.object_id SEPARATOR '###') AS term_taxonomy_id
+                                GROUP_CONCAT(distinct {$wpdb->prefix}term_relationships.term_taxonomy_id order by {$wpdb->prefix}term_relationships.object_id SEPARATOR ' #sm# ') AS term_taxonomy_id
                             FROM {$wpdb->prefix}posts
                                     JOIN {$wpdb->prefix}term_relationships ON ({$wpdb->prefix}posts.id = {$wpdb->prefix}term_relationships.object_id)
                             WHERE {$wpdb->prefix}posts.post_status IN $post_status
@@ -293,10 +306,10 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
         }
 
 
-        // GROUP_CONCAT(distinct wtr.term_taxonomy_id order by wtr.object_id SEPARATOR '###') AS term_taxonomy_id,
+        // GROUP_CONCAT(distinct wtr.term_taxonomy_id order by wtr.object_id SEPARATOR ' #sm# ') AS term_taxonomy_id,
 
-        $post_meta_select = (!empty($_POST['func_nm']) && $_POST['func_nm'] == 'exportCsvWoo') ? ", GROUP_CONCAT({$wpdb->prefix}postmeta.meta_key order by {$wpdb->prefix}postmeta.meta_id SEPARATOR '###') AS prod_othermeta_key
-                     , GROUP_CONCAT({$wpdb->prefix}postmeta.meta_value order by {$wpdb->prefix}postmeta.meta_id SEPARATOR '###') AS prod_othermeta_value" : "";
+        $post_meta_select = (!empty($_POST['func_nm']) && $_POST['func_nm'] == 'exportCsvWoo') ? ", GROUP_CONCAT({$wpdb->prefix}postmeta.meta_key order by {$wpdb->prefix}postmeta.meta_id SEPARATOR ' #sm# ') AS prod_othermeta_key
+                     , GROUP_CONCAT({$wpdb->prefix}postmeta.meta_value order by {$wpdb->prefix}postmeta.meta_id SEPARATOR ' #sm# ') AS prod_othermeta_value" : "";
 
         $select = "SELECT SQL_CALC_FOUND_ROWS {$wpdb->prefix}posts.id,
                     {$wpdb->prefix}posts.post_title,
@@ -1018,7 +1031,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         $category_names = "";
             //                unset($records[$i]['term_taxonomy_id']);
 
-                    $category_id = explode('###', $category_ids_all[$records[$i]['id']]);
+                    $category_id = explode(' #sm# ', $category_ids_all[$records[$i]['id']]);
 
                       for ($j = 0; $j < sizeof($category_id); $j++) {
                             if (isset($term_taxonomy[$category_id[$j]])) {
@@ -2515,8 +2528,8 @@ function variable_product_price_sync($id) {
     if ($children) {
 
         if ($_POST['SM_IS_WOO16'] == "true") {
-            $query = "SELECT GROUP_CONCAT(meta_value order by meta_id SEPARATOR '###') AS meta_value,
-                    GROUP_CONCAT(meta_key order by meta_id SEPARATOR '###') AS meta_key
+            $query = "SELECT GROUP_CONCAT(meta_value order by meta_id SEPARATOR ' #sm# ') AS meta_value,
+                    GROUP_CONCAT(meta_key order by meta_id SEPARATOR ' #sm# ') AS meta_key
                   FROM {$wpdb->prefix}postmeta WHERE meta_key IN ('_price','_sale_price')
                     AND post_id IN (".implode(",", $children).")
                     GROUP BY post_id
@@ -2524,8 +2537,8 @@ function variable_product_price_sync($id) {
             $result = $wpdb->get_results($query,'ARRAY_A');
         }
         else {
-            $query = "SELECT GROUP_CONCAT(meta_value order by meta_id SEPARATOR '###') AS meta_value,
-                    GROUP_CONCAT(meta_key order by meta_id SEPARATOR '###') AS meta_key
+            $query = "SELECT GROUP_CONCAT(meta_value order by meta_id SEPARATOR ' #sm# ') AS meta_value,
+                    GROUP_CONCAT(meta_key order by meta_id SEPARATOR ' #sm# ') AS meta_key
                   FROM {$wpdb->prefix}postmeta WHERE meta_key IN ('_regular_price','_sale_price')
                     AND post_id IN (".implode(",", $children).")
                     GROUP BY post_id
@@ -2538,8 +2551,8 @@ function variable_product_price_sync($id) {
         for ( $i=0;$i<sizeof($children);$i++ ) {
 
             
-            $prod_meta_values = explode ( '###', $result[$i]['meta_value'] );
-            $prod_meta_key    = explode ( '###', $result[$i]['meta_key']);
+            $prod_meta_values = explode ( ' #sm# ', $result[$i]['meta_value'] );
+            $prod_meta_key    = explode ( ' #sm# ', $result[$i]['meta_key']);
             
             if ( count($prod_meta_values) != count($prod_meta_key) ) continue;
             unset ( $records[$i]['prod_othermeta_value'] );
@@ -2877,7 +2890,7 @@ function woo_insert_update_data($post) {
                             //Code For updating the parent price of the product
                             if ($parent_id > 0) {
                                 if ($_POST['SM_IS_WOO21'] == "true" || $_POST['SM_IS_WOO22'] == "true") {
-                                    $woo_prod_obj->sync($parent_id);
+                                    WC_Product_Variable::sync($parent_id);
                                 } else {
                                     variable_price_sync($parent_id);
                                 }
