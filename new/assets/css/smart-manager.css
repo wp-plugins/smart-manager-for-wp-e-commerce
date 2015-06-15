@@ -1,0 +1,150 @@
+#icon-smart-manager {
+	background: url("../images/logo-32x32.png") no-repeat scroll transparent;
+}
+
+.icon32 {
+	float: left;
+	height: 34px;
+	margin: 7px 8px 0 0;
+	width: 36px;
+	background-repeat: no-repeat;
+	display: block;
+}
+
+#sm-editor-grid {
+	margin: auto;
+	width: 100%;
+}
+
+td {
+    border-color: #F0F0F0 !important;
+	/*border-color: #c1c1c1 !important;*/
+}
+
+th {
+    background-color: #FAFAFA !important;
+    border-color: #F0F0F0 !important;
+}
+
+.sm-jqgrid-dirty-cell {
+	background:transparent no-repeat 0 0;
+	background-image: url(../images/dirty.gif);
+}
+
+.multiselect {
+	width: 100%!important;
+}
+
+ul.children{list-style:none outside;margin:0px 0 0 24px}
+
+#edit_product_attributes input[type="text"] {
+	line-height: 19px;
+	width: 100%;
+}
+
+#sm_top_bar_left{
+	float:left;
+	width:85%;
+}
+
+#sm_top_bar_right{
+	float:right;
+	/*width:40%;*/
+}
+
+#sm_top_bar_right span{
+	float:left;
+	color:#3892D3;
+	padding: 2px;
+    cursor: pointer;
+}
+
+#save_sm_editor_grid {
+	background-image: url("../images/jqgrid/save_img-blue-15X15.png");
+}
+
+.sm_error_icon {
+	color:#FF5B5E !important;
+}
+
+/*Reduce the size of checkbox*/
+input[type=checkbox] {
+  -ms-transform: scale(0.85); /* IE */
+  -moz-transform: scale(0.85); /* FF */
+  -webkit-transform: scale(0.85); /* Safari and Chrome */
+  -o-transform: scale(0.85); /* Opera */
+}
+
+
+/*CSS fro the dashboard select*/
+#sm_dashboard_select {
+    padding:0px 0px 2px 2px;
+    margin: 0;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    background: #f8f8f8;
+    color:#888;
+    border:none;
+    border-bottom: 1px solid #3892D3;
+    background-color:transparent;
+    outline:none;
+    display: inline-block;
+    -webkit-appearance:none;
+    -moz-appearance:none;
+    text-indent: 0.01px;
+    text-overflow: '';
+    appearance:none;
+    cursor:pointer;
+    line-height: inherit;
+    font-weight:bold;
+}
+
+
+#sm_dashboard_select_lbl {position:relative}
+#sm_dashboard_select_lbl:after {
+    /*content:'>';*/
+    content: "\f347";
+    font-size:20px;
+    font-family: dashicons;
+    color:#3892D3;
+    right:0px;
+    line-height: 23px;
+    position:absolute;
+    pointer-events:none;
+}
+#sm_dashboard_select_lbl:before {
+    content:'';
+    right:6px; top:0px;
+    width:20px; height:20px;
+    background:transparent;
+    position:absolute;
+    pointer-events:none;
+    display:block;
+}
+
+/*==============================================
+OVERRIDING JQGRID CSS
+==============================================*/
+
+.ui-jqgrid .ui-jqgrid-pager .ui-pg-div {
+	padding: 1px 0;
+	float: left;
+	position: relative;
+	background-color: #5AB6F8 !important;
+	border-color: #66BEFC !important;
+	color: #ffffff !important;
+	border-radius: 3px;
+	-webkit-border-radius: 3px;
+}
+
+
+.gbox_sm_editor_grid {
+	max-width: 750px !important;
+}
+
+/*.ui-jqgrid tr.jqgrow td {
+    white-space:nowrap;
+    height: 1px;
+}*/
+

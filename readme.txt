@@ -4,7 +4,7 @@ Donate link: http://www.storeapps.org/
 Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager, extension, premium, free, download
 Requires at least: 2.0.2
 Tested up to: 4.2.2
-Stable tag: 3.9.4
+Stable tag: 3.9.6
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
@@ -116,6 +116,16 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.9.6 =
+* New: Support for sort functionality on the entire database of records (Beta)
+* Fix: Search functionality displaying never ending loading for Orders Dashboard in some cases (WooCommerce)
+* Fix: Some minor fixes
+
+= 3.9.5 =
+* New: Smart Manager Revamp (Beta)
+* Fix: Prevent display of variations of products whose product type has been changed (WooCommerce)
+* Fix: Some minor fixes
 
 = 3.9.4 =
 * Fix: Batch update for the text type attributes not working (WooCommerce)
@@ -555,6 +565,12 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.9.6 =
+New feature of sort functionality on the entire database of records (Beta) along with some important fixes for WooCommerce along with some other minor fixes. Recommended upgrade.
+
+= 3.9.5 =
+Smart Manager Revamp (Beta) along with some important fixes for WooCommerce along with some other minor fixes. Recommended upgrade.
 
 = 3.9.4 =
 Important fixes for WooCommerce along with some other minor fixes. Recommended upgrade.
