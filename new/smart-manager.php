@@ -79,6 +79,7 @@ if ( ! class_exists( 'Smart_Manager' ) ) {
 			wp_register_script ( 'sm_jqgrid_locale', plugins_url ( '/assets/js/jqgrid/grid.locale-en.js', __FILE__ ), array ('sm_jquery_ui_multiselect'), '1.10.2' );
 			wp_register_script ( 'sm_jqgrid_main', plugins_url ( '/assets/js/jqgrid/jquery.jqGrid.min.js', __FILE__ ), array ('sm_jqgrid_locale'), '1.10.2' );
 			wp_register_script ( 'sm_chosen', plugins_url ( '/assets/js/chosen/chosen.jquery.min.js', __FILE__ ), array ('sm_jqgrid_main'), '1.3.0' );
+			wp_register_script ( 'sm_custom_smart_manager_js', plugins_url ( '/assets/js/smart-manager.js', __FILE__ ), array ('sm_chosen'));
 
 
 			// Code for loading custom js automatically
@@ -88,8 +89,12 @@ if ( ! class_exists( 'Smart_Manager' ) ) {
 
 	        	$file_nm = 'sm_custom_'.preg_replace('/[\s-.]/','_',substr($file, (strrpos($file, '/', -3) + 1)));
 
+	        	if ( $file_nm == 'sm_custom_smart_manager_js' ) {
+	        		continue;
+	        	}
+
 	        	if ($index == 0) {
-	        		wp_register_script ( $file_nm, plugins_url ( '/assets/js/'.substr($file, (strrpos($file, '/', -3) + 1)), __FILE__ ), array ('sm_chosen') );
+	        		wp_register_script ( $file_nm, plugins_url ( '/assets/js/'.substr($file, (strrpos($file, '/', -3) + 1)), __FILE__ ), array ('sm_custom_smart_manager_js') );
 	        	} else {	        		
 	        		wp_register_script ( $file_nm, plugins_url ( '/assets/js/'.substr($file, (strrpos($file, '/', -3) + 1)), __FILE__ ), array ($last_reg_script) );
 	        	}

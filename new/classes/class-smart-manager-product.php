@@ -5,7 +5,8 @@ if ( !defined( 'ABSPATH' ) ) exit;
 if ( ! class_exists( 'Smart_Manager_Product' ) ) {
 	class Smart_Manager_Product extends Smart_Manager_Base {
 		public $dashboard_key = '',
-			$default_store_model = array();
+			$default_store_model = array(),
+			$prod_sort = false;
 
 		function __construct($dashboard_key) {
 			$this->dashboard_key = $dashboard_key;
@@ -23,6 +24,8 @@ if ( ! class_exists( 'Smart_Manager_Product' ) ) {
 			add_filter('posts_fields',array(&$this,'sm_product_query_post_fields'),10,2);
 			add_filter('posts_where',array(&$this,'sm_product_query_post_where_cond'),10,2);
 			add_filter('posts_orderby',array(&$this,'sm_product_query_order_by'),10,2);
+
+			add_filter('posts_join_paged',array(&$this,'sm_query_join'),10,2);
 
 			// add_action('admin_footer',array(&$this,'attribute_handling'));
 		}
@@ -83,8 +86,29 @@ if ( ! class_exists( 'Smart_Manager_Product' ) ) {
 
 		public function sm_product_query_order_by ($order_by, $wp_query_obj) {
 	
-			$order_by = 'parent_sort_id DESC';
+			global $wpdb;
 
+			// $order_by = 'CASE
+			// 				WHEN post_parent > 0 THEN id
+			// 				WHEN post_parent = 0 THEN post_title
+			// 			END DESC';
+
+			if ( !empty($this->req_params['sidx']) && ( ($this->req_params['sidx'] != 'posts_id') || ($this->req_params['sidx'] == 'posts_id' && $this->req_params['sord'] == 'asc') )) {
+
+				$order = ( empty($this->req_params['sord']) ) ? ' ASC' : ' '.strtoupper($this->req_params['sord']);
+
+				if ( strpos($this->req_params['sidx'],'posts_') !== false ) {
+					$order_by = substr($this->req_params['sidx'], strlen('posts_')) . $order;
+				} else if ( strpos($this->req_params['sidx'],'terms_') !== false && $this->terms_sort_join === true ) {
+					$order_by = $wpdb->prefix. 'term_relationships.term_taxonomy_id '.$order ;
+				}
+
+				$this->prod_sort = true;
+
+			} else {
+				$order_by = 'parent_sort_id DESC';
+				$this->prod_sort = false;
+			}
 			return $order_by;
 		}
 
@@ -276,13 +300,11 @@ if ( ! class_exists( 'Smart_Manager_Product' ) ) {
 						}
 					}	
 				}
-				
 
 				$taxonomy_nm = array();
 				$term_taxonomy_ids = array();
 				$post_ids = array();
 				$product_attributes_postmeta = array();
-
 
 				foreach ($col_model as $column) {
 					if (empty($column['src'])) continue;
@@ -311,22 +333,30 @@ if ( ! class_exists( 'Smart_Manager_Product' ) ) {
 
 					if ( !empty($data['posts_post_parent']) ) {
 
-						// $parent_key = sm_multidimesional_array_search($data['posts_post_parent'], 'posts_id', $data_model['items']);
-						$parent_key = $data['posts_post_parent'];
-						$parent_type = '';
+						$parent_key = sm_multidimesional_array_search($data['posts_post_parent'], 'posts_id', $data_model['items']);
+						// $parent_key = $data['posts_post_parent'];
+						// $parent_type = '';
 
-						if ( !empty($data_model['items'][$parent_key]['terms_product_type']) ) {
-							$parent_type = $data_model['items'][$parent_key]['terms_product_type'];
-						} else if ( empty($data_model['items'][$parent_key]['terms_product_type'])) {
-							$parent_type = wp_get_object_terms( $parent_key, 'product_type', array('fields' => 'names') );
-							$parent_type = $parent_type[0];
+						// if ( !empty($data_model['items'][$parent_key]['terms_product_type']) ) {
+						// 	$parent_type = $data_model['items'][$parent_key]['terms_product_type'];
+						// } else if ( empty($data_model['items'][$parent_key]['terms_product_type'])) {
+						// 	$parent_type = wp_get_object_terms( $parent_key, 'product_type', array('fields' => 'names') );
+						// 	$parent_type = $parent_type[0];
+						// }
+
+						// if ( $parent_type != 'variable' ) {
+						// 	unset($data_model['items'][$key]);
+						// 	continue;
+						// }
+
+						$parent_title  = '';
+
+						// Code for the variation title on sorting
+						if ( $this->prod_sort === true ) {
+							$parent_title = (!empty($data_model['items'][$parent_key]['posts_post_title'])) ? $data_model['items'][$parent_key]['posts_post_title'] : get_the_title($data['posts_post_parent']);
+							$parent_title .= ( !empty($parent_title) ) ? ' - ' : '';
 						}
-
-						if ( $parent_type != 'variable' ) {
-							unset($data_model['items'][$key]);
-							continue;
-						}
-
+						
 						$data['parent'] = $data['posts_post_parent'];
 						$data['isLeaf'] = true;
 						$data['level'] = 1;
@@ -357,7 +387,7 @@ if ( ! class_exists( 'Smart_Manager_Product' ) ) {
 							}	
 						}
 
-						$data['posts_post_title'] = substr($variation_title, 0, strlen($variation_title)-2 );
+						$data['posts_post_title'] = $parent_title .''. substr($variation_title, 0, strlen($variation_title)-2 );
 
 					} else if ( !empty($data['terms_product_type']) ) {
 						if ( $data['terms_product_type'] == 'simple' ) {
@@ -366,6 +396,13 @@ if ( ! class_exists( 'Smart_Manager_Product' ) ) {
 						$data['parent'] = 'null';
 						$data['isLeaf'] = false;
 						$data['level'] = 0;							
+					}
+
+					if ( $this->prod_sort === true ) {
+						$data['icon_show'] = false;
+						$data['parent'] = 'null';
+						$data['isLeaf'] = false;
+						$data['level'] = 0;	
 					}
 
 					if (empty($data['postmeta_meta_key__product_attributes_meta_value__product_attributes'])) continue;

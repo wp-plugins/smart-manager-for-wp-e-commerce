@@ -51,7 +51,44 @@ jQuery(function($) {
 			$("#"+id).find('[aria-describedby="sm_editor_grid_terms_product_type"]').addClass('sm-jqgrid-dirty-cell').addClass('dirty-cell');
 		});
 
-		$(document).on('oncellclick',function(e,rowid, celname, value, iRow, iCol){
+		var grid = '#sm_editor_grid';
+		var getColumnIndexByName = function(gr,columnName) {
+			var cm = $(gr).jqGrid('getGridParam','colModel');
+			for (var i=0,l=cm.length; i<l; i++) {
+			    if (cm[i].name===columnName) {
+			        return i;
+			    }
+			}
+			return -1;
+		};
+
+
+
+		// Code for disabling the fields on show_variations
+		$(document).on('sm_grid_complete',function(e){
+			
+			if ( sm.dashboard_key != 'product' ) return;
+
+			var allIds = $('#sm_editor_grid').jqGrid('getDataIDs');
+            editor_grid = $('#sm_editor_grid');
+
+            var pos=getColumnIndexByName(grid,'posts_post_title');
+			var allIds = $('#sm_editor_grid').jqGrid('getDataIDs');
+			var cells = $("tbody > tr.jqgrow > td:nth-child("+(pos+1)+")",editor_grid[0]);
+
+            for (var i = 0; i < allIds.length; i++) {
+
+            	var cell = $(cells[i]);
+                var rowData = $('#sm_editor_grid').jqGrid('getRowData', allIds[i]);
+
+                if ( rowData.hasOwnProperty('posts_post_parent') && rowData.posts_post_parent > 0 ) {
+	                cell.addClass('not-editable-cell');
+	            }
+
+            }
+		});
+
+		$(document).on('sm_on_cell_click',function(e,rowid, celname, value, iRow, iCol){
 
 			if (celname != 'custom_product_attributes' || sm.dashboard_key != 'product') return;
 

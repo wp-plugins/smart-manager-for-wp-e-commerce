@@ -8,7 +8,8 @@ if ( ! class_exists( 'Smart_Manager_Base' ) ) {
 		public $dashboard_key = '',
 			$default_store_model = array(),
 			$terms_val_parent = array(),
-			$req_params = array();
+			$req_params = array(),
+			$terms_sort_join = false;
         
 		// include_once $this->plugin_path . '/class-smart-manager-utils.php';
 
@@ -17,6 +18,52 @@ if ( ! class_exists( 'Smart_Manager_Base' ) ) {
 			$this->post_type = $dashboard_key;
 			$this->plugin_path  = untrailingslashit( plugin_dir_path( __FILE__ ) );
 			$this->req_params  	= (!empty($_REQUEST)) ? $_REQUEST : array();
+
+			add_filter('posts_join_paged',array(&$this,'sm_query_join'),10,2);
+			add_filter('posts_orderby',array(&$this,'sm_query_order_by'),10,2);
+		}
+
+		public function sm_query_join ($join, $wp_query_obj) {
+
+			global $wpdb;
+
+			// Code for sorting of the terms columns
+			if ( !empty($this->req_params['sidx']) ) {
+ 				if ( strpos($this->req_params['sidx'],'terms_') !== false ) {
+
+ 					$taxonomy_nm = substr($this->req_params['sidx'], strlen('terms_'));
+
+ 					// Query to get the ordered term_taxonomy_ids of the taxonomy being sorted
+					$query_taxonomy_ids = "SELECT taxonomy.term_taxonomy_id
+											FROM {$wpdb->prefix}term_taxonomy AS taxonomy
+												JOIN {$wpdb->prefix}terms AS terms ON ( terms.term_id = taxonomy.term_id AND taxonomy.taxonomy = '". $taxonomy_nm ."' )";
+					$taxonomy_ids = $wpdb->get_col($query_taxonomy_ids);
+					$rows_taxonomy_ids = $wpdb->num_rows;
+
+					if ( $rows_taxonomy_ids > 0 ) {
+						$join = 'LEFT JOIN ' .$wpdb->prefix. 'term_relationships ON (  '.$wpdb->prefix. 'term_relationships.object_id = ' .$wpdb->prefix. 'posts.ID
+																					AND '  .$wpdb->prefix. 'term_relationships.term_taxonomy_id IN (' .implode(",",$taxonomy_ids). ') )';
+						$this->terms_sort_join = true;
+					}
+				}
+			}
+			return $join;
+		}
+
+		public function sm_query_order_by ($order_by, $wp_query_obj) {
+
+			global $wpdb;
+
+			$order = ( empty($this->req_params['sord']) ) ? ' ASC' : ' '.strtoupper($this->req_params['sord']);
+
+			if ( !empty($this->req_params['sidx']) ) {			
+				if ( strpos($this->req_params['sidx'],'posts_') !== false ) {
+					$order_by = substr($this->req_params['sidx'], strlen('posts_')) . $order;
+				} else if ( strpos($this->req_params['sidx'],'terms_') !== false && $this->terms_sort_join === true ) {
+					$order_by = $wpdb->prefix. 'term_relationships.term_taxonomy_id '.$order ;
+				}
+			}
+			return $order_by;
 		}
 
 		public function get_default_store_model() {
@@ -467,7 +514,36 @@ if ( ! class_exists( 'Smart_Manager_Base' ) ) {
 
 			global $wpdb;
 
+			$data_model = array(); 
+
+			$start = (!empty($this->req_params['start'])) ? $this->req_params['start'] : '';
+			$limit = (!empty($this->req_params['limit'])) ? $this->req_params['limit'] : 50;
+			$current_page = (!empty($this->req_params['page'])) ? $this->req_params['page'] : '1';
+
+			$start_offset = ($current_page > 1) ? (($current_page - 1) * $limit) : $start;
+
+			$post_cond = (!empty($this->req_params['table_model']['posts']['where'])) ? $this->req_params['table_model']['posts']['where'] : array('post_type' => $this->dashboard_key);
+			$meta_query = (!empty($this->req_params['table_model']['postmeta']['where'])) ? $this->req_params['table_model']['postmeta']['where'] : '';
+			$tax_query = (!empty($this->req_params['table_model']['terms']['where'])) ? $this->req_params['table_model']['terms']['where'] : '';
+			$sort_params = (!empty($this->req_params['sort_params'])) ? $this->req_params['sort_params'] : '';
+			$order_by = (!empty($sort_params['orderby'])) ? $sort_params['orderby'] : '';
+			$order = (!empty($sort_params['order'])) ? $sort_params['order'] : '';
+
 			$current_store_model = get_transient( 'sm_dashboard_model_'.$this->dashboard_key );
+
+			// Code for handling sorting of the postmeta
+
+			$sort_meta_key = '';
+
+			if ( !empty($this->req_params['sidx']) ) {			
+
+				if ( strpos($this->req_params['sidx'],'meta_key') !== false || strpos($this->req_params['sidx'],'_meta_value') !== false ) {
+					$start_pos = strpos($this->req_params['sidx'],'meta_key') + strlen('meta_key_');
+					$key_len = strpos($this->req_params['sidx'],'_meta_value') - $start_pos;
+					$sort_meta_key = substr($this->req_params['sidx'], $start_pos, $key_len);
+					$order = ( empty($this->req_params['sord']) ) ? 'ASC' : strtoupper($this->req_params['sord']);
+				}
+			}
 
 			$col_model = (!empty($current_store_model[$this->dashboard_key]['columns'])) ? $current_store_model[$this->dashboard_key]['columns'] : array();
 
@@ -493,8 +569,15 @@ if ( ! class_exists( 'Smart_Manager_Base' ) ) {
 
 					$data_cols[] = $col_nm;
 
+					//Condition for getting the sort meta_key
+					if ( !empty($this->req_params['sidx']) ) {	
+						if ( $col_nm == $sort_meta_key ) {
+							$order_by = ( $col['type'] == 'number' ) ? 'meta_value_num' : 'meta_value';
+						}
+					}
+
 					//Code for storing the serialized cols
-					if($col['type'] == 'longstring') {
+					if( $col['type'] == 'longstring' ) {
 						$data_cols_serialized[] = $col_nm;
 					} else if ($col['type'] == 'multilist') {
 						$data_cols_multilist[] = $col_nm;
@@ -507,21 +590,6 @@ if ( ! class_exists( 'Smart_Manager_Base' ) ) {
 				}
 			}
 
-			$data_model = array(); 
-
-			$start = (!empty($this->req_params['start'])) ? $this->req_params['start'] : '';
-			$limit = (!empty($this->req_params['limit'])) ? $this->req_params['limit'] : 50;
-			$current_page = (!empty($this->req_params['page'])) ? $this->req_params['page'] : '1';
-
-			$start_offset = ($current_page > 1) ? (($current_page - 1) * $limit) : $start;
-
-			$post_cond = (!empty($this->req_params['table_model']['posts']['where'])) ? $this->req_params['table_model']['posts']['where'] : array('post_type' => $this->dashboard_key);
-			$meta_query = (!empty($this->req_params['table_model']['postmeta']['where'])) ? $this->req_params['table_model']['postmeta']['where'] : '';
-			$tax_query = (!empty($this->req_params['table_model']['terms']['where'])) ? $this->req_params['table_model']['terms']['where'] : '';
-			$sort_params = (!empty($this->req_params['sort_params'])) ? $this->req_params['sort_params'] : '';
-			$order_by = (!empty($sort_params['orderby'])) ? $sort_params['orderby'] : '';
-			$order = (!empty($sort_params['order'])) ? $sort_params['order'] : '';
-
 			//WP_Query to get all the relevant post_ids
 			$args = array(
 				            'posts_per_page' => $this->req_params['limit'],
@@ -532,10 +600,15 @@ if ( ! class_exists( 'Smart_Manager_Base' ) ) {
 				            'order' => $order
 			            );
 
+			//Condition for sorting of postmeta_cols
+			if ( !empty($this->req_params['sidx']) &&  !empty($sort_meta_key) ) {
+				$args ['meta_key'] = $sort_meta_key;
+			}
+
 			$args = array_merge($args, $post_cond);
 
         	$result_posts = new WP_Query( $args );
-
+        	
         	$items = array();
         	$post_ids = array();
 

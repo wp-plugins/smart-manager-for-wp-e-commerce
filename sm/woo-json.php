@@ -1126,6 +1126,11 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                         
                         $records[$i]['post_status'] = get_post_status($records[$i]['post_parent']);
 
+                        // Code for assigning the parent sku if sku is blank
+                        if ( empty($records[$i]['_sku']) ) {
+                            $records[$i]['_sku'] = get_post_meta($records[$i]['post_parent'], '_sku');
+                        }
+
                         if($_POST['SM_IS_WOO16'] == "true") {
                             $records[$i]['_regular_price'] = $records[$i]['_price'];
                         }
@@ -1876,7 +1881,11 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
             }
 
             if ($_POST['SM_IS_WOO22'] == "true" ) {
-                $search_condn .= " OR order_status LIKE '%$search_on%'";
+                if (!empty($search_condn)) {
+                    $search_condn .= " OR order_status LIKE '%$search_on%'";
+                } else {
+                    $search_condn = " HAVING order_status LIKE '%$search_on%'";
+                }
             }
 
             

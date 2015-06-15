@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.9.5
+Version: 3.9.6
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013, 2014, 2015 Store Apps All rights reserved.
@@ -72,6 +72,9 @@ function smart_is_pro_updated() {
 }
 
 
+$plugin_path  = untrailingslashit( plugin_dir_path( __FILE__ ) );
+include_once $plugin_path . '/new/classes/class-smart-manager-admin-welcome.php';
+
 /**
  * Throw an error on admin page when WP e-Commerece plugin is not activated.
  */
@@ -92,6 +95,11 @@ include_once (ABSPATH . WPINC . '/functions.php');
 	//	admin_init is triggered before any other hook when a user access the admin area. 
 	// This hook doesn't provide any parameters, so it can only be used to callback a specified function.
 	add_action ( 'admin_init', 'smart_admin_init' );
+
+function smart_manager_get_data() {
+	return get_plugin_data( __FILE__ );
+}
+
 	
 	function smart_admin_init() {
                 global $wp_version,$wpdb;
@@ -252,17 +260,17 @@ include_once (ABSPATH . WPINC . '/functions.php');
 		if (is_admin() ) {
             add_action ( 'wp_ajax_sm_include_file', 'sm_include_file' ); 
 
-            if ( false !== get_option( '_sm_activation_redirect' ) ) {
-            	// Delete the redirect transient
-		    	delete_option( '_sm_activation_redirect' );
+       //      if ( false !== get_option( '_sm_activation_redirect' ) ) {
+       //      	// Delete the redirect transient
+		    	// delete_option( '_sm_activation_redirect' );
 
-		    	if ( WPSC_WOO_ACTIVATED === true || WOO_ACTIVATED === true ) {
-		    		wp_redirect( admin_url( 'edit.php?post_type=product&page=smart-manager-woo' ) );
-		    	} else if ( WPSC_ACTIVATED === true ) {
-		    		wp_redirect( admin_url( 'edit.php?post_type=wpsc-product&page=smart-manager-wpsc' ) );
-		    	}
+		    	// if ( WPSC_WOO_ACTIVATED === true || WOO_ACTIVATED === true ) {
+		    	// 	wp_redirect( admin_url( 'edit.php?post_type=product&page=smart-manager-woo' ) );
+		    	// } else if ( WPSC_ACTIVATED === true ) {
+		    	// 	wp_redirect( admin_url( 'edit.php?post_type=wpsc-product&page=smart-manager-wpsc' ) );
+		    	// }
 		    	
-            }
+       //      }
         }
 
 	}

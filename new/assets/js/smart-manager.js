@@ -77,19 +77,24 @@ var $ = jQuery.noConflict(),
                             drag: true,
                             // resize: true,
                             closeOnEscape: true,
-                            onClose: hideDialog
+                            closeicon: [false,'left','ui-icon-close'],
+                            onClose:hideDialog
+                            
                         },
                         "#gview_"+gID,
                         $("#gview_"+gID)[0]);
                         $("#"+gID+"_inlinemod").css({'overflow-x': 'hidden', 'overflow-y': 'scroll'});
                 } else {
-                    $("#"+gID+"_inlinemod").css({'width': modal_width, 'height': modal_height, 'overflow-x': 'hidden', 'overflow-y': 'scroll'});
+                    $("#"+gID+"_inlinemod").css({'width': modal_width, 'height': modal_height, 'overflow-x': 'hidden', 'overflow-y': 'scroll', 'left': ((window_width - modal_width)/2), 'top':((window_height - modal_height)/2)});
                     // $("#edit_product_attributes").html(dialog_content);
 
                     $("#"+gID+"_inlinecnt").html(dialog_content);
                 }
 
                 $.jgrid.viewModal("#"+IDs.themodal,{gbox:"#gbox_"+gID,jqm:true, overlay: 10, modal:false});
+
+
+                $("#"+gID+"_inlinehd").find('.ui-jqdialog-titlebar-close').hide();
 
     }
 
@@ -242,26 +247,26 @@ var load_dashboard = function () {
 
 
 
-                $.jgrid.createModal(
-                    IDs,
-                    dlgContent,
-                    {
-                        gbox: "#gbox_"+gID,
-                        caption: 'Batch Update',
-                        jqModal: true,
-                        left: 200,
-                        top: 300,
-                        overlay: 10,
-                        width: 540,
-                        height: 'auto',
-                        zIndex: 950,
-                        drag: true,
-                        resize: true,
-                        closeOnEscape: true,
-                        onClose: null
-                    },
-                    "#gview_"+gID,
-                    $("#gview_"+gID)[0]);
+                // $.jgrid.createModal(
+                //     IDs,
+                //     dlgContent,
+                //     {
+                //         gbox: "#gbox_"+gID,
+                //         caption: 'Batch Update',
+                //         jqModal: true,
+                //         left: 200,
+                //         top: 300,
+                //         overlay: 10,
+                //         width: 540,
+                //         height: 'auto',
+                //         zIndex: 950,
+                //         drag: true,
+                //         resize: true,
+                //         closeOnEscape: true,
+                //         onClose: null
+                //     },
+                //     "#gview_"+gID,
+                //     $("#gview_"+gID)[0]);
             }
 
             $.jgrid.viewModal("#"+IDs.themodal,{gbox:"#gbox_"+gID,jqm:true, overlay: 10, modal:false});
@@ -844,11 +849,14 @@ var load_grid = function () {
                             'cellEdit': true, // for cell editing
                             'cellsubmit' : 'clientArray',
                             onSelectCell: function (rowid, celname, value, iRow, iCol) {
-                                $(document).trigger("oncellclick",[rowid, celname, value, iRow, iCol]);
+                                $(document).trigger("sm_on_cell_click",[rowid, celname, value, iRow, iCol]);
                             },
                             beforeEditCell:function(rowid,cellname,v,iRow,iCol){
                                 lastrow = iRow;
                                 lastcell = iCol;
+                            },
+                            afterEditCell : function(rowid, cellname, value, iRow, iCol) {
+                                $(document).trigger("sm_after_edit_cell",[rowid, celname, value, iRow, iCol]);
                             },
                             gridComplete: function() {
 
@@ -910,6 +918,9 @@ var load_grid = function () {
                                     });
                                 });
 
+
+                                $(document).trigger("sm_grid_complete");
+
                             },
                             // recordpos: 'left', // for position of the view records label ... left, center, right
                             // footerrow:true, // for insertng blnk row in footer
@@ -932,7 +943,7 @@ var load_grid = function () {
 }
 
 //Code for handling cell click for multiselect
-$(document).on('oncellclick',function(e,rowid, celname, value, iRow, iCol){
+$(document).on('sm_on_cell_click',function(e,rowid, celname, value, iRow, iCol){
     var columns = sm.dashboard_model[sm.dashboard_key].columns,
         multiselect_edit_html = '',
         current_value = '',

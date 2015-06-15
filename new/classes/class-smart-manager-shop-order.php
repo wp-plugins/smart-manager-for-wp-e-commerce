@@ -12,6 +12,9 @@ if ( ! class_exists( 'Smart_Manager_Shop_Order' ) ) {
 			$this->req_params  	= (!empty($_REQUEST)) ? $_REQUEST : array();
 			add_filter('sm_dashboard_model',array(&$this,'orders_dashboard_model'),10,1);
 
+			add_filter('posts_join_paged',array(&$this,'sm_query_join'),10,2);
+			add_filter('posts_orderby',array(&$this,'sm_query_order_by'),10,2);
+
 		}
 
 		public function orders_dashboard_model ($dashboard_model) {
