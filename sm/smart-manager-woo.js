@@ -501,6 +501,7 @@ Ext.onReady(function () {
                                 Customers : Ext.encode(SM.customers_state),
                                 Orders : Ext.encode(SM.orders_state),
                                 search_type: jQuery("#search_switch").text().trim(),
+                                security: SM_NONCE,
                                 file:  jsonURL
                     },
                     success: function(data) {
@@ -524,6 +525,7 @@ Ext.onReady(function () {
                 data: {
                             cmd: 'state',
                             op : 'get',
+                            security: SM_NONCE,
                             file:  jsonURL
                 },
                 success: function(response) {
@@ -924,11 +926,11 @@ products_columns = [editorGridSelectionModel,
 					})
 				},
 				{
-					header: SM.productsCols.price.name,
+					header: SM.productsCols.regularPrice.name,
 					id: 'price',
 					align: 'right',
 					sortable: true,
-					dataIndex: SM.productsCols.price.colName,
+					dataIndex: SM.productsCols.regularPrice.colName,
 					tooltip: getText('Price'),
 					renderer: numeric_renderer(sm_amount_decimal_precision),
 		            width: 70,
@@ -1149,7 +1151,7 @@ var products_render_fields = new Array();
 products_render_fields = [
 							{name: SM.productsCols.id.colName,                type: 'int'},
 							{name: SM.productsCols.name.colName,              type: 'string'},
-							{name: SM.productsCols.price.colName,             type: 'string'},
+							{name: SM.productsCols.regularPrice.colName,      type: 'string'},
 							{name: SM.productsCols.salePrice.colName,         type: 'string'},
 							{name: SM.productsCols.salePriceFrom.colName,     type: 'date', dateFormat: 'Y-m-d'},
 							{name: SM.productsCols.salePriceTo.colName,       type: 'date', dateFormat: 'Y-m-d'},
@@ -1372,7 +1374,6 @@ var productsColumnModel = new Ext.ProductsColumnModel({
 	});	
 
 	//Code to get the advanced search query string
-
 	var productsStore = new Ext.data.Store({
 		reader: productsJsonReader,
 		proxy: new Ext.data.HttpProxy({
@@ -1389,6 +1390,7 @@ var productsColumnModel = new Ext.ProductsColumnModel({
             SM_IS_WOO16: SM_IS_WOO16,
             SM_IS_WOO21: SM_IS_WOO21,
             SM_IS_WOO22: SM_IS_WOO22,
+            security: SM_NONCE,
             file:  jsonURL
 		},
 		dirty: false,
@@ -1503,6 +1505,7 @@ var productsColumnModel = new Ext.ProductsColumnModel({
 				            SM_IS_WOO16: SM_IS_WOO16,
 				            SM_IS_WOO21: SM_IS_WOO21,
 				            SM_IS_WOO22: SM_IS_WOO22,
+				            security: SM_NONCE,
 				            file:  jsonURL,
 				            search_query: search_query,
 				            search: 'advanced_search'
@@ -1712,7 +1715,7 @@ var pagingToolbar = new Ext.PagingToolbar({
                     css: 'display:none;visibility:hidden;height:0px;', 
                     // src: jsonURL+'?cmd=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
                     // src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+''
-                    src: fileurl + '&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+'&SM_IS_WOO21='+SM_IS_WOO21+'&SM_IS_WOO22='+SM_IS_WOO22+'',
+                    src: fileurl + '&file='+jsonURL+'&func_nm=exportCsvWoo&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&SM_IS_WOO16='+SM_IS_WOO16+'&SM_IS_WOO21='+SM_IS_WOO21+'&SM_IS_WOO22='+SM_IS_WOO22+'&security='+SM_NONCE,
                 }); 
 			}
 		}
@@ -1813,6 +1816,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                 SM_IS_WOO16: SM_IS_WOO16,
                 SM_IS_WOO21: SM_IS_WOO21,
                 SM_IS_WOO22: SM_IS_WOO22,
+                security: SM_NONCE,
                 file:  jsonURL
 			}};
 			Ext.Ajax.request(o);
@@ -1959,6 +1963,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                                     incvariation: SM.incVariation,
                                                     SM_IS_WOO21: SM_IS_WOO21,
                                                     SM_IS_WOO22: SM_IS_WOO22,
+                                                    security: SM_NONCE,
                                                     file:  jsonURL
                                             }
                                     };
@@ -2003,6 +2008,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                     active_module: SM.activeModule,
                                     incvariation: SM.incVariation,
                                     data: Ext.encode(records),
+                                    security: SM_NONCE,
                                     file:  jsonURL
                             }
                     };
@@ -2094,6 +2100,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 						cmd: 'delData',
 						active_module: SM.activeModule,
 						data: Ext.encode(records),
+						security: SM_NONCE,
 						file:  jsonURL
 					}
 				};
@@ -2428,6 +2435,7 @@ var searchLogic = function () {
 			SM_IS_WOO16: SM_IS_WOO16,
 			SM_IS_WOO21: SM_IS_WOO21,
 			SM_IS_WOO22: SM_IS_WOO22,
+			security: SM_NONCE,
 			file:  jsonURL
 		}
 	};
@@ -2961,6 +2969,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 											 		active_module: SM.activeModule,
 											 		action_name: selectedValue,
 											 		attribute_name: selectedActionvalue,
+											 		security: SM_NONCE,
 											 		file:  jsonURL
 												}
 											};
@@ -3042,6 +3051,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								cmd: 'getRegion',
 								active_module: SM.activeModule,
 								country_id: selectedValue,
+								security: SM_NONCE,
 								file:  jsonURL				
 							}
 						};
@@ -3737,6 +3747,7 @@ var showCustomerDetails = function(record,rowIndex){
             SM_IS_WOO16: SM_IS_WOO16,
             SM_IS_WOO21: SM_IS_WOO21,
             SM_IS_WOO22: SM_IS_WOO22,
+            security: SM_NONCE,
             file:  jsonURL
 		},
 		dirty:false,
@@ -3957,6 +3968,7 @@ var showCustomerDetails = function(record,rowIndex){
 			SM_IS_WOO16: SM_IS_WOO16,
 			SM_IS_WOO21: SM_IS_WOO21,
 			SM_IS_WOO22: SM_IS_WOO22,
+			security: SM_NONCE,
 			file:  jsonURL
 		},
 		dirty:false,
@@ -4297,6 +4309,7 @@ var showCustomerDetails = function(record,rowIndex){
             SM_IS_WOO16: SM_IS_WOO16,
             SM_IS_WOO21: SM_IS_WOO21,
             SM_IS_WOO22: SM_IS_WOO22,
+            security: SM_NONCE,
             file:  jsonURL
 		},
 		dirty:false,
@@ -4531,6 +4544,7 @@ var showCustomerDetails = function(record,rowIndex){
 						,params:
 						{
 							cmd:'getRolesDashboard',
+							security: SM_NONCE,
 							file:  jsonURL
 						}};
 				Ext.Ajax.request(object);
@@ -4682,6 +4696,7 @@ var showCustomerDetails = function(record,rowIndex){
 											thumbnail_id: attachment['id'],
 											id: record.id,
 											incVariation: SM.incVariation,
+											security: SM_NONCE,
 											file:  jsonURL
 										}
 									};
@@ -4725,6 +4740,7 @@ var showCustomerDetails = function(record,rowIndex){
 													cmd:'editImage',
 													id: record.id,
 													incVariation: SM.incVariation,
+													security: SM_NONCE,
 													file:  jsonURL
 												}
 											};

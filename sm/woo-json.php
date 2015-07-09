@@ -2,6 +2,34 @@
 
 ob_start();
 
+// Code for checking whether user is valid or not
+$current_user_role = '';
+
+if (!function_exists('wp_get_current_user')) {
+    require_once (ABSPATH . 'wp-includes/pluggable.php'); // Sometimes conflict with SB-Welcome Email Editor
+}
+$current_user = wp_get_current_user(); 
+if ( !($current_user instanceof WP_User) )
+   exit;
+
+if ( !isset( $current_user->roles[0] ) ) {
+    $current_user_role = array_values( $current_user->roles );
+} else {
+    $current_user_role = $current_user->roles;
+}
+
+//Fix for the client
+if ( !empty( $current_user->caps ) ) {
+    $caps = array_keys($current_user->caps);
+    $current_user_role[0] = (!empty($caps)) ? $caps[0] : '';
+}
+
+$sm_privilege_option = (!empty($current_user_role[0])) ? get_option('sm_'.$current_user_role[0].'_dashboard') : '';
+
+if ( !is_user_logged_in() || !is_admin() || ( $current_user_role[0] != 'administrator' && empty($sm_privilege_option) ) ) {
+    exit;
+}
+
 if (!function_exists('find_wp_load_path')) {
     function find_wp_load_path() { // function to find the wordpress root directory path
         $dir = dirname(__FILE__);
@@ -2264,6 +2292,10 @@ if ( !function_exists( 'get_attributes_value' ) ) {
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 
+    check_ajax_referer('smart-manager-security','security');
+
+    global $current_user;
+
     //Code to handle get_data for Coupons dashboard
     if (isset ( $_POST ['couponFields'] ) && $_POST ['couponFields'] != '') {
 
@@ -2329,6 +2361,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'state') {
+
+        check_ajax_referer('smart-manager-security','security');
 
         global $current_user , $wpdb;
 
@@ -3022,6 +3056,8 @@ function woo_insert_update_data($post) {
 // For insert updating product in woo.
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 
+        check_ajax_referer('smart-manager-security','security');
+
         //For encoding the string in UTF-8 Format
 //                $charset = "EUC-JP, ASCII, UTF-8, ISO-8859-1, JIS, SJIS";
         $charset = ( get_bloginfo('charset') === 'UTF-8' ) ? null : get_bloginfo('charset');
@@ -3119,6 +3155,8 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
+
+    check_ajax_referer('smart-manager-security','security');
 
     global $wpdb;
 
@@ -3270,6 +3308,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
+
+    check_ajax_referer('smart-manager-security','security');
+
     $delCnt = 0;
     $activeModule = substr( $_POST ['active_module'], 0, -1 );
 
@@ -3317,6 +3358,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
+
+    check_ajax_referer('smart-manager-security','security');
+
     global $wpdb, $current_user;
 
     if (!function_exists('wp_get_current_user')) {
@@ -3389,6 +3433,9 @@ function get_term_taxonomy_id($term_name) {                 // for woocommerce o
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getTerms'){
+
+    check_ajax_referer('smart-manager-security','security');
+
     global $wpdb;
 
     $terms_combo_store = array();
@@ -3455,6 +3502,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getTerms'){
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRegion') {
+
+    check_ajax_referer('smart-manager-security','security');
+
     global $wpdb, $woocommerce;
     $cnt = 0;
     if ( !empty ( $woocommerce->countries->states[$_POST['country_id']] ) ) {
@@ -3478,6 +3528,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRegion') {
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'editImage') {
+
+    check_ajax_referer('smart-manager-security','security');
+
     $woo_default_image = WP_PLUGIN_URL . '/smart-reporter-for-wp-e-commerce/resources/themes/images/woo_default_image.png';
 
     if (!empty($_POST['thumbnail_id'])) {

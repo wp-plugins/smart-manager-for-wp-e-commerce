@@ -1,7 +1,7 @@
 
 // jQuery(function($) {
 var $ = jQuery.noConflict(),
-    sm = {dashboard_model:'', dashboard_key: '',dashboard_select_options: ''},
+    sm = {dashboard_model:'', dashboard_key: '',dashboard_select_options: '',sm_nonce: ''},
     page = 1,
     hideDialog = '',
     inline_edit_dlg = '',
@@ -103,6 +103,8 @@ $(document).ready(function() {
     sm_dashboards_combo = sm_dashboards = $.parseJSON(sm_dashboards[0]);
 
     sm.dashboard_key = sm_dashboards['default'];
+
+    sm.sm_nonce = sm_dashboards['sm_nonce'];
 
     if ( !jQuery(document.body).hasClass('folded') ) {
         grid_width  = document.documentElement.offsetWidth - 220;
@@ -378,6 +380,7 @@ var load_dashboard = function () {
                 data: {
                             cmd: 'delete',
                             active_module: sm.dashboard_key,
+                            security: sm.sm_nonce,
                             ids: JSON.stringify(row_ids)
                 },
                 success: function(response) { 
@@ -474,6 +477,7 @@ var load_dashboard = function () {
                             cmd: 'inline_update',
                             active_module: sm.dashboard_key,
                             edited_data: JSON.stringify(rowdata),
+                            security: sm.sm_nonce,
                             table_model: JSON.stringify(sm_store_table_model)
                 },
                 success: function(response) {
@@ -779,6 +783,7 @@ var get_dashboard_model = function () {
             async: false,
             data: {
                         cmd: 'get_dashboard_model',
+                        security: sm.sm_nonce,
                         active_module: sm.dashboard_key
                 },
             success: function(response) {
@@ -807,6 +812,7 @@ var load_grid = function () {
                             postData: {
                                       cmd: 'get_data_model',
                                       active_module: sm.dashboard_key,
+                                      security: sm.sm_nonce,
                                       start: 0,
                                       page: page,
                                       limit: limit,

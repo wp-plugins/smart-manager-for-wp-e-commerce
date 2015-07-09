@@ -287,10 +287,10 @@ $products_cols['name']['actionType']='modStrActions';
 $products_cols['name']['colName']   ='post_title';
 $products_cols['name']['tableName'] ="{$wpdb->prefix}posts";
 
-$products_cols['price']['name']=__( 'Price', $sm_domain );
-$products_cols['price']['actionType']='price_actions';
-$products_cols['price']['tableName']="{$wpdb->prefix}postmeta";
-$products_cols['price']['updateColName']='meta_value';
+$products_cols['regularPrice']['name']=__( 'Price', $sm_domain );
+$products_cols['regularPrice']['actionType']='price_actions';
+$products_cols['regularPrice']['tableName']="{$wpdb->prefix}postmeta";
+$products_cols['regularPrice']['updateColName']='meta_value';
 
 $products_cols['salePrice']['name']=__( 'Sale Price', $sm_domain );
 $products_cols['salePrice']['actionType']='salesprice_actions';
@@ -350,7 +350,7 @@ $products_cols['post_parent']['actionType']='';
 
 if (WPSC_RUNNING === true) {
 	
-	$products_cols['price']['colName']='_wpsc_price';
+	$products_cols['regularPrice']['colName']='_wpsc_price';
 	$products_cols['salePrice']['colName']='_wpsc_special_price';
 	$products_cols['inventory']['colName']='_wpsc_stock';
 	$products_cols['sku']['colName']='_wpsc_sku';
@@ -423,7 +423,7 @@ if (WPSC_RUNNING === true) {
 	$products_cols['lengthCol']['colFilter']='meta_key:_wpsc_product_metadata';
 	$products_cols['lengthUnit']['colFilter']='meta_key:_wpsc_product_metadata';
 	$products_cols['oos']['colFilter']='meta_key:_wpsc_product_metadata';
-	$products_cols['price']['colFilter']='meta_key:_wpsc_price';
+	$products_cols['regularPrice']['colFilter']='meta_key:_wpsc_price';
 	$products_cols['salePrice']['colFilter']='meta_key:_wpsc_special_price';
 	$products_cols['inventory']['colFilter']='meta_key:_wpsc_stock';
 	$products_cols['sku']['colFilter']='meta_key:_wpsc_sku';
@@ -592,7 +592,7 @@ if (WPSC_RUNNING === true) {
 	
 	$encodedCountries = json_encode ( $countries );
 	
-	$products_cols['price']['colName']='_regular_price'; // for woo
+	$products_cols['regularPrice']['colName']='_regular_price'; // for woo
 	$products_cols['salePrice']['colName']='_sale_price'; // for woo
 	$products_cols['inventory']['colName']='_stock'; // for woo
 	$products_cols['sku']['colName']='_sku'; // for woo
@@ -1100,15 +1100,16 @@ function sm_product_columns_filter($attr) {
 	$product_meta_fields_query = "SELECT DISTINCT {$wpdb->prefix}postmeta.meta_key,
 									{$wpdb->prefix}postmeta.meta_value
 								FROM {$wpdb->prefix}postmeta 
-									JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.id = {$wpdb->prefix}postmeta.post_id)
-								WHERE post_type IN ('product','product_variation')
-									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE 'attribute_%'
-									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE '[%'
-									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE ':%'
-									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE '.%'
-									AND {$wpdb->prefix}postmeta.meta_key NOT LIKE '\%'
+									JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.id = {$wpdb->prefix}postmeta.post_id
+										AND {$wpdb->prefix}posts.post_type IN ('product','product_variation')
+										AND {$wpdb->prefix}postmeta.meta_key NOT LIKE 'attribute_%'
+										AND {$wpdb->prefix}postmeta.meta_key NOT LIKE '[%'
+										AND {$wpdb->prefix}postmeta.meta_key NOT LIKE ':%'
+										AND {$wpdb->prefix}postmeta.meta_key NOT LIKE '.%'
+										AND {$wpdb->prefix}postmeta.meta_key NOT LIKE '\%'
 										$postmeta_fields_ignored_cond
 										$postmeta_fields_meta_value_cond
+										)
 								GROUP BY {$wpdb->prefix}postmeta.meta_key";
 
 	$product_meta_fields_filtered_results = $wpdb->get_results ($product_meta_fields_query , 'ARRAY_A');
@@ -1291,6 +1292,7 @@ if (WOO_RUNNING === true) {
         var SM_IS_WOO16            =  '" . ((WOO_RUNNING === true) ? SM_IS_WOO16 : '') . "';
         var SM_IS_WOO21            =  '" . ((WOO_RUNNING === true) ? SM_IS_WOO21 : '') . "';
         var SM_IS_WOO22            =  '" . ((WOO_RUNNING === true) ? SM_IS_WOO22 : '') . "';
+        var SM_NONCE            =  '" . wp_create_nonce( 'smart-manager-security' ) . "';
         var IS_WP35             =  '" . ((version_compare ( $wp_version, '3.5', '>=' )) ? IS_WP35 : '') . "';
         var IS_WP40             =  '" . ((version_compare ( $wp_version, '4.0', '>=' )) ? IS_WP40 : '') . "';
         var time_zone           = '" . $timezone . "';
@@ -1564,9 +1566,9 @@ if (WPSC_RUNNING === true) {
 			SM.productsCols.name.colName               = 'name';
 			SM.productsCols.name.tableName             = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
 			
-			SM.productsCols.price.colName              = 'price';
-			SM.productsCols.price.tableName            = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
-			SM.productsCols.price.updateColName        = '';
+			SM.productsCols.regularPrice.colName              = 'price';
+			SM.productsCols.regularPrice.tableName            = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';
+			SM.productsCols.regularPrice.updateColName        = '';
 			 
 			SM.productsCols.salePrice.colName          = 'sale_price';
 			SM.productsCols.salePrice.tableName        = '" . (WPSC_RUNNING === true ? WPSC_TABLE_PRODUCT_LIST : '') . "';

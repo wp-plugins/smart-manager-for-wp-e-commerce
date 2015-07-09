@@ -131,6 +131,8 @@ if ( ! class_exists( 'Smart_Manager' ) ) {
 			$sm_dashboard_keys = array_keys($sm_dashboards);
 			$sm_dashboards ['default'] = $sm_dashboard_keys[0];
 
+			$sm_dashboards ['sm_nonce'] = wp_create_nonce( 'smart-manager-security' );
+
 	        wp_localize_script( 'sm_custom_smart_manager_js', 'sm_dashboards', array(json_encode($sm_dashboards)) );
 
 			wp_enqueue_script( $last_reg_script );
