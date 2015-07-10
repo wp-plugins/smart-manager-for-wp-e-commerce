@@ -60,6 +60,12 @@ if ( ! class_exists( 'Smart_Manager_Controller' ) ) {
 
 			if (empty($_REQUEST) || empty($_REQUEST['active_module']) || empty($_REQUEST['cmd'])) return;
 
+			check_ajax_referer('smart-manager-security','security');
+
+			if ( !is_user_logged_in() || !is_admin() ) {
+				return;
+			}
+
 			//Including the common utility functions class
 			include_once $this->plugin_path . '/class-smart-manager-utils.php';
 

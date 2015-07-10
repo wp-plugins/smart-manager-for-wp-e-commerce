@@ -1,20 +1,35 @@
 <?php
 
-if (!function_exists('find_wp_load_path')) {
-    function find_wp_load_path() { // function to find the wordpress root directory path
-        $dir = dirname(__FILE__);
-        do {
-            if( file_exists($dir."/wp-load.php") ) {
-                return $dir;
-            }
-        } while( $dir = realpath("$dir/..") );
-        return null;
-    }    
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly
 }
 
+// Code for checking whether user is valid or not
+$current_user_role = '';
 
-if ( ! defined('ABSPATH') ) {
-    include_once (find_wp_load_path()  . '/wp-load.php');
+if (!function_exists('wp_get_current_user')) {
+    require_once (ABSPATH . 'wp-includes/pluggable.php'); // Sometimes conflict with SB-Welcome Email Editor
+}
+$current_user = wp_get_current_user(); 
+if ( !($current_user instanceof WP_User) )
+   exit;
+
+if ( !isset( $current_user->roles[0] ) ) {
+    $current_user_role = array_values( $current_user->roles );
+} else {
+    $current_user_role = $current_user->roles;
+}
+
+//Fix for the client
+if ( !empty( $current_user->caps ) ) {
+    $caps = array_keys($current_user->caps);
+    $current_user_role[0] = (!empty($caps)) ? $caps[0] : '';
+}
+
+$sm_privilege_option = (!empty($current_user_role[0])) ? get_option('sm_'.$current_user_role[0].'_dashboard') : '';
+
+if ( !is_user_logged_in() || !is_admin() || ( $current_user_role[0] != 'administrator' && empty($sm_privilege_option) ) ) {
+    exit;
 }
 
 include_once (ABSPATH . 'wp-includes/wp-db.php');
@@ -466,6 +481,9 @@ elseif ($active_module == 'Orders') {
 
 // Searching a product in the grid
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
+
+	check_ajax_referer('smart-manager-security','security');
+
 	$encoded = get_data_wpsc_37 ( $_POST, $offset, $limit );
         // ob_clean();
 
@@ -558,6 +576,8 @@ if (isset ( $_GET ['func_nm'] ) && $_GET ['func_nm'] == 'exportCsvWpsc') {
 
 // Delete product.
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'delData') {
+
+	check_ajax_referer('smart-manager-security','security');
 	
 	$delCnt = 0;
 	if ($active_module == 'Products') {
@@ -625,6 +645,8 @@ function update_products($post) {
 
 // For updating product and orders details.
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
+
+	check_ajax_referer('smart-manager-security','security');
 	
 	if ($active_module == 'Products') {
 		if (SMPRO == true)
@@ -674,6 +696,9 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'saveData') {
 }
 
 if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getRolesDashboard') {
+
+	check_ajax_referer('smart-manager-security','security');
+
 	global $wpdb, $current_user;
 
 	if (!function_exists('wp_get_current_user')) {

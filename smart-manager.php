@@ -3,7 +3,7 @@
 Plugin Name: Smart Manager for e-Commerce
 Plugin URI: http://www.storeapps.org/product/smart-manager/
 Description: <strong>Lite Version Installed</strong> 10x productivity gains with WP e-Commerce & WooCommerce store administration. Quickly find and update products, variations, orders and customers.
-Version: 3.9.6
+Version: 3.9.7
 Author: Store Apps
 Author URI: http://www.storeapps.org/
 Copyright (c) 2010, 2011, 2012, 2013, 2014, 2015 Store Apps All rights reserved.
@@ -591,11 +591,10 @@ function smart_manager_get_data() {
 	                $before_plug_page = '';
 	                $after_plug_page = '';
 	                $plug_page = '';
-	                $sm_promo_img_url = "http://www.storeapps.org/ads/sm-in-app.png?d=". date("Ymd");
 			?>
 			<span style="float:right; margin: -6px -21px -20px 0px;">
 					<!-- <a href="http://www.storeapps.org/?buy-now=742&coupon=sm-festive-40-2013&utm_source=SM&utm_medium=Lite&utm_campaign=Festive2013" target="_blank"> <img src="<?php echo IMG_URL . '40perc-off-sm-thanks2013.png'?>" alt="40peroff"> </a> -->
-					<a href="http://www.storeapps.org/sm-in-app-promo" target="_blank"> <img src="<?php echo $sm_promo_img_url ?>" alt=""> </a>
+					<a href="http://www.storeapps.org/sm-in-app-promo" target="_blank"> <img src="<?php echo IMG_URL . 'sm-in-app-promo.png' ?>" alt=""> </a>
 			</span>
 	   		<p class="wrap" style="font-size: 12px; margin: 18px -21px 0px 5px;"><span style="float: right; line-height: 17px;"> <?php
 				if ( SMPRO === true && ! is_multisite() ) {

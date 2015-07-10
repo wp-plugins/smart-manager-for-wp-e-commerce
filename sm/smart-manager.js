@@ -33,6 +33,7 @@ Ext.notification = function(){
     };
 }();// Floating notification end
 
+
 // global Variables and array declaration.
 var	categories         = new Array(), //an array for category combobox in batchupdate window.
 	dimensionUnits     = new Array(), //an array for dimension units combobox in batchupdate window.
@@ -70,7 +71,7 @@ Ext.onReady(function () {
 		dismissDelay: 9999999,
 		trackMouse: true
 	});
-	
+
 	// Global object SM....declared in manager-console.php
 	SM.searchTextField   = '';
 	SM.dashboardComboBox = '';
@@ -450,6 +451,7 @@ Ext.onReady(function () {
                                 Customers : Ext.encode(SM.customers_state),
                                 Orders : Ext.encode(SM.orders_state),
                                 search_type: jQuery("#search_switch").text().trim(),
+                                security: SM_NONCE,
                                 file:  jsonURL
                     },
                     success: function(data) {
@@ -474,6 +476,7 @@ Ext.onReady(function () {
                 data: {
                             cmd: 'state',
                             op : 'get',
+                            security: SM_NONCE,
                             file:  jsonURL
                 },
                 success: function(response) {
@@ -808,13 +811,13 @@ Ext.onReady(function () {
 			})
 		},
 		{
-			header: SM.productsCols.price.name,
+			header: SM.productsCols.regularPrice.name,
 			id: 'price',
 			// type: 'float',
 			align: 'right',
 			sortable: true,
                         width: 70,
-			dataIndex: SM.productsCols.price.colName,
+			dataIndex: SM.productsCols.regularPrice.colName,
 			tooltip: getText('Price'),
 			editable: true,
 			renderer: amountRenderer,
@@ -1119,7 +1122,7 @@ Ext.onReady(function () {
 		wpec_products_fields = [
 									{name: SM.productsCols.id.colName,                type: 'int'},
 									{name: SM.productsCols.name.colName,              type: 'string'},
-									{name: SM.productsCols.price.colName,             type: 'string'},
+									{name: SM.productsCols.regularPrice.colName,      type: 'string'},
 									{name: SM.productsCols.salePrice.colName,         type: 'string'},
 									{name: SM.productsCols.inventory.colName,         type: 'string'},
 									{name: SM.productsCols.publish.colName,           type: 'string'},
@@ -1143,7 +1146,7 @@ Ext.onReady(function () {
 		wpec_products_fields = [
 									{name: SM.productsCols.id.colName,                type: 'int'},
 									{name: SM.productsCols.name.colName,              type: 'string'},
-									{name: SM.productsCols.price.colName,             type: 'string'},
+									{name: SM.productsCols.regularPrice.colName,      type: 'string'},
 									{name: SM.productsCols.salePrice.colName,         type: 'string'},
 									{name: SM.productsCols.inventory.colName,         type: 'string'},
 									{name: SM.productsCols.publish.colName,           type: 'string'},
@@ -1186,6 +1189,7 @@ Ext.onReady(function () {
 			limit: limit,
 			viewCols: Ext.encode(productsViewCols),
 			incVariation: SM.incVariation,
+			security: SM_NONCE,
 			file:  jsonURL
 		},
 		dirty: false,
@@ -1297,6 +1301,7 @@ Ext.onReady(function () {
 							incVariation: SM.incVariation,
 							file:  jsonURL,
 				            search_query: search_query,
+				            security: SM_NONCE,
 				            search: 'advanced_search'
 	                    },
 	                    // callback: function (options, success, response) {
@@ -1538,7 +1543,7 @@ var pagingToolbar = new Ext.PagingToolbar({
                     css: 'display:none;visibility:hidden;height:0px;', 
                     // src: jsonURL+'?cmd=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
                     // src: ajaxurl + '?action=sm_include_file&file='+jsonURL+'&func_nm=exportCsvWpsc&incVariation='+SM.incVariation+'&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
-                    src: fileurl + '&file='+jsonURL+'&func_nm=exportCsvWpsc&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+''
+                    src: fileurl + '&file='+jsonURL+'&func_nm=exportCsvWpsc&incVariation='+SM.incVariation+'&search_query[]='+encodeURIComponent(search_query)+'&search=advanced_search&viewCols='+encodeURIComponent(Ext.encode(productsViewCols))+'&searchText='+SM.searchTextField.getValue()+'&fromDate='+fromDateTxt.getValue()+'&toDate='+toDateTxt.getValue()+'&active_module='+SM.activeModule+'&security='+SM_NONCE
                 }); 
 			}
 		}
@@ -1612,6 +1617,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 				active_module: SM.activeModule,
 				edited:Ext.encode(edited),
 				isWPSC3814: isWPSC3814,
+				security: SM_NONCE,
 				file:  jsonURL
 			}};
 			Ext.Ajax.request(o);
@@ -1751,6 +1757,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                                 menu : menu,
                                                 active_module : SM.activeModule,
                                                 incvariation : SM.incVariation,
+                                                security: SM_NONCE,
                                                 file:  jsonURL
 					}
 				};
@@ -1794,6 +1801,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
                                     active_module: SM.activeModule,
                                     incvariation: SM.incVariation,
                                     data: Ext.encode(records),
+                                    security: SM_NONCE,
                                     file:  jsonURL
                             }
                     };
@@ -1876,6 +1884,7 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 						cmd: 'delData',
 						active_module: SM.activeModule,
 						data: Ext.encode(records),
+						security: SM_NONCE,
 						file:  jsonURL
 					}
 				};
@@ -2386,6 +2395,7 @@ var batchMask = new Ext.LoadMask(Ext.getBody(), {
 			active_module: 'Customers',
 			start: 0,
 			limit: limit,
+			security: SM_NONCE,
 			file:  jsonURL			
 		},
 		dirty:false,
@@ -2744,6 +2754,7 @@ if(isWPSC38 == '1'){
 			active_module: 'Orders',
 			start: 0,
 			limit: limit,
+			security: SM_NONCE,
 			file:  jsonURL
 		},
 		dirty:false,
@@ -2943,6 +2954,7 @@ var searchLogic = function () {
 			start: 0,
 			limit: limit,
 			viewCols: Ext.encode(productsViewCols),
+			security: SM_NONCE,
 			file:  jsonURL
 		}
 	};
@@ -3836,6 +3848,7 @@ var showCustomerDetails = function(record,rowIndex){
 						,params:
 						{
 							cmd:'getRolesDashboard',
+							security: SM_NONCE,
 							file:  jsonURL
 						}};
 				Ext.Ajax.request(object);
@@ -3953,6 +3966,7 @@ var showCustomerDetails = function(record,rowIndex){
 											thumbnail_id: attachment['id'],
 											id: record.id,
 											incVariation: SM.incVariation,
+											security: SM_NONCE,
 											file:  jsonURL
 										}
 									};
@@ -3996,6 +4010,7 @@ var showCustomerDetails = function(record,rowIndex){
 													cmd:'editImage',
 													id: record.id,
 													incVariation: SM.incVariation,
+													security: SM_NONCE,
 													file:  jsonURL
 												}
 											};

@@ -73,9 +73,15 @@ if ( ! class_exists( 'Smart_Manager' ) ) {
 	        }
 
 	        
+	        $deps = array('jquery', 'jquery-ui-core' , 'jquery-ui-widget' , 'jquery-ui-accordion' , 'jquery-ui-autocomplete' , 'jquery-ui-button' , 'jquery-ui-datepicker' ,
+	        			 'jquery-ui-dialog' , 'jquery-ui-draggable' , 'jquery-ui-droppable' , 'jquery-ui-menu' , 'jquery-ui-mouse' , 'jquery-ui-position' , 'jquery-ui-progressbar'
+	        			 , 'jquery-ui-selectable' , 'jquery-ui-resizable' , 'jquery-ui-sortable' , 'jquery-ui-slider' , 'jquery-ui-tooltip' ,'jquery-ui-tabs' , 'jquery-ui-spinner' , 
+	        			  'jquery-effects-core' , 'jquery-effects-blind' , 'jquery-effects-bounce' , 'jquery-effects-clip' , 'jquery-effects-drop' ,
+	        			  'jquery-effects-explode' , 'jquery-effects-fade' , 'jquery-effects-fold' , 'jquery-effects-highlight' , 'jquery-effects-pulsate' , 'jquery-effects-scale' ,
+	        			  'jquery-effects-shake' , 'jquery-effects-slide' , 'jquery-effects-transfer');
+
 	        //Registering scripts for jqgrid lib.
-	        wp_register_script ( 'sm_jquery_ui_custom', plugins_url ( '/assets/js/jqgrid/jquery-ui-1.9.2.custom.js', __FILE__ ), array ('jquery'), '1.10.2' );
-	        wp_register_script ( 'sm_jquery_ui_multiselect', plugins_url ( '/assets/js/jqgrid/ui.multiselect.js', __FILE__ ), array ('sm_jquery_ui_custom'), '1.10.2' );
+	        wp_register_script ( 'sm_jquery_ui_multiselect', plugins_url ( '/assets/js/jqgrid/ui.multiselect.js', __FILE__ ), $deps, '1.10.2' );
 			wp_register_script ( 'sm_jqgrid_locale', plugins_url ( '/assets/js/jqgrid/grid.locale-en.js', __FILE__ ), array ('sm_jquery_ui_multiselect'), '1.10.2' );
 			wp_register_script ( 'sm_jqgrid_main', plugins_url ( '/assets/js/jqgrid/jquery.jqGrid.min.js', __FILE__ ), array ('sm_jqgrid_locale'), '1.10.2' );
 			wp_register_script ( 'sm_chosen', plugins_url ( '/assets/js/chosen/chosen.jquery.min.js', __FILE__ ), array ('sm_jqgrid_main'), '1.3.0' );
@@ -130,6 +136,8 @@ if ( ! class_exists( 'Smart_Manager' ) ) {
 
 			$sm_dashboard_keys = array_keys($sm_dashboards);
 			$sm_dashboards ['default'] = $sm_dashboard_keys[0];
+
+			$sm_dashboards ['sm_nonce'] = wp_create_nonce( 'smart-manager-security' );
 
 	        wp_localize_script( 'sm_custom_smart_manager_js', 'sm_dashboards', array(json_encode($sm_dashboards)) );
 
