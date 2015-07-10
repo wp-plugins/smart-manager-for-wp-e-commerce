@@ -17,13 +17,16 @@ class Smart_Manager_Admin_Welcome {
 	 * Hook in tabs.
 	 */
 
-	public $sm_redirect_url;
+	public $sm_redirect_url,
+			$plugin_url;
 
 	public function __construct() {
 
 		add_action( 'admin_menu', array( $this, 'admin_menus') );
 		add_action( 'admin_head', array( $this, 'admin_head' ) );
 		add_action( 'admin_init', array( $this, 'smart_manager_welcome' ),11 );
+
+		$this->plugin_url = plugins_url( '', __FILE__ );
 	}
 
 	/**
@@ -236,7 +239,7 @@ class Smart_Manager_Admin_Welcome {
 				<div class="headline-feature">
 					<h2 style="text-align:center;"><?php _e( 'Introducing Smart Manager Beta' ); ?></h2>
 					<div class="featured-image">
-						<img src="http://www.storeapps.org/wp-content/uploads/2015/06/Smart-Manager-Beta.png" />
+						<img src="<?php echo $this->plugin_url . '/../../images/smart-manager-beta.png'?>" />
 					</div>
 					<p><?php echo __( 'Smart Manager Beta is nothing but a transformed more bigger version of the previous Smart Manager. It has ton’s of functionality and only promises to be better than what Smart Manager ever was.', 'smart-manager' ); ?></p>
 				</div>

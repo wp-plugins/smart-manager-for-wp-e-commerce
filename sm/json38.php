@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly
+}
+
 ob_start();
 
 // Code for checking whether user is valid or not
@@ -28,23 +33,6 @@ $sm_privilege_option = (!empty($current_user_role[0])) ? get_option('sm_'.$curre
 
 if ( !is_user_logged_in() || !is_admin() || ( $current_user_role[0] != 'administrator' && empty($sm_privilege_option) ) ) {
     exit;
-}
-
-if (!function_exists('find_wp_load_path')) {
-    function find_wp_load_path() { // function to find the wordpress root directory path
-        $dir = dirname(__FILE__);
-        do {
-            if( file_exists($dir."/wp-load.php") ) {
-                return $dir;
-            }
-        } while( $dir = realpath("$dir/..") );
-        return null;
-    }    
-}
-
-
-if ( ! defined('ABSPATH') ) {
-    include_once (find_wp_load_path()  . '/wp-load.php');
 }
 
 include_once (ABSPATH . 'wp-includes/wp-db.php');

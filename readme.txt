@@ -1,70 +1,78 @@
 === Smart Manager for e-Commerce - WooCommerce and WPeC extension ===
 Contributors: storeapps, niravmehta, ratnakar.dubey, Tarun.Parswani
 Donate link: http://www.storeapps.org/
-Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager, extension, premium, free, download
+Tags: administration, wp e-commerce, woo commerce, woocommerce, wpec, wpsc, jigoshop, ecommerce, management, batch update, bulk edit, mass update, wp ecommerce, productivity, products, variations, orders, customers, manager, pro, manager pro, pro manager, extension, premium, free, download, wooCommerce customer management,
+woocommerce manager, woocommerce order management, woocommerce product management, woocommerce smart manager, woocommerce store management
 Requires at least: 2.0.2
 Tested up to: 4.2.2
-Stable tag: 3.9.6
+Stable tag: 3.9.7
 
 10x productivity gains with WP e-Commerce & WooCommerce store administration. 
 Manage products, variations, orders and customers reliably using a fast and familiar interface.
 
 == Description ==
-Smart Manager is a unique, revolutionary tool that gives you the **power to efficiently manage products, 
-product variations, customers and orders** using the popular WordPress e-Commerce plugins WooCommerce from WooThemes 
-and WPeC from GetShopped / Instinct.
+Store administration with WooCommerce / WPeC takes up 100's of hours a year. As a business owner, **you could spend all this time on customer service, marketing, business development, or any other activity that helps you earn more revenue**.
 
-As a business owner, **your time is better spent on marketing and customer service** than on store administration. 
-Unfortunately store administration with WooCommerce / WPeC can take significant time. Day after day.
+Storeapps.org presents Smart Manager, a revolutionary tool that instantly gives you easy and **effective control** over your **products**, **product variations**, **customers** and **orders** using the popular WordPress e-Commerce plugins **WooCommerce from WooThemes and WPeC from GetShopped / Instinct**.
 
-Smart Manager will **boost your productivity 10x** in managing products, customers and orders. 
-You can browse, search, and manage multiple products, customers or orders using a **familiar, single page, 
-spreadsheet like** interface. 
- 
-You will discover a new way of store administration with this add-on. 
+Can you run an online store and save time doing it? Well, with Smart Manager you can!
 
-Smart Manager frees you up from mundane housekeeping tasks. So you can spend that time on anything that makes you more 
-money. Use that time to leverage social media for higher sales, or develop deeper customer relationships. 
-Use that time to develop a new product, or simply present it to your family.
+Smart Manager makes you an expert in **Store administration**, by allowing you to browse, search, add, update and delete multiple products & variations, customers or orders using a familiar, single page, spreadsheet like interface.
 
-Smart Manager works with WooCommerce latest versions and both WP e-Commerce 3.7 and 3.8.
+Smart Manager increases your productivity more than 10 times by giving you a super-fast interface that lets you manage products, customers and orders in the blink of an eye.
 
-**What Can You Do With The Free "Lite" Version**
+What makes Smart Manager awesome is the ability to edit multiple products in one go. And we have extended that for variations too. That’s not all, you can even use **Batch Update** to edit multiple parameters on multiple product variations at once. Isn’t that super awesome? To know more, visit:
 
-* Convenient Spreadsheet Like Browsing - Eliminate Extra Clicks And Long Wait Times
-* Easy Search - easily locate products / customers / orders
-* Inline Product/Order/Customer Editing - Get Productive Right Away (Lite edition: up to 3 rows at a time)
-* See and manage Product Variations
-* Quick, In-page detail view for Products/Orders/Customers
-* Delete single / multiple products or orders at once
+[Manage Product Variations with Smart Manager](http://www.storeapps.org/manage-product-variations-with-smart-manager-for-wpec-now/) 
 
-**A Lot More In Paid Versions**
+The **Smart Batch Update** allows you to modify multiple fields on multiple items all at once with zero errors. You will have your mind blown with this new way of store administration.
 
-* Unlimited Inline Editing for Products, Orders and Customers
-* Fast And Reliable Batch Updates With Intelligent Update Actions - update multiple items at once
-* Print packing slips / orders for multiple orders in one go
-* Add your own logo for packing slips / order printing
-* On Customers dashboard - view total sales for each customer and their last order details.
-* Export to CSV for all dashboards - products, customers, orders. Works even with search results.
-* Add / Duplicate single / multiple products at once. You can even duplicate the enitre store in one click.
-* Manage All Orders - not limited to one month, plus Smart Date filters
-* Access Control - Manage privileges for different WordPress user roles - what can they do within Smart Manager and what they can't
+Smart Manager will save you so much time, which can be further used to leverage social media for higher sales, or develop deeper customer relationships.
+
+Smart Manager is the most powerful, flexible, feature-rich and high performance tool. Just install and you are ready to go!
+
+We have over 6000 individual lines on our site and this has saved us huge amounts of time.
+Batch update works flawlessly which is a massive time saver, if you need to change all of your prices on the entire site by a % or value, you can with a couple of clicks! We made an update to Tax class on all products in less than 3 minutes. The CSV export tool actually works unlike some I have tried, all 6000 odd lines neatly exported in one attempt. No missing or corrupt data.
+
+- [Obsolete Electronic Components] (Link: https://wordpress.org/support/topic/99-is-nothing-compared-to-the-time-we-have-saved)
+
+**What you can achieve with the Smart Manager Free "Lite" Version**
+
+* Convenient Spreadsheet Like Browsing - Eliminate extra clicks and long wait times 
+* Easy Search - easily locate products / customers / orders ANYTHING!
+* Inline Product/Order/Customer Editing - Get productive right away (Lite edition: up to 3 rows at a time) 
+* See and manage Product Variations 
+* Quick, In-page detail view for Products/Orders/Customers 
+* Delete single or multiple products or orders at once saving a ton of time
+
+**What you can achieve with the Smart Manager paid Version**
+
+* Unlimited Inline Editing for products, orders and customers 
+* Fast and reliable batch updates with intelligent update actions - update multiple items at once 
+* Print packing slips / orders for multiple orders in one go 
+* Add your own logo for packing slips / order printing 
+* On Customers dashboard - view total sales for each customer and their last order details. 
+* Export to CSV for all dashboards - products, customers, orders. Works even with search results. 
+* Add / Duplicate single / multiple products at once. You can even duplicate the entire store in one click. 
+* Manage All Orders - not limited to one month, plus Smart Date filters 
+* Access Control - Manage privileges for different WordPress user roles - what can they do within Smart Manager and what they can't 
 * Premium Support and Automatic Upgrades for full year
 
 
-**Customer Feedback**
+Available Translations for Smart Manager: Dutch, Brazilian Portuguese, French, Romanian, German(Austria)
 
-* Just bought this Genius Add-on... It's going to save me hundreds of hours a year...
-* I find it extremely useful and very well done. 
-* Great looking plugin! :D I would recommend your plugin to my customers and readers.
-* I just took a look at Smart Manager and it looks way awesome!
+**Smart Manager is compatible with latest versions of both [WooCommerce](http://www.woothemes.com/woocommerce/) and [WP e-Commerce](http://www.getshopped.org).**
 
-Thousands of customers like you are extremely happy with Smart Manager! Checkout our website for more details.
+For any more product related inquiries, drop us a mail and we will happily clear your doubts. 
+Email: support@storeapps.org 
+For more information visit us at www.storeapps.org
+Or tweet to us @storeapps.
 
-**More than 1,00,000 downloads and counting**
+Smart Manager has thousands of happy and satisfied users! You could become one too. Checkout our website for more details: www.storeapps.org
 
-Available Translations: Dutch, Brazilian Portugese, French, Romanian, German(Austria)
+**We are proud to have more than 150,000 downloads.**
 
+Don't forget to give us a 5 star review if you like us and our Smart Manager.
 
 == Installation ==
 
@@ -116,6 +124,10 @@ It also gives the warm feeling of supporting further development of the plugin.
 4. Column selection for display
 
 == Changelog ==
+
+= 3.9.7 =
+* Fix: Important security fixes
+* Fix: Some minor fixes
 
 = 3.9.6 =
 * New: Support for sort functionality on the entire database of records (Beta)
@@ -565,6 +577,9 @@ It also gives the warm feeling of supporting further development of the plugin.
 * Product administration features
 
 == Upgrade Notice ==
+
+= 3.9.7 =
+Some important security fixes along with some other minor fixes. Recommended upgrade.
 
 = 3.9.6 =
 New feature of sort functionality on the entire database of records (Beta) along with some important fixes for WooCommerce along with some other minor fixes. Recommended upgrade.
