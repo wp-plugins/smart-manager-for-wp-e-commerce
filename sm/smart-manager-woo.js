@@ -43,7 +43,8 @@ var	categories         = new Array(), //an array for category combobox in batchu
 	weightUnitStore    = '',
 	showOrdersView     = '',
 	countriesStore     = '',
-    hidden_state       = false;
+    hidden_state       = false,
+    sm_prod_custom_cols_formatted = new Object(); // object for storing the formmated custom cols names
 
 
 
@@ -795,7 +796,7 @@ Ext.onReady(function () {
 		store: new Ext.data.ArrayStore({
 			id: 0,
 			fields: ['value','name'],
-			data: [['publish', 'Published'], ['draft', 'Draft'],['inherit', 'Inherit']]
+			data: [['publish', 'Published'], ['pending', 'Pending Review'], ['draft', 'Draft'],['inherit', 'Inherit']]
 		}),
 		valueField: 'value',
 		displayField: 'name'
@@ -812,7 +813,7 @@ Ext.onReady(function () {
 		store: new Ext.data.ArrayStore({
 			id: 0,
 			fields: ['value','name'],
-			data: [['publish', 'Published'], ['draft', 'Draft']]			
+			data: [['publish', 'Published'], ['pending', 'Pending Review'], ['draft', 'Draft']]			
 		}),
 		valueField: 'value',
 		displayField: 'name'
@@ -1184,11 +1185,19 @@ jQuery(function($) {
 
 	    if (value.hasOwnProperty('colType') && value.colType == 'custom_column' && value.name != 'Other Meta') {
 
-	    	var product_column = new Object(),
+        var name = value.value,
+        	f_name = name.replace(/[^a-zA-z0-9_]/g,''); // commented for meta_keys containing sp. chars [like #,~..]
+     	
+
+    	var product_column = new Object(),
 	    		decimal_precision = (value.hasOwnProperty('decimal_precision')) ? value.decimal_precision : 0;
 
         	product_column.header = value.name;
-        	product_column.dataIndex = value.value;
+        	
+		//product_column.dataIndex = value.value;
+		sm_prod_custom_cols_formatted[f_name] = name
+		product_column.dataIndex = f_name;
+
         	product_column.width = 50;
         	product_column.editable = true;
         	product_column.hidden = true;
@@ -1261,9 +1270,9 @@ jQuery(function($) {
         	if (fileExists == 1) {
 		    	var product_column_render = new Object();
 
-                var name = value.value;
-                // product_column_render.name = name.replace(/[^a-zA-z0-9_]/g,''); // commented for meta_keys containing sp. chars [like #,~..]
-	        	product_column_render.name = value.value;
+                // var name = value.value;
+                product_column_render.name = f_name; // commented for meta_keys containing sp. chars [like #,~..]
+	        	//product_column_render.name = value.value;
 	        	product_column_render.type = (decimal_precision > 0 || jQuery.inArray(value.colName, columns_render_string) > -1 ) ? 'string' : value.dataType;
 	        	product_column_render.table = value.tableName;
 	        	products_render_fields [render_index] = product_column_render;
@@ -1271,7 +1280,6 @@ jQuery(function($) {
 	        	render_index++;
         	}
 	    }
-
 	});
 });
 
@@ -1770,13 +1778,15 @@ var pagingActivePage = pagingToolbar.getPageData().activePage;
 				edited_ids.push(r.id);
 			}
 
+			var e_data = new Object();
+
 			for (var item in r.data) {
-				if (typeof r.data[item] == "string") {
-					r.data[item] = r.data[item].replace(/(?:\r\n|\r|\n)/g, '<br />');
-				}
+
+				key = ( SM.activeModule == 'Products' && sm_prod_custom_cols_formatted.hasOwnProperty(item) ) ? sm_prod_custom_cols_formatted[item] : item;
+				e_data[key] = (typeof r.data[item] == "string") ? r.data[item].replace(/(?:\r\n|\r|\n)/g, '<br />') : r.data[item];
 			}
 			
-			edited.push(r.data);
+			edited.push(e_data);
 		});
 
 		var o = {
@@ -2511,6 +2521,14 @@ var visibilityStoreData = new Array();
                             ['hidden', getText('Hidden')]
                           ];
 
+var postStatusStoreData = new Array();
+    postStatusStoreData = [
+                            ['publish', getText('Publish')],
+                            ['pending', getText('Pending Review')],
+                            ['draft', getText('Draft')]
+                          ];
+
+
 //Store for 'set to' from second combobox(actions combobox).
 var countriesStore = new Ext.data.Store({
 	reader: new Ext.data.JsonReader({
@@ -2658,7 +2676,13 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								comboCategoriesActionCmp.reset();
                                 lblImg.hide();
                                 setTextarea.hide();
-							} else if(colName == '_tax_status' || colName == '_visibility' || (field.colType == "custom_column" && field.hasOwnProperty('values'))) {
+							} else if (field_name == 'Stock: Quantity Limited' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping' || actionType == 'YesNoActions') {
+								setTextfield.hide();
+								textField2Cmp.hide();
+								comboCategoriesActionCmp.hide();
+                                lblImg.hide();
+                                setTextarea.hide();
+							} else if(colName == '_tax_status' || colName == '_visibility' || field_name == 'Publish' || (field.colType == "custom_column" && field.hasOwnProperty('values'))) {
 								setTextfield.hide();
 								textField2Cmp.hide();
 								comboCategoriesActionCmp.show();
@@ -2677,13 +2701,6 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
 								comboCategoriesActionCmp.hide();
                                 lblImg.hide();
 								setTextarea.hide();
-							} else if (field_name == 'Stock: Quantity Limited' || field_name == 'Publish' || field_name == 'Stock: Inform When Out Of Stock' || field_name == 'Disregard Shipping' || actionType == 'YesNoActions') {
-								
-								setTextfield.hide();
-								textField2Cmp.hide();
-								comboCategoriesActionCmp.hide();
-                                lblImg.hide();
-                                setTextarea.hide();
 							} else if (field_name == 'Weight' || field_name == 'Variations: Weight'||field_name == 'Height' ||field_name == 'Width' ||field_name == 'Length') {
 								setTextfield.show();
 								textField2Cmp.hide();
@@ -2900,7 +2917,7 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
                         	}
                         }
                         
-                        if (comboactionvalue == 'YES' || comboactionvalue == 'NO' || comboactionvalue == 'SET_TO_SALES_PRICE' || comboactionvalue == 'SET_TO_REGULAR_PRICE' || (comboactionvalue == 'SET_TO' && (combofieldvalue == 'visibility' || combofieldvalue == 'taxStatus' || storedata_array[colName] != undefined))) {
+                        if (comboactionvalue == 'YES' || comboactionvalue == 'NO' || comboactionvalue == 'SET_TO_SALES_PRICE' || comboactionvalue == 'SET_TO_REGULAR_PRICE' || (comboactionvalue == 'SET_TO' && (combofieldvalue == 'visibility' || combofieldvalue == 'taxStatus'  || combofieldvalue == 'publish' ||  storedata_array[colName] != undefined))) {
                             textField1Cmp.hide();
                         }
                                                 
@@ -3116,6 +3133,8 @@ var batchUpdateToolbarInstance = Ext.extend(Ext.Toolbar, {
                                     categoryStore.loadData( taxStatusStoreData );
                                 } else if ( field_name == 'Visibility' ) {
                                     categoryStore.loadData( visibilityStoreData );
+                                } else if ( field_name == 'Publish' ) {
+                                    categoryStore.loadData( postStatusStoreData );
                                 } else if (storedata_array[colName] != undefined) {
                                 	categoryStore.loadData( storedata_array[colName] );
                                 }else {

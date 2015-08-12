@@ -165,6 +165,7 @@ if ( ! class_exists( 'Smart_Manager_Base' ) ) {
 					if ($field_nm == 'post_status') {
 						$temp ['type'] = 'list';
 						$temp ['values'] = array('publish' => __('Publish'),
+												 'pending' => __('Pending Review'),
 												 'draft' => __('Draft'));
 					}
 

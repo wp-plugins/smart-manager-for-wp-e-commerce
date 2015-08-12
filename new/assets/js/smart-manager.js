@@ -106,6 +106,8 @@ $(document).ready(function() {
 
     sm.sm_nonce = sm_dashboards['sm_nonce'];
 
+    delete sm_dashboards['sm_nonce'];
+
     if ( !jQuery(document.body).hasClass('folded') ) {
         grid_width  = document.documentElement.offsetWidth - 220;
     }
