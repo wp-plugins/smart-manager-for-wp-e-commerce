@@ -141,7 +141,7 @@ function get_data_wpsc_38 ( $post, $offset, $limit, $is_export = false ) {
 //Code to handle the show variations query
 function variation_query_params(){
 	global $wpdb,$post_status,$parent_sort_id,$order_by;
-	$post_status    = "('publish', 'draft','inherit') AND {$wpdb->prefix}posts.ID NOT IN 
+	$post_status    = "('publish', 'pending', 'draft', 'inherit') AND {$wpdb->prefix}posts.ID NOT IN 
 							( SELECT product.ID FROM {$wpdb->prefix}posts AS product 
 							LEFT JOIN {$wpdb->prefix}posts AS product_variation 
 							ON product_variation.ID = product.post_parent 
@@ -176,7 +176,7 @@ function variation_query_params(){
 			$show_variation = true;
 		} else { // query params for non-variation products
 			$show_variation = false;
-			$post_status = "('publish', 'draft')";
+			$post_status = "('publish', 'pending', 'draft')";
 			$parent_sort_id = '';
 			$order_by = " ORDER BY {$wpdb->prefix}posts.id desc";
 		}
@@ -1764,12 +1764,12 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'dupData') {
 
         //Code for getting the number of parent products for the dulplication of entire store
         if ( $_POST ['menu'] == 'store') {
-            $query="SELECT id from {$wpdb->prefix}posts WHERE post_type='wpsc-product' AND post_status IN ('publish', 'draft')";
+            $query="SELECT id from {$wpdb->prefix}posts WHERE post_type='wpsc-product' AND post_status IN ('publish', 'pending', 'draft')";
             $data_dup = $wpdb->get_col ( $query );
         }
         else{
             if ($_POST ['incvariation'] == true) {
-                $query="SELECT id from {$wpdb->prefix}posts WHERE post_type='wpsc-product' AND post_status IN ('publish', 'draft')";
+                $query="SELECT id from {$wpdb->prefix}posts WHERE post_type='wpsc-product' AND post_status IN ('publish', 'pending', 'draft')";
                 $parent_ids = $wpdb->get_col ( $query );
 
                 for ($i=0;$i<sizeof($parent_ids);$i++) {

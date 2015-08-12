@@ -319,7 +319,8 @@ $products_cols['weight']['actionType']='modIntPercentActions';
 $products_cols['weight']['tableName']="{$wpdb->prefix}postmeta";
 
 $products_cols['publish']['name']=__( 'Publish', $sm_domain );
-$products_cols['publish']['actionType']='YesNoActions';
+// $products_cols['publish']['actionType']='YesNoActions';
+$products_cols['publish']['actionType']='setStrActions';
 $products_cols['publish']['colName']='post_status';
 $products_cols['publish']['tableName']="{$wpdb->prefix}posts";
 
@@ -967,7 +968,8 @@ if (WPSC_RUNNING === true && IS_WPSC38) {
 				$products_search_cols [$index]['key'] = 'Post Status';
 				$products_search_cols [$index]['values'] = array();
 				$products_search_cols [$index]['values'][0] = array('key' => 'publish', 'value' => __('Publish',$sm_domain));
-				$products_search_cols [$index]['values'][1] = array('key' => 'draft', 'value' => __('Draft',$sm_domain));
+				$products_search_cols [$index]['values'][1] = array('key' => 'pending', 'value' => __('Pending Review',$sm_domain));
+				$products_search_cols [$index]['values'][2] = array('key' => 'draft', 'value' => __('Draft',$sm_domain));
 			}
 
 			$products_search_cols [$index]['category'] = "";
@@ -1518,6 +1520,10 @@ if (WPSC_RUNNING === true) {
 		lang.refunded			            = '" . __('Refunded',$sm_domain) . "';
 		lang.cancelled			            = '" . __('Cancelled',$sm_domain) . "';
 		lang.pending_payment			    = '" . __('Pending payment',$sm_domain) . "';
+
+		lang.publish			    = '" . __('Publish',$sm_domain) . "';
+		lang.pending_review			    = '" . __('Pending Review',$sm_domain) . "';
+		lang.draft			    = '" . __('Draft',$sm_domain) . "';
                     
         lang.product_visibility			= '" . __('Product Visibility',$sm_domain) . "';
         lang.visibility     			= '" . __('Visibility',$sm_domain) . "';

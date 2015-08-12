@@ -90,7 +90,7 @@ function variation_query_params(){
 
     $variation_name = "variation_name,";
     $parent_name    = "parent_name,";
-    $post_status    = "('publish', 'draft')";
+    $post_status    = "('publish', 'pending', 'draft')";
     $post_type      = "('product', 'product_variation')";
     $parent_sort_id = " ,if({$wpdb->prefix}posts.post_parent = 0,{$wpdb->prefix}posts.id,{$wpdb->prefix}posts.post_parent - 1 + ({$wpdb->prefix}posts.id)/pow(10,char_length(cast({$wpdb->prefix}posts.id as char)))) as parent_sort_id";
     $order_by       = " ORDER BY parent_sort_id desc";
@@ -133,7 +133,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
         } else {
             $parent_name = '';
-            $post_status = "('publish', 'draft')";
+            $post_status = "('publish', 'pending', 'draft')";
             $post_type = "('product')";
             $parent_sort_id = '';
             $order_by = " ORDER BY {$wpdb->prefix}posts.id desc";
@@ -228,7 +228,7 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
                                             AND post_id IN (SELECT id FROM {$wpdb->prefix}posts
                                                                 WHERE post_parent > 0
                                                                  AND post_type IN ('product_variation')
-                                                                 AND post_status IN ('publish', 'draft'))";
+                                                                 AND post_status IN ('publish', 'pending', 'draft'))";
             $wpdb->query ( $query_delete_variations );
         }
 
@@ -1035,8 +1035,21 @@ function get_data_woo ( $post, $offset, $limit, $is_export = false ) {
 
                 unset($records[$i]['prod_othermeta_value']);
                 unset($records[$i]['prod_othermeta_key']);
-                $prod_meta_key_values = array_combine($prod_meta_key, $prod_meta_values);
+                $temp = array_combine($prod_meta_key, $prod_meta_values);
                 $product_type = wp_get_object_terms($records[$i]['id'], 'product_type', array('fields' => 'slugs'));
+
+        //for formatting meta keys of custom keys
+
+        $prod_meta_key_values = array();
+
+        if (empty($_POST['func_nm'])) {
+            foreach ($temp as $key => $val) {
+                $key = preg_replace('/[^A-Za-z0-9\-_]/', '', $key);
+                $prod_meta_key_values [$key] = $val;  // Removes special chars.
+            }
+        } else {
+            $prod_meta_key_values = $temp;
+        }   
 
                 // Code to get the Category Name from the term_taxonomy_id
                 
@@ -2331,7 +2344,6 @@ if (isset ( $_POST ['cmd'] ) && $_POST ['cmd'] == 'getData') {
     } else {
         $encoded = get_data_woo ( $_POST, $offset, $limit );
     }
-
      
    // ob_clean("ob_gzhandler");
 
@@ -2711,9 +2723,9 @@ function woo_insert_update_data($post) {
 
         $post_meta_info = array();
         // To get distinct meta_key for Simple Products. => Executed only once
-        $post_meta_info = $wpdb->get_col( "SELECT distinct postmeta.meta_key FROM {$wpdb->prefix}postmeta AS postmeta INNER JOIN {$wpdb->prefix}posts AS posts on posts.ID = postmeta.post_id WHERE posts.post_type='product' AND posts.post_status IN ('publish','draft')" );
+        $post_meta_info = $wpdb->get_col( "SELECT distinct postmeta.meta_key FROM {$wpdb->prefix}postmeta AS postmeta INNER JOIN {$wpdb->prefix}posts AS posts on posts.ID = postmeta.post_id WHERE posts.post_type='product' AND posts.post_status IN ('publish', 'pending', 'draft')" );
         // To get distinct meta_key for Child Products i.e. Variations. => Executed only once
-        $post_meta_info_variations = $wpdb->get_col( "SELECT distinct postmeta.meta_key FROM {$wpdb->prefix}postmeta AS postmeta INNER JOIN {$wpdb->prefix}posts AS posts on posts.ID = postmeta.post_id WHERE posts.post_type='product_variation' AND posts.post_status IN ('publish','draft') AND posts.post_parent > 0" );
+        $post_meta_info_variations = $wpdb->get_col( "SELECT distinct postmeta.meta_key FROM {$wpdb->prefix}postmeta AS postmeta INNER JOIN {$wpdb->prefix}posts AS posts on posts.ID = postmeta.post_id WHERE posts.post_type='product_variation' AND posts.post_status IN ('publish', 'pending', 'draft') AND posts.post_parent > 0" );
                 
         // meta_key required for new products, that are entered through Smart Manager   
             // if (count($post_meta_info) <= 0 || count($post_meta_info) < 23) {
@@ -2734,9 +2746,9 @@ function woo_insert_update_data($post) {
     if( is_foreachable( $new_product ) ) {
 
         $woo_prod_obj = '';
-        if ($_POST['SM_IS_WOO21'] == "true" || $_POST['SM_IS_WOO22'] == "true") {
-            $woo_prod_obj = new WC_Product_Variable();
-        }
+        // if ($_POST['SM_IS_WOO21'] == "true" || $_POST['SM_IS_WOO22'] == "true") {
+        //     $woo_prod_obj = new WC_Product_Variable();
+        // }
 
         foreach ($new_product as $obj){
             if($_POST ['active_module'] == 'Products') {
@@ -2921,6 +2933,8 @@ function woo_insert_update_data($post) {
                             if ($parent_id > 0) {
                                 if ($_POST['SM_IS_WOO21'] == "true" || $_POST['SM_IS_WOO22'] == "true") {
                                     WC_Product_Variable::sync($parent_id);
+                                    delete_transient( 'wc_product_children_' . $parent_id ); //added in woo24
+
                                 } else {
                                     variable_price_sync($parent_id);
                                 }
